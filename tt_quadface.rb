@@ -73,6 +73,36 @@ module TT::Plugins::QuadFaceTools
   
   # (!) Custom QuadFaceEdge class for smarter traversing of the QuadFace mesh.
   
+  # @since 0.1.0
+  class QuadFaceEdge
+    
+    # @param [Sketchup::Edge] edge
+    #
+    # @since 0.1.0
+    def initialize( edge )
+      raise ArgumentError, 'Invalid Edge' unless edge.is_a?( Sketchup::Edge )
+      @edge = edge
+      @faces = []
+    end
+    
+    # @param [QuadFace] face
+    #
+    # @since 0.1.0
+    def link_face( face )
+      raise ArgumentError, 'Invalid QuadFace' unless face.is_a?( QuadFace )
+      @faces << face unless @faces.include?( face )
+    end
+    
+    # @param [QuadFace] face
+    #
+    # @since 0.1.0
+    def unlink_face( face )
+      raise ArgumentError, 'Invalid QuadFace' unless face.is_a?( QuadFace )
+      @faces.delete( face )
+    end
+    
+  end # class QuadFaceEdge
+  
   
   # @since 0.1.0
   class QuadFace
@@ -114,6 +144,14 @@ module TT::Plugins::QuadFaceTools
       @faces << face2 if face2.is_a?( Sketchup::Face )
     end
     
+    # @param [Sketchup::Face] face
+    #
+    # @return [Boolean]
+    # @since 0.1.0
+    def include?( face )
+      @faces.include?( face )
+    end
+    
     # @return [Array<Sketchup::Edge>]
     # @since 0.1.0
     def edges
@@ -122,6 +160,15 @@ module TT::Plugins::QuadFaceTools
         result.concat( face.edges.select { |e| !e.soft? } )
       end
       result
+    end
+    
+    # @return [QuadFace,Nil]
+    # @since 0.1.0
+    def next_face( edge )
+      return nil unless edge.faces.size == 2
+      quadfaces = edge.faces.reject! { |face| @faces.include?( face ) }
+      return nil if quadfaces.empty?
+      quadfaces[0]
     end
     
     # @return [Sketchup::Edge]
