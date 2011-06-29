@@ -12,7 +12,7 @@ TT::Lib.compatible?('2.6.0', 'TT QuadFace Tools')
 
 #-------------------------------------------------------------------------------
 
-module TT::Plugins::QuadFaceTools  
+module TT::Plugins::QuadFaceTools
   
   ### CONSTANTS ### ------------------------------------------------------------
   
@@ -31,6 +31,8 @@ module TT::Plugins::QuadFaceTools
   unless file_loaded?( File.basename(__FILE__) )
     m = TT.menu( 'Tools' ).add_submenu( 'QuadFace Tools' )
     m.add_item( 'Inspect' )     { self.inspect_quad_faces }
+    m.add_separator
+    m.add_item( 'Ring' )        { self.select_rings }
   end
   
   
@@ -39,6 +41,51 @@ module TT::Plugins::QuadFaceTools
   # @since 0.1.0
   def self.inspect_quad_faces
     Sketchup.active_model.select_tool( QuadFaceInspector.new )
+  end
+  
+  
+  # @since 0.1.0
+  def self.select_rings
+    selection = Sketchup.active_model.selection
+    entities = []
+    for entity in selection
+      next unless entity.is_a?( Sketchup::Edge )
+      entities.concat( find_edge_ring( entity ) )
+    end
+    # Select
+    selection.clear
+    selection.add( entities )
+  end
+  
+  
+  # @param [Sketchup::Edge]
+  #
+  # @return [Array<Sketchup::Edge>]
+  # @since 0.1.0
+  def self.find_edge_ring( origin_edge )
+    raise ArgumentError, 'Invalid Edge' unless origin_edge.is_a?( Sketchup::Edge )
+    # Find initial connected QuadFaces
+    return false unless ( 1..2 ).include?( origin_edge.faces.size )
+    valid_faces = origin_edge.faces.select { |f| QuadFace.is?( f ) }
+    quads = valid_faces.map { |face| QuadFace.new( face ) }
+    # Find ring loop
+    selected_faces = []
+    selected_edges = [ origin_edge ]
+    for quad in quads
+      current_quad = quad
+      current_edge = current_quad.opposite_edge( origin_edge )
+      until current_edge.nil?
+        selected_faces << current_quad
+        selected_edges << current_edge
+        # Look for more connected.
+        current_quad = current_quad.next_face( current_edge )
+        break unless current_quad # if nil
+        current_edge = current_quad.opposite_edge( current_edge )
+        # Stop if the entities has already been processed.
+        break if selected_edges.include?( current_edge )
+      end
+    end
+    selected_edges
   end
   
   
@@ -144,12 +191,18 @@ module TT::Plugins::QuadFaceTools
       @faces << face2 if face2.is_a?( Sketchup::Face )
     end
     
-    # @param [Sketchup::Face] face
+    # @param [QuadFace] quadface
     #
-    # @return [Boolean]
+    # @return [Sketchup::Edge,Nil]
     # @since 0.1.0
-    def include?( face )
-      @faces.include?( face )
+    def common_edge( quadface )
+      unless quadface.is_a?( QuadFace )
+        raise ArgumentError, 'Invalid QuadFace'
+      end
+      other_edges = quadface.edges
+      match = edges.select { |edge| other_edges.include?( edge ) }
+      return nil unless match
+      match[0]
     end
     
     # @return [Array<Sketchup::Edge>]
@@ -162,13 +215,28 @@ module TT::Plugins::QuadFaceTools
       result
     end
     
+    # @return [Array<Sketchup::Face>]
+    # @since 0.1.0
+    def faces
+      @faces.dup
+    end
+    
+    # @param [Sketchup::Face] face
+    #
+    # @return [Boolean]
+    # @since 0.1.0
+    def include?( face )
+      @faces.include?( face )
+    end
+    
     # @return [QuadFace,Nil]
     # @since 0.1.0
     def next_face( edge )
       return nil unless edge.faces.size == 2
       quadfaces = edge.faces.reject! { |face| @faces.include?( face ) }
       return nil if quadfaces.empty?
-      quadfaces[0]
+      return nil unless valid_native_face?( quadfaces[0] )
+      QuadFace.new( quadfaces[0] )
     end
     
     # @return [Sketchup::Edge]
@@ -186,9 +254,7 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<Sketchup::Edge>]
     # @since 0.1.0
     def outer_loop
-      result = []
-      # (!) Sort bordering edges.
-      result
+      TT::Edges.sort( edges )
     end
     
     private
@@ -303,7 +369,7 @@ module TT::Plugins::QuadFaceTools
     #x = Dir.glob( File.join(PATH, '*.{rb,rbs}') ).each { |file|
     #  load file
     #}
-    x.length
+    #x.length
   ensure
     $VERBOSE = original_verbose
   end
