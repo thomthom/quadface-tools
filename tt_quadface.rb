@@ -8,7 +8,7 @@
 require 'sketchup.rb'
 require 'TT_Lib2/core.rb'
 
-TT::Lib.compatible?('2.0.0', 'TT QuadFace Tools')
+TT::Lib.compatible?('2.6.0', 'TT QuadFace Tools')
 
 #-------------------------------------------------------------------------------
 
@@ -59,6 +59,15 @@ module TT::Plugins::QuadFaceTools
     # (!)
     # Transform a set of entities related to quadfaces - ensuring that native
     # quadfaces are triangulated correctly with a soft & smooth divider edge.
+  end
+  
+  
+  # @since 0.1.0
+  def self.convert_connected_mesh_to_quads
+    # (!)
+    # Select a native quadface or two triangles. This will be the origin of the
+    # mesh and from there the connected mesh will be attempted to be converted
+    # into a quadface mesh.
   end
   
   
