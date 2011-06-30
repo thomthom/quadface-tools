@@ -45,11 +45,19 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Select Ring'
     cmd_select_ring = cmd
     
+    cmd = UI::Command.new( 'Loop' )     { self.select_loops }
+    cmd.small_icon = File.join( PATH_ICONS, 'SelectLoop_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'SelectLoop_24.png' )
+    cmd.status_bar_text = 'Select Loop.'
+    cmd.tooltip = 'Select Loop'
+    cmd_select_loop = cmd
+    
     # Menus
     m = TT.menu( 'Tools' ).add_submenu( 'QuadFace Tools' )
     m.add_item( cmd_select )
     m.add_separator
     m.add_item( cmd_select_ring )
+    m.add_item( cmd_select_loop )
     
     # Context menu
     #UI.add_context_menu_handler { |context_menu|
@@ -63,6 +71,7 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_select )
     toolbar.add_separator
     toolbar.add_item( cmd_select_ring )
+    toolbar.add_item( cmd_select_loop )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -85,6 +94,20 @@ module TT::Plugins::QuadFaceTools
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
       entities.concat( find_edge_ring( entity ) )
+    end
+    # Select
+    selection.clear
+    selection.add( entities )
+  end
+  
+  
+  # @since 0.1.0
+  def self.select_loops
+    selection = Sketchup.active_model.selection
+    entities = []
+    for entity in selection
+      next unless entity.is_a?( Sketchup::Edge )
+      entities.concat( find_edge_loop( entity ) )
     end
     # Select
     selection.clear
@@ -120,6 +143,62 @@ module TT::Plugins::QuadFaceTools
       end
     end
     selected_edges
+  end
+  
+  
+  # @param [Sketchup::Edge]
+  #
+  # @return [Array<Sketchup::Edge>]
+  # @since 0.1.0
+  def self.find_edge_loop( origin_edge )
+    raise ArgumentError, 'Invalid Edge' unless origin_edge.is_a?( Sketchup::Edge )
+    # Find initial connected QuadFaces
+    return false unless ( 1..2 ).include?( origin_edge.faces.size )
+    quads = self.connected_quad_faces( origin_edge )
+    # Find ring loop
+    loop = []
+    stack = [ origin_edge ]
+    i = 0
+    until stack.empty?
+      if i > 1000
+        puts 'LOOP!!!'
+        return false
+      end
+      
+      edge = stack.shift
+      # Find connected edges
+      next_vertices = []
+      for v in edge.vertices
+        next if v.edges.any? { |e| loop.include?( e ) }
+        next_vertices << v
+      end
+      loop << edge
+      # Get connected faces
+      quads = self.connected_quad_faces( edge )
+      # Pick next edges
+      for vertex in next_vertices
+        for e in vertex.edges
+          next if e == edge
+          next if e.soft?
+          next if quads.any? { |q| q.edges.include?( e ) }
+          next if loop.include?( e )
+          next if self.connected_quad_faces( e ).empty?
+          stack << e
+        end # for e
+      end # for vertex
+    end # until
+    loop
+  end
+  
+  
+  # @param [Sketchup::Edge]
+  #
+  # @return [Array<Sketchup::Edge>]
+  # @since 0.1.0
+  def self.connected_quad_faces( edge )
+    # Get connected faces
+    valid_faces = edge.faces.select { |f| QuadFace.is?( f ) }
+    quads = valid_faces.map { |face| QuadFace.new( face ) }
   end
   
   
