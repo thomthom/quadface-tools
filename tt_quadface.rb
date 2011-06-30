@@ -38,6 +38,20 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Select'
     cmd_select = cmd
     
+    cmd = UI::Command.new( 'Grow Selection' )     { self.selection_grow }
+    cmd.small_icon = File.join( PATH_ICONS, 'SelectionGrow_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'SelectionGrow_24.png' )
+    cmd.status_bar_text = 'Grow Selection.'
+    cmd.tooltip = 'Grow Selection'
+    cmd_selection_grow = cmd
+    
+    cmd = UI::Command.new( 'Shrink Selection' )   { self.selection_shrink }
+    cmd.small_icon = File.join( PATH_ICONS, 'SelectionShrink_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'SelectionShrink_24.png' )
+    cmd.status_bar_text = 'Shrink Selection.'
+    cmd.tooltip = 'Shrink Selection'
+    cmd_selection_shrink = cmd
+    
     cmd = UI::Command.new( 'Ring' )     { self.select_rings }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectRing_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SelectRing_24.png' )
@@ -56,6 +70,9 @@ module TT::Plugins::QuadFaceTools
     m = TT.menu( 'Tools' ).add_submenu( 'QuadFace Tools' )
     m.add_item( cmd_select )
     m.add_separator
+    m.add_item( cmd_selection_grow )
+    m.add_item( cmd_selection_shrink )
+    m.add_separator
     m.add_item( cmd_select_ring )
     m.add_item( cmd_select_loop )
     
@@ -69,6 +86,9 @@ module TT::Plugins::QuadFaceTools
     # Toolbar
     toolbar = UI::Toolbar.new( PLUGIN_NAME )
     toolbar.add_item( cmd_select )
+    toolbar.add_separator
+    toolbar.add_item( cmd_selection_grow )
+    toolbar.add_item( cmd_selection_shrink )
     toolbar.add_separator
     toolbar.add_item( cmd_select_ring )
     toolbar.add_item( cmd_select_loop )
@@ -112,6 +132,85 @@ module TT::Plugins::QuadFaceTools
     # Select
     selection.clear
     selection.add( entities )
+  end
+  
+  
+  # @since 0.1.0
+  def self.selection_grow
+    selection = Sketchup.active_model.selection
+    new_selection = []
+    for entity in selection
+      if entity.is_a?( Sketchup::Edge )
+        for vertex in entity.vertices
+          edges = vertex.edges.select { |e| !QuadFace.dividing_edge?( e ) }
+          new_selection.concat( edges )
+        end
+      elsif entity.is_a?( Sketchup::Face )
+        if QuadFace.is?( entity )
+          face = QuadFace.new( entity )
+        else
+          face = entity
+        end
+        for edge in face.edges
+          for f in edge.faces
+            if QuadFace.is?( f )
+              qf = QuadFace.new( f )
+              new_selection.concat( qf.faces )
+            else
+              new_selection << f
+            end
+          end
+        end # for edge in face.edges
+      end # if entity.is_a?
+    end # for entity
+    # Update selection
+    selection.add( new_selection )
+  end
+  
+  
+  # @since 0.1.0
+  def self.selection_shrink
+    selection = Sketchup.active_model.selection
+    new_selection = []
+    for entity in selection
+      if entity.is_a?( Sketchup::Edge )
+        unless entity.vertices.all? { |vertex|
+          edges = vertex.edges.select { |e| !QuadFace.dividing_edge?( e ) }
+          edges.all? { |edge| selection.include?( edge ) }
+        }
+          new_selection << entity
+        end
+      elsif entity.is_a?( Sketchup::Face )
+        unless entity.edges.all? { |edge|
+          edge.faces.all? { |face|
+            if QuadFace.is?( face )
+              qf = QuadFace.new( face )
+              qf.faces.any? { |f| selection.include?( f ) }
+            else
+              selection.include?( face )
+            end
+          }
+        }
+          if QuadFace.is?( entity )
+            qf = QuadFace.new( entity )
+            new_selection.concat( qf.faces )
+          else
+            new_selection << entity
+          end
+        end
+      end # if entity.is_a?
+    end # for entity
+    # Update selection
+    selection.remove( new_selection )
+  end
+  
+  
+  # @since 0.1.0
+  def self.process_entity( entity )
+    if entity.is_a?( Sketchup::Face ) && QuadFace.is?( entity )
+      entity = QuadFace.new( entity )
+    end
+    entity
   end
   
   
@@ -301,6 +400,22 @@ module TT::Plugins::QuadFaceTools
         return false if soft_edges.size > 0
       end
       true
+    end
+    
+    # Evaluates if the entity is a face that forms part of a QuadFace.
+    #
+    # @see {QuadFace}
+    #
+    # @param [Sketchup::Entity] entity
+    #
+    # @return [Boolean]
+    # @since 0.1.0
+    def self.dividing_edge?( entity )
+      return false unless entity.is_a?( Sketchup::Edge )
+      edge = entity
+      return false unless edge.soft?
+      return false unless edge.faces.size == 2
+      edge.faces.all? { |face| self.is?( face ) }
     end
     
     # @param [Sketchup::Entity] entity
