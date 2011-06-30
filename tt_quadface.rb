@@ -23,24 +23,58 @@ module TT::Plugins::QuadFaceTools
   
   # Resource paths
   PATH_ROOT   = File.dirname( __FILE__ ).freeze
-  #PATH        = File.join( PATH_ROOT, 'TT_Plugin' ).freeze
+  PATH        = File.join( PATH_ROOT, 'TT_QuadFaceTools' ).freeze
+  PATH_ICONS  = File.join( PATH, 'Icons' ).freeze
   
   
   ### MENU & TOOLBARS ### ------------------------------------------------------
   
   unless file_loaded?( File.basename(__FILE__) )
+    # Commands
+    cmd = UI::Command.new( 'Select' )   { self.select_quadface_tool }
+    cmd.small_icon = File.join( PATH_ICONS, 'Select_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'Select_24.png' )
+    cmd.status_bar_text = 'Select Tool.'
+    cmd.tooltip = 'Select'
+    cmd_select = cmd
+    
+    cmd = UI::Command.new( 'Ring' )     { self.select_rings }
+    cmd.small_icon = File.join( PATH_ICONS, 'SelectRing_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'SelectRing_24.png' )
+    cmd.status_bar_text = 'Select Ring.'
+    cmd.tooltip = 'Select Ring'
+    cmd_select_ring = cmd
+    
+    # Menus
     m = TT.menu( 'Tools' ).add_submenu( 'QuadFace Tools' )
-    m.add_item( 'Inspect' )     { self.inspect_quad_faces }
+    m.add_item( cmd_select )
     m.add_separator
-    m.add_item( 'Ring' )        { self.select_rings }
+    m.add_item( cmd_select_ring )
+    
+    # Context menu
+    #UI.add_context_menu_handler { |context_menu|
+    #  model = Sketchup.active_model
+    #  selection = model.selection
+    #  # ...
+    #}
+    
+    # Toolbar
+    toolbar = UI::Toolbar.new( PLUGIN_NAME )
+    toolbar.add_item( cmd_select )
+    toolbar.add_separator
+    toolbar.add_item( cmd_select_ring )
+    if toolbar.get_last_state == TB_VISIBLE
+      toolbar.restore
+      UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
+    end
   end
   
   
   ### MAIN SCRIPT ### ----------------------------------------------------------
   
   # @since 0.1.0
-  def self.inspect_quad_faces
-    Sketchup.active_model.select_tool( QuadFaceInspector.new )
+  def self.select_quadface_tool
+    Sketchup.active_model.select_tool( SelectQuadFace.new )
   end
   
   
@@ -355,19 +389,13 @@ module TT::Plugins::QuadFaceTools
   
   
   # @since 0.1.0
-  class QuadFaceInspector
+  class SelectQuadFace
     
     # @since 0.1.0
     def initialize
       model = Sketchup.active_model
-      # Get workset.
-      if model.selection.empty?
-        entities = model.active_entities.to_a
-      else
-        entities = model.selection.to_a
-      end
       # Find QuadFaces
-      @faces = entities.select { |e| QuadFace.is?( e ) }
+      @faces = model.active_entities.select { |e| QuadFace.is?( e ) }
       # (!) Build QuadFace list
       # Build draw cache
       @edges = @faces.map { |quad| quad.edges }
