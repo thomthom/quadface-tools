@@ -376,6 +376,14 @@ module TT::Plugins::QuadFaceTools
       @edges.reject! { |e| e.soft? }
       @segments = @edges.map { |e| [e.start.position, e.end.position] }
       @lines = @segments.flatten
+      # Used by onSetCursor
+      @key_ctrl = false
+      @key_shift = false
+      
+      @cursor         = TT::Cursor.get_id( :select )
+      @cursor_add     = TT::Cursor.get_id( :select_add )
+      @cursor_remove  = TT::Cursor.get_id( :select_remove )
+      @cursor_toggle  = TT::Cursor.get_id( :select_toggle )
     end
     
     # @since 0.1.0
@@ -433,11 +441,44 @@ module TT::Plugins::QuadFaceTools
       elsif picked_quad
         picked = picked_quad.faces
       end
+      # Get key modifier controlling how the selection should be modified.
+      # Using standard SketchUp selection modifier keys.
+      key_ctrl = flags & COPY_MODIFIER_MASK == COPY_MODIFIER_MASK
+      key_shift = flags & CONSTRAIN_MODIFIER_MASK == CONSTRAIN_MODIFIER_MASK
       # Select the entities.
-      view.model.selection.clear
-      if picked
-        view.model.selection.add( picked )
+      entities = []
+      entities << picked if picked
+      selection = view.model.selection
+      if key_ctrl && key_shift
+        selection.remove( entities )
+      elsif key_ctrl
+        selection.add( entities )
+      elsif key_shift
+        selection.toggle( entities )
+      else
+        selection.clear
+        selection.add( entities )
       end
+    end
+    
+    # @see http://code.google.com/apis/sketchup/docs/ourdoc/tool.html#onKeyDown
+    #
+    # @since 1.0.0
+    def onKeyDown( key, repeat, flags, view )
+      @key_ctrl  = true if key == COPY_MODIFIER_KEY
+      @key_shift = true if key == CONSTRAIN_MODIFIER_KEY
+      onSetCursor() # This blocks the VCB. (But "p onSetCursor()" does not.. ? )
+      false # The VCB is not blocked as long as onSetCursor isn't the last call.
+    end
+    
+    # @see http://code.google.com/apis/sketchup/docs/ourdoc/tool.html#onKeyUp
+    #
+    # @since 1.0.0
+    def onKeyUp( key, repeat, flags, view )
+      @key_ctrl  = false if key == COPY_MODIFIER_KEY
+      @key_shift = false if key == CONSTRAIN_MODIFIER_KEY
+      onSetCursor()
+      false
     end
     
     # @since 0.1.0
@@ -448,6 +489,22 @@ module TT::Plugins::QuadFaceTools
         view.drawing_color = 'red'
         view.draw_lines( @lines )
       end
+    end
+    
+    # @see http://code.google.com/apis/sketchup/docs/ourdoc/tool.html#onSetCursor
+    #
+    # @since 1.0.0
+    def onSetCursor
+      if @key_ctrl && @key_shift
+        cursor = @cursor_remove
+      elsif @key_ctrl
+        cursor = @cursor_add
+      elsif @key_shift
+        cursor = @cursor_toggle
+      else
+        cursor = @cursor
+      end
+      UI.set_cursor( cursor )
     end
     
   end # class QuadFaceInspector
