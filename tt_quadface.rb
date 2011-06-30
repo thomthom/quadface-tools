@@ -151,10 +151,22 @@ module TT::Plugins::QuadFaceTools
   end # class QuadFaceEdge
   
   
+  # Wrapper class for making handling of quad faces easier. Since a quad face
+  # might be triangulated, this class allows the possibly multiple native
+  # SketchUp entities to be treated as one object.
+  #
+  # A QuadFace is defined as:
+  # * A face with four vertices bound by non-soft edges.
+  # * Two triangular faces joined by a soft edge bound by non-soft edges.
+  #
   # @since 0.1.0
   class QuadFace
     
-    # @param [Sketchup::Entity] entitys
+    # Evaluates if the entity is a face that forms part of a QuadFace.
+    #
+    # @see {QuadFace}
+    #
+    # @param [Sketchup::Entity] entity
     #
     # @return [Boolean]
     # @since 0.1.0
@@ -174,6 +186,33 @@ module TT::Plugins::QuadFaceTools
       else # face.vertices.size == 4
         # Pure Quadface
         return false if soft_edges.size > 0
+      end
+      true
+    end
+    
+    # @param [Sketchup::Entity] entity
+    #
+    # @return [Boolean]
+    # @since 0.1.0
+    def self.valid_geometry?( *args )
+      # Validate arguments
+      unless (1..2).include?( args.size )
+        raise ArgumentError, 'Must be one or two faces.'
+      end
+      unless args.all? { |e| e.is_a?( Sketchup::Face ) }
+        raise ArgumentError, 'Must be faces.'
+      end
+      # Validate geometric properties
+      if args.size == 1
+        # Native QuadFace
+        face = args[0]
+        return false unless face.vertices.size == 4
+      else
+        # Triangulated QuadFace
+        face1, face2 = args
+        return false unless face1.vertices.size == 3
+        return false unless face2.vertices.size == 3
+        return false unless face1.edges.any? { |e| face2.edges.include?( e ) }
       end
       true
     end
@@ -227,6 +266,24 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def include?( face )
       @faces.include?( face )
+    end
+    
+    # @return [Geom::PolygonMesh]
+    # @since 0.1.0
+    def mesh
+      if @faces.size == 1
+        @faces[0].mesh
+      else
+        face1, face2 = @faces
+        pm1 = face1.mesh
+        pm2 = face2.mesh
+        # Merge the polygon from face2 with face1.
+        # (i) This assumes @faces contains two valid triangular faces.
+        polygon = pm2.polygons[0]
+        polygon.map! { |index| pm2.point_at( index ) }
+        pm1.add_polygon( *polygon )
+        pm1
+      end
     end
     
     # @return [QuadFace,Nil]
@@ -310,14 +367,15 @@ module TT::Plugins::QuadFaceTools
         entities = model.selection.to_a
       end
       # Find QuadFaces
-      quads = entities.select { |e| QuadFace.is?( e ) }
+      @faces = entities.select { |e| QuadFace.is?( e ) }
+      # (!) Build QuadFace list
       # Build draw cache
-      edges = quads.map { |quad| quad.edges }
-      edges.flatten!
-      edges.uniq!
-      edges.reject! { |e| e.soft? }
-      @lines = edges.map { |e| [e.start.position, e.end.position] }
-      @lines.flatten!
+      @edges = @faces.map { |quad| quad.edges }
+      @edges.flatten!
+      @edges.uniq!
+      @edges.reject! { |e| e.soft? }
+      @segments = @edges.map { |e| [e.start.position, e.end.position] }
+      @lines = @segments.flatten
     end
     
     # @since 0.1.0
@@ -336,11 +394,58 @@ module TT::Plugins::QuadFaceTools
     end
     
     # @since 0.1.0
+    def onLButtonDown( flags, x, y, view )
+      ph = view.pick_helper
+      picked_edge = nil
+      picked_quad = nil
+      # Pick faces
+      ph.do_pick( x, y )
+      entity = ph.picked_face
+      if entity && @faces.include?( entity )
+        quad = QuadFace.new( entity )
+        picked_quad = quad
+      end
+      # Pick Edges
+      # Hidden edges are not picked if Hidden Geometry is off.
+      ph.init( x, y )
+      for edge in @segments
+        result = ph.pick_segment( edge )
+        next unless result
+        # Find the edge which the segment represented.
+        index = @segments.index( edge )
+        current_edge = @edges[index]
+        if picked_quad
+          # If a quad has been picked, choose edge connected to the quad - if
+          # possible.
+          if picked_quad.edges.include?( current_edge )
+            picked_edge = current_edge
+            break
+          end
+        else
+          picked_edge = current_edge
+          break
+        end
+      end
+      # Determine what to pick.
+      picked = nil
+      if picked_edge
+        picked = picked_edge
+      elsif picked_quad
+        picked = picked_quad.faces
+      end
+      # Select the entities.
+      view.model.selection.clear
+      if picked
+        view.model.selection.add( picked )
+      end
+    end
+    
+    # @since 0.1.0
     def draw( view )
       unless @lines.empty?
         view.line_stipple = ''
         view.line_width = 3
-        view.drawing_color = 'Red'
+        view.drawing_color = 'red'
         view.draw_lines( @lines )
       end
     end
