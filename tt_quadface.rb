@@ -96,6 +96,13 @@ module TT::Plugins::QuadFaceTools
     cmd.set_validation_proc { MF_GRAYED }
     cmd_shrink_loop = cmd
     
+    cmd = UI::Command.new( 'Triangulate' )  { self.triangulate_selection}
+    cmd.small_icon = File.join( PATH_ICONS, 'Triangulate_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'Triangulate_24.png' )
+    cmd.status_bar_text = 'Triangulate selected QuadFaces.'
+    cmd.tooltip = 'Triangulate Selected QuadFaces'
+    cmd_triangulate_selection = cmd
+    
     # Menus
     m = TT.menu( 'Tools' ).add_submenu( 'QuadFace Tools' )
     m.add_item( cmd_select )
@@ -110,6 +117,8 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_select_loop )
     m.add_item( cmd_grow_loop )
     m.add_item( cmd_shrink_loop )
+    m.add_separator
+    m.add_item( cmd_triangulate_selection )
     
     # Context menu
     #UI.add_context_menu_handler { |context_menu|
@@ -132,6 +141,8 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_select_loop )
     toolbar.add_item( cmd_grow_loop )
     toolbar.add_item( cmd_shrink_loop )
+    toolbar.add_separator
+    toolbar.add_item( cmd_triangulate_selection )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -144,6 +155,24 @@ module TT::Plugins::QuadFaceTools
   # @since 0.1.0
   def self.select_quadface_tool
     Sketchup.active_model.select_tool( SelectQuadFace.new )
+  end
+  
+  
+  # @since 0.1.0
+  def self.triangulate_selection
+    model = Sketchup.active_model
+    selection = model.selection
+    new_selection = []
+    TT::Model.start_operation( 'Triangulate QuadFaces' )
+    for entity in selection.to_a
+      next unless entity.is_a?( Sketchup::Face )
+      next unless QuadFace.is?( entity )
+      quadface = QuadFace.new( entity )
+      quadface.triangulate!
+      new_selection.concat( quadface.faces )
+    end
+    model.commit_operation
+    selection.add( new_selection )
   end
   
   
@@ -547,8 +576,7 @@ module TT::Plugins::QuadFaceTools
         pm2 = face2.mesh
         # Merge the polygon from face2 with face1.
         # (i) This assumes @faces contains two valid triangular faces.
-        polygon = pm2.polygons[0]
-        polygon.map! { |index| pm2.point_at( index ) }
+        polygon = pm2.polygon_points_at( 1 )
         pm1.add_polygon( *polygon )
         pm1
       end
@@ -580,6 +608,36 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def outer_loop
       TT::Edges.sort( edges )
+    end
+    
+    # @return [Boolean]
+    # @since 0.1.0
+    def triangulated?
+      @faces.size > 1
+    end
+    
+    # @return [Boolean]
+    # @since 0.1.0
+    def triangulate!
+      if @faces.size == 1
+        # (?) Validation required?
+        face = @faces[0]
+        entities = face.parent.entities
+        mesh = face.mesh
+        # Find the splitting segment.
+        polygon1 = mesh.polygon_at( 1 ).map{ |i| i.abs }
+        polygon2 = mesh.polygon_at( 2 ).map{ |i| i.abs }
+        split = polygon1 & polygon2
+        # Add edge at split
+        split.map! { |index| mesh.point_at( index ) }
+        edge = entities.add_line( *split )
+        edge.soft = true
+        edge.smooth = true
+        # Update references
+        @faces = edge.faces
+      else
+        false
+      end
     end
     
     private
