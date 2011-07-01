@@ -38,33 +38,63 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Select'
     cmd_select = cmd
     
-    cmd = UI::Command.new( 'Grow Selection' )     { self.selection_grow }
+    cmd = UI::Command.new( 'Grow Selection' ) { self.selection_grow }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectionGrow_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SelectionGrow_24.png' )
     cmd.status_bar_text = 'Grow Selection.'
     cmd.tooltip = 'Grow Selection'
     cmd_selection_grow = cmd
     
-    cmd = UI::Command.new( 'Shrink Selection' )   { self.selection_shrink }
+    cmd = UI::Command.new( 'Shrink Selection' ) { self.selection_shrink }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectionShrink_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SelectionShrink_24.png' )
     cmd.status_bar_text = 'Shrink Selection.'
     cmd.tooltip = 'Shrink Selection'
     cmd_selection_shrink = cmd
     
-    cmd = UI::Command.new( 'Ring' )     { self.select_rings }
+    cmd = UI::Command.new( 'Ring' ) { self.select_rings }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectRing_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SelectRing_24.png' )
     cmd.status_bar_text = 'Select Ring.'
     cmd.tooltip = 'Select Ring'
     cmd_select_ring = cmd
     
-    cmd = UI::Command.new( 'Loop' )     { self.select_loops }
+    cmd = UI::Command.new( 'Grow Ring' )  { self.select_rings( true ) }
+    cmd.small_icon = File.join( PATH_ICONS, 'GrowRing_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'GrowRing_24.png' )
+    cmd.status_bar_text = 'Grow Ring.'
+    cmd.tooltip = 'Grow Ring'
+    cmd_grow_ring = cmd
+    
+    cmd = UI::Command.new( 'Shrink Ring' )  { self.select_rings( true ) }
+    cmd.small_icon = File.join( PATH_ICONS, 'ShrinkRing_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'ShrinkRing_24.png' )
+    cmd.status_bar_text = 'Shrink Ring.'
+    cmd.tooltip = 'Shrink Ring'
+    cmd.set_validation_proc { MF_GRAYED }
+    cmd_shrink_ring = cmd
+    
+    cmd = UI::Command.new( 'Loop' ) { self.select_loops }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectLoop_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SelectLoop_24.png' )
     cmd.status_bar_text = 'Select Loop.'
     cmd.tooltip = 'Select Loop'
     cmd_select_loop = cmd
+    
+    cmd = UI::Command.new( 'Grow Loop' )  { self.select_loops( true ) }
+    cmd.small_icon = File.join( PATH_ICONS, 'GrowLoop_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'GrowLoop_24.png' )
+    cmd.status_bar_text = 'Grow Loop.'
+    cmd.tooltip = 'Grow Loop'
+    cmd_grow_loop = cmd
+    
+    cmd = UI::Command.new( 'Shrink Loop' )  { self.select_loops( true ) }
+    cmd.small_icon = File.join( PATH_ICONS, 'ShrinkLoop_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'ShrinkLoop_24.png' )
+    cmd.status_bar_text = 'Shrink Loop.'
+    cmd.tooltip = 'Shrink Loop'
+    cmd.set_validation_proc { MF_GRAYED }
+    cmd_shrink_loop = cmd
     
     # Menus
     m = TT.menu( 'Tools' ).add_submenu( 'QuadFace Tools' )
@@ -74,7 +104,12 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_selection_shrink )
     m.add_separator
     m.add_item( cmd_select_ring )
+    m.add_item( cmd_grow_ring )
+    m.add_item( cmd_shrink_ring )
+    m.add_separator
     m.add_item( cmd_select_loop )
+    m.add_item( cmd_grow_loop )
+    m.add_item( cmd_shrink_loop )
     
     # Context menu
     #UI.add_context_menu_handler { |context_menu|
@@ -91,7 +126,12 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_selection_shrink )
     toolbar.add_separator
     toolbar.add_item( cmd_select_ring )
+    toolbar.add_item( cmd_grow_ring )
+    toolbar.add_item( cmd_shrink_ring )
+    toolbar.add_separator
     toolbar.add_item( cmd_select_loop )
+    toolbar.add_item( cmd_grow_loop )
+    toolbar.add_item( cmd_shrink_loop )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -108,12 +148,12 @@ module TT::Plugins::QuadFaceTools
   
   
   # @since 0.1.0
-  def self.select_rings
+  def self.select_rings( step = false )
     selection = Sketchup.active_model.selection
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
-      entities.concat( find_edge_ring( entity ) )
+      entities.concat( find_edge_ring( entity, step ) )
     end
     # Select
     selection.clear
@@ -122,12 +162,12 @@ module TT::Plugins::QuadFaceTools
   
   
   # @since 0.1.0
-  def self.select_loops
+  def self.select_loops( step = false )
     selection = Sketchup.active_model.selection
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
-      entities.concat( find_edge_loop( entity ) )
+      entities.concat( find_edge_loop( entity, step  ) )
     end
     # Select
     selection.clear
@@ -218,7 +258,7 @@ module TT::Plugins::QuadFaceTools
   #
   # @return [Array<Sketchup::Edge>]
   # @since 0.1.0
-  def self.find_edge_ring( origin_edge )
+  def self.find_edge_ring( origin_edge, step = false )
     raise ArgumentError, 'Invalid Edge' unless origin_edge.is_a?( Sketchup::Edge )
     # Find initial connected QuadFaces
     return false unless ( 1..2 ).include?( origin_edge.faces.size )
@@ -233,6 +273,7 @@ module TT::Plugins::QuadFaceTools
       until current_edge.nil?
         selected_faces << current_quad
         selected_edges << current_edge
+        break if step
         # Look for more connected.
         current_quad = current_quad.next_face( current_edge )
         break unless current_quad # if nil
@@ -249,7 +290,7 @@ module TT::Plugins::QuadFaceTools
   #
   # @return [Array<Sketchup::Edge>]
   # @since 0.1.0
-  def self.find_edge_loop( origin_edge )
+  def self.find_edge_loop( origin_edge, step = false )
     raise ArgumentError, 'Invalid Edge' unless origin_edge.is_a?( Sketchup::Edge )
     # Find initial connected QuadFaces
     return false unless ( 1..2 ).include?( origin_edge.faces.size )
@@ -257,13 +298,7 @@ module TT::Plugins::QuadFaceTools
     # Find ring loop
     loop = []
     stack = [ origin_edge ]
-    i = 0
     until stack.empty?
-      if i > 1000
-        puts 'LOOP!!!'
-        return false
-      end
-      
       edge = stack.shift
       # Find connected edges
       next_vertices = []
@@ -271,7 +306,9 @@ module TT::Plugins::QuadFaceTools
         next if v.edges.any? { |e| loop.include?( e ) }
         next_vertices << v
       end
+      # Add to loop
       loop << edge
+      break if step && loop.size > 2 # (!) Incorrect unless it grows in both directions.
       # Get connected faces
       quads = self.connected_quad_faces( edge )
       # Pick next edges
@@ -282,6 +319,7 @@ module TT::Plugins::QuadFaceTools
           next if quads.any? { |q| q.edges.include?( e ) }
           next if loop.include?( e )
           next if self.connected_quad_faces( e ).empty?
+          # (!) Bug! Branches where a loop meets missing faces.
           stack << e
         end # for e
       end # for vertex
