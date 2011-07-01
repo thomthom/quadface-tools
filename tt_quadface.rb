@@ -156,7 +156,6 @@ module TT::Plugins::QuadFaceTools
       entities.concat( find_edge_ring( entity, step ) )
     end
     # Select
-    selection.clear
     selection.add( entities )
   end
   
@@ -170,7 +169,6 @@ module TT::Plugins::QuadFaceTools
       entities.concat( find_edge_loop( entity, step  ) )
     end
     # Select
-    selection.clear
     selection.add( entities )
   end
   
@@ -295,6 +293,8 @@ module TT::Plugins::QuadFaceTools
     # Find initial connected QuadFaces
     return false unless ( 1..2 ).include?( origin_edge.faces.size )
     quads = self.connected_quad_faces( origin_edge )
+    # Find existing entities affecting the loop.
+    selected_edges = origin_edge.model.selection.select { |e| e.is_a?( Sketchup::Edge ) }    
     # Find ring loop
     loop = []
     stack = [ origin_edge ]
@@ -310,7 +310,7 @@ module TT::Plugins::QuadFaceTools
       loop << edge
       break if step && loop.size > 2 # (!) Incorrect unless it grows in both directions.
       # Get connected faces
-      quads = self.connected_quad_faces( edge )
+      quads.concat( self.connected_quad_faces( edge ) )
       # Pick next edges
       for vertex in next_vertices
         for e in vertex.edges
@@ -318,8 +318,10 @@ module TT::Plugins::QuadFaceTools
           next if e.soft?
           next if quads.any? { |q| q.edges.include?( e ) }
           next if loop.include?( e )
+          next if selected_edges.include?( e ) # (?) Needed?
           next if self.connected_quad_faces( e ).empty?
-          # (!) Bug! Branches where a loop meets missing faces.
+          # (!) Bug! Branches where a loop meets missing faces. 
+          #     3DSMax also display this in step mode.
           stack << e
         end # for e
       end # for vertex
