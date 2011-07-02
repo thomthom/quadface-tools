@@ -474,7 +474,12 @@ module TT::Plugins::QuadFaceTools
   # @return [QuadFace]
   # @since 0.1.0
   def self.find_other_triangle( triangle, shared_edge, connected_quadface )
-    #puts 'find_other_triangle'
+    # (!) Not perfect. In some cases it picks the least matching edge.
+    #     Maybe - instead of looking for a best bet for once triangle - 
+    #     it would be better to take the origin quadface, analyse each
+    #     connected faces at each vertex and run multiple passes and choose
+    #     the pass the produces the most quadfaces?
+    #
     # Narrow down options
     edges = triangle.edges - [ shared_edge ]
     # Find possible faces
@@ -528,7 +533,6 @@ module TT::Plugins::QuadFaceTools
           v2 = vertex.position.vector_to( tri_edge.other_vertex( vertex ).position )
           # Measure angle
           angle = v1.angle_between( v2 )
-          #angle = quad_edge.line[1].angle_between( tri_edge.line[1] )
           if best_angle.nil? || angle < best_angle
             best_angle = angle
             best_match = tri_edge
