@@ -103,6 +103,13 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Triangulate Selected QuadFaces'
     cmd_triangulate_selection = cmd
     
+    cmd = UI::Command.new( 'Convert Connected to Quads' )  { self.convert_connected_mesh_to_quads}
+    cmd.small_icon = File.join( PATH_ICONS, 'ConvertToQuads_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'ConvertToQuads_24.png' )
+    cmd.status_bar_text = 'Convert connected geometry to Quads.'
+    cmd.tooltip = 'Convert Connected to Quads'
+    cmd_convert_connected_mesh_to_quads = cmd
+    
     # Menus
     m = TT.menu( 'Tools' ).add_submenu( 'QuadFace Tools' )
     m.add_item( cmd_select )
@@ -119,6 +126,7 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_shrink_loop )
     m.add_separator
     m.add_item( cmd_triangulate_selection )
+    m.add_item( cmd_convert_connected_mesh_to_quads )
     
     # Context menu
     #UI.add_context_menu_handler { |context_menu|
@@ -143,6 +151,7 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_shrink_loop )
     toolbar.add_separator
     toolbar.add_item( cmd_triangulate_selection )
+    toolbar.add_item( cmd_convert_connected_mesh_to_quads )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -371,18 +380,6 @@ module TT::Plugins::QuadFaceTools
   
   
   # @since 0.1.0
-  def self.triangulate_planar_quads
-    # (!)
-    # Native quad-faces are planar. If they are made non-planar SketchUp's
-    # autofold feature kicks in and triangulates it. But the newly created
-    # edge is not soft or smooth.
-    #
-    # To avoid native quads from becoming tris - this triangulate method will
-    # ensure there is a soft and smooth edge.
-  end
-  
-  
-  # @since 0.1.0
   def self.transform
     # (!)
     # Transform a set of entities related to quadfaces - ensuring that native
@@ -396,6 +393,198 @@ module TT::Plugins::QuadFaceTools
     # Select a native quadface or two triangles. This will be the origin of the
     # mesh and from there the connected mesh will be attempted to be converted
     # into a quadface mesh.
+    model = Sketchup.active_model
+    selection = model.selection
+    faces = selection.select { |e| e.is_a?( Sketchup::Face ) }
+    # Verify selection
+    unless (1..2).include?( faces.size )
+      UI.messagebox( 'Selection must contain one or two faces represeting a QuadFace.' )
+      return
+    end
+    TT::Model.start_operation( 'Convert to QuadFaces' )
+    # Validate geometry
+    if faces.size == 1
+      # Native QuadFace
+      face = faces[0]
+      unless face.vertices.size == 4
+        UI.messagebox( 'Selected face does to represent a QuadFace. Too many vertices.' )
+        return
+      end
+      # Convert geometry to QuadFace
+      quadface = self.convert_to_quad( face )
+    else
+      # Triangulated QuadFace
+      unless faces.all? { |face| face.vertices.size == 3 }
+        UI.messagebox( 'Selected faces does to represent a QuadFace. Too many vertices.' )
+        return
+      end
+      face1, face2 = faces
+      shared_edges = face1.edges & face2.edges
+      if shared_edges.empty?
+        UI.messagebox( 'Selected faces does to represent a QuadFace. No shared edge.' )
+        return
+      end
+      # Convert geometry to QuadFace
+      quadface = self.convert_to_quad( face1, face2, shared_edges[0] )
+    end
+    # (!) Find connected faces
+    converted = [ quadface ]
+    processed = quadface.faces
+    stack = [ quadface ]
+    until stack.empty?
+      quadface = stack.shift
+      for edge in quadface.edges
+        next if processed.include?( edge )
+        processed << edge
+        faces = edge.faces.select { |face| !processed.include?( face ) }
+        next unless faces.size == 1
+        face = faces[0]
+        if face.vertices.size == 4
+          # Native quadface
+          qf = self.convert_to_quad( face )
+          converted << qf
+          stack << qf
+          processed.concat( qf.faces )
+        elsif face.vertices.size == 3
+          # Triangualted - Find other triangle...
+          face2 = self.find_other_triangle( face, edge, quadface )
+          #next unless face2
+          unless face2
+            face.material = 'red' # DEBUG
+            next
+          end
+          divider = ( face.edges & face2.edges )[0]
+          qf = self.convert_to_quad( face, face2, divider )
+          converted << qf
+          stack << qf
+          processed.concat( qf.faces )
+        end
+      end
+    end
+    # Commit and select converted geometry.
+    model.commit_operation
+    selection.clear
+    selection.add( converted.map { |qf| qf.faces + qf.edges } )
+  rescue
+    model.abort_operation
+    raise
+  end
+  
+  
+  # @return [QuadFace]
+  # @since 0.1.0
+  def self.find_other_triangle( triangle, shared_edge, connected_quadface )
+    #puts 'find_other_triangle'
+    # Narrow down options
+    edges = triangle.edges - [ shared_edge ]
+    # Find possible faces
+    faces = []
+    for edge in edges
+      next unless edge.faces.size == 2
+      for face in edge.faces
+        next unless face.vertices.size == 3
+        next if face == triangle
+        next if connected_quadface.faces.include?( face )
+        next if QuadFace.is?( face )
+        faces << face
+      end
+    end
+    # Find best match
+    return nil if faces.empty?
+    if faces.size == 1
+      faces[0].material = 'green' # DEBUG (certain choice)
+      return faces[0]
+    else
+      # Work out which of the two likely faces is the best fit for a QuadFace.
+      #
+      # Find perpendicular edges to `edge` in `connected_quadface`.
+      loop = connected_quadface.outer_loop
+      index = loop.index( shared_edge )
+      prev_edge_index = ( index - 1 ) % 4
+      next_edge_index = ( index + 1 ) % 4
+      prev_edge = loop[ prev_edge_index ]
+      next_edge = loop[ next_edge_index ]
+      # Find edges in possible faces that connects to `edge`
+      possible_edges = []
+      for face in faces
+        edges = face.edges - triangle.edges
+        for edge in edges
+          if self.edges_connected?( edge, shared_edge )
+            possible_edges << edge
+          end
+        end
+      end
+      raise "> possible edges: #{possible_edges.size}" unless possible_edges.size == 2
+      # Find edge in `triangle` that is the most colinear match.
+      # (!) Bug - See Bug01.png
+      best_angle = nil
+      best_match = nil
+      for quad_edge in [ prev_edge, next_edge ]
+        for tri_edge in possible_edges
+          next unless self.edges_connected?( quad_edge, tri_edge )
+          # Get vectors running in the same direction through the shared edge.
+          vertex = TT::Edges.common_vertex( quad_edge, tri_edge )
+          v1 = vertex.position.vector_to( quad_edge.other_vertex( vertex ).position ).reverse
+          v2 = vertex.position.vector_to( tri_edge.other_vertex( vertex ).position )
+          # Measure angle
+          angle = v1.angle_between( v2 )
+          #angle = quad_edge.line[1].angle_between( tri_edge.line[1] )
+          if best_angle.nil? || angle < best_angle
+            best_angle = angle
+            best_match = tri_edge
+          end
+        end
+      end
+      # Use the remaining edge in `triangle` as the divider.
+      if triangle.edges.include?( best_match )
+        divider = ( triangle.edges - [ shared_edge, best_match ] )[0]
+        other_triangle = ( divider.faces & faces )[0]
+      else
+        other_triangle = ( best_match.faces & faces )[0]
+      end
+      other_triangle.material = 'orange' # DEBUG (uncertain choice)
+      return other_triangle
+    end
+    nil
+  end
+  
+  
+  # @return [QuadFace]
+  # @since 0.1.0
+  def self.edges_connected?( edge1, edge2 )
+    edge1.vertices.any? { |vertex| edge2.vertices.include?( vertex ) }
+  end
+  
+  
+  # @return [QuadFace]
+  # @since 0.1.0
+  def self.convert_to_quad( *args )
+    if args.size == 1
+      face = args[0]
+      for edge in face.edges
+        if edge.soft?
+          edge.soft = false
+          edge.hidden = true
+        end
+      end
+      QuadFace.new( face )
+    elsif args.size == 3
+      face1, face2, dividing_edge = args
+      dividing_edge.soft = true
+      dividing_edge.smooth = true
+      for face in [ face1, face2 ]
+        for edge in face.edges
+          next if edge == dividing_edge
+          if edge.soft?
+            edge.soft = false
+            edge.hidden = true
+          end
+        end
+      end
+      QuadFace.new( face1 )
+    else
+      raise ArgumentError, 'Incorrect number of arguments.'
+    end
   end
   
   
@@ -638,6 +827,12 @@ module TT::Plugins::QuadFaceTools
       else
         false
       end
+    end
+    
+    # @return [Array<Sketchup::Vertices>]
+    # @since 0.1.0
+    def vertices
+      outer_loop.map { |edge| edge.vertices }.flatten.uniq
     end
     
     private
