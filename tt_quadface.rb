@@ -471,6 +471,7 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # REV 1
   # @since 0.1.0
   def self.find_connected_quadfaces( quadface_origin )
     # Find confirmed quadfaces connected each vertex. (Native or QuadFace)
@@ -542,6 +543,38 @@ module TT::Plugins::QuadFaceTools
       # If no confirmed - pick one unconfirmed and try both solutions.
       # > Pick the solution that produce the most QuadFaces
     end
+    quadfaces
+  end
+  
+  
+  # REV2
+  # @since 0.1.0
+  def self.find_connected_quadfaces( quadface_origin )
+    # Find confirmed quadfaces connected each vertex. (Native or QuadFace)
+    faces = [] # Unconfirmed
+    quadfaces = [] # Confirmed
+    for vertex in quadface_origin.vertices
+      for face in vertex.faces
+        if QuadFace.is?( face )
+          quadface = QuadFace.new( face )
+          quadfaces << face
+        elsif face.vertices.size == 4
+          quadface = self.convert_to_quad( face )
+          quadfaces << quadface
+        elsif face.vertices.size == 3
+          faces << face
+        end
+      end
+    end
+    # Look for safe corner faces. Vertex connected to only one triangle not
+    # connected to quadface_origin's edges.
+    # (!)
+    # If any confirmed Quadfaces, start traversing around the origin looking
+    # for more.
+    # (!)
+    # If any unconfirmed left, run various solutions and find the one that
+    # yields the most quadfaces.
+    # (!)
     quadfaces
   end
   
