@@ -471,6 +471,129 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # @since 0.1.0
+  def self.find_connected_quadfaces( quadface_origin )
+    # Find confirmed quadfaces connected each vertex. (Native or QuadFace)
+    faces = [] # Unconfirmed
+    quadfaces = [] # Confirmed
+    for vertex in quadface_origin.vertices
+      for face in vertex.faces
+        if QuadFace.is?( face )
+          quadface = QuadFace.new( face )
+          quadfaces << face
+        elsif face.vertices.size == 4
+          quadface = self.convert_to_quad( face )
+          quadfaces << quadface
+        elsif face.vertices.size == 3
+          faces << face
+        end
+      end
+    end
+    # Process findings
+    if quadfaces.size > 0
+      # If any confirmed - start with first confirmed and traverse around.
+      #
+      # +---+---+---+
+      # | 8 | 1 | 2 |
+      # +---+---+---+
+      # | 7 | x | 3 |
+      # +---+---+---+
+      # | 6 | 5 | 4 |
+      # +---+---+---+
+      #
+      stack = quadfaces.dup
+      until stack.empty?
+        quadface = stack.shift
+        all_quads = quadfaces + [quadface_origin]
+        if self.at_corner?( quadface_origin, quadface )
+          vertex = self.corner_vertex( quadface_origin, quadfaces )
+          triangles = self.valid_triangles( vertex.faces, all_quads )
+          next if triangles.empty?
+          # Fetch first triangle
+          triangle1 = triangles.shift
+          # (!) Find other triangle
+          faces = vertex.faces - all_quads.map { |qf| qf.faces }.flatten
+          if triangles.size == 1
+            # > Splitting edge connected to vertex
+            triangle2 = triangles.shift
+            # Find splitting edge
+            dividing_edge = self.common_edge( triangle1, triangle2 )
+            unless dividing_edge
+              raise 'Invalid splitting edge!'
+            end
+          elsif triangles > 1
+            raise 'Too many triangles!'
+          else
+            # > Splitting edge not connected to vertex
+            dividing_edge = ( triangle.edges - vertex.edges )[0]
+            next unless dividing_edge.faces.size == 2
+            triangle2 = ( dividing_edge.faces - [ triangle1 ] )[0]
+          end
+          # Convert to quad
+          qf = self.convert_to_quad( triangle1, triangle2, dividing_edge )
+          quadfaces << qf
+          stack << qf
+        else
+          # Not at corner
+          # (!) Ditto
+        end
+      end
+    else
+      # If no confirmed - pick one unconfirmed and try both solutions.
+      # > Pick the solution that produce the most QuadFaces
+    end
+    quadfaces
+  end
+  
+  
+  # @since 0.1.0
+  def self.common_edge( triangle1, triangle2 )
+    intersect = triangle1.edges & triangle2.edges
+    return nil if intersect.empty?
+    intersect[0]
+  end
+  
+  
+  # @since 0.1.0
+  def self.valid_triangles( faces, ignore_quads )
+    # Ignore processed quads.
+    faces.reject! { |face|
+      ignore_quads.any?{ |quadface| quadface.faces.include?( face ) }
+    }
+    # Choose a triangle
+    faces.select { |face| face.vertices.size == 3 }
+  end
+  
+  
+  # @since 0.1.0
+  def self.next_triangle( faces, ignore_quads )
+    # Ignore processed quads.
+    faces.reject! { |face|
+      ignore_quads.any?{ |quadface| quadface.faces.include?( face ) }
+    }
+    # Choose a triangle
+    for face in faces
+      return face if face.vertices.size == 3
+    end
+    nil
+  end
+  
+  
+  # @since 0.1.0
+  def self.at_corner?( quadface_origin, quadface )
+    quadface_origin.edges.any? { |edge|
+      quadface.edges.include?( edge )
+    }
+  end
+  
+  
+  # @since 0.1.0
+  def self.corner_vertex( quadface_origin, quadface )
+    intersect = quadface_origin.vertices & quadface.vertices
+    ( intersect.empty? ) ? nil : intersect[0]
+  end
+  
+  
   # @return [QuadFace]
   # @since 0.1.0
   def self.find_other_triangle( triangle, shared_edge, connected_quadface )
