@@ -562,13 +562,34 @@ module TT::Plugins::QuadFaceTools
           quadface = self.convert_to_quad( face )
           quadfaces << quadface
         elsif face.vertices.size == 3
+          # (!) Check for safe corner vertices here
           faces << face
         end
       end
     end
     # Look for safe corner faces. Vertex connected to only one triangle not
     # connected to quadface_origin's edges.
-    # (!)
+    corner_faces = []
+    for face in faces.to_a
+      unless face.edges.any? { |edge| quadface_origin.include?( edge ) }
+        corner_faces << face
+        faces.delete( face )
+      end
+    end
+    unless corner_faces.empty?
+      for face in corner_faces
+        vertex_edges = face.edges.select { |edge|
+          edge.vertices.any? { |vertex|
+            quadface_origin.vertices.include?( vertex )
+          }
+        } # Should yield two edges
+        divider = ( face.edges - vertex_edges )[0]
+        next unless divider.faces == 2
+        other_triangle = ( divider.faces - [ face ] )[0]
+        quadface = self.convert_to_quad( face, other_triangle, divider )
+        quadfaces << quadface
+      end
+    end
     # If any confirmed Quadfaces, start traversing around the origin looking
     # for more.
     # (!)
