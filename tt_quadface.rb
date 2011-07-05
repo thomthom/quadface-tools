@@ -570,7 +570,7 @@ module TT::Plugins::QuadFaceTools
       vertex_faces = vertex.faces.select { |face|
         face.edges.all? { |edge|
           quadface_origin.edge.include?( edge ) 
-        {
+        }
       }
       if vertex_faces.size == 1
         face = vertex_faces[0]
