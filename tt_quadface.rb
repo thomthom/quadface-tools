@@ -322,18 +322,56 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # Selects a loop of edges. Loop can be grown in steps.
+  #
+  # Currently using the Blender method - with exception of edges with no faces. 
+  #
+  #
+  # Blender
+  #
+  # Blender 2.58a
+  # editmesh_mods.c
+  # Line 1854
+  #
+  # selects or deselects edges that:
+  # - if edges has 2 faces:
+  #   - has vertices with valence of 4
+  #   - not shares face with previous edge
+  # - if edge has 1 face:
+  #   - has vertices with valence 4
+  #   - not shares face with previous edge
+  #   - but also only 1 face
+  # - if edge no face:
+  #   - has vertices with valence 2
+  #
+  #
+  # In Maya, an edge loop has the following properties: 
+  # * The vertices that connect the edges must have a valency equal to four.
+  #   Valency refers to the number of edges connected to a particular vertex.
+  # * The criteria for connecting the sequence is that the next edge in the
+  #   sequence is the (i + 2nd) edge of the shared vertex, determined in order
+  #   from the current edge (i).
+  # * The sequence of edges (loop) can form either an open or closed path on the
+  #   polygonal mesh.
+  # * The start and end edges need not have a valency equal to four.
+  #
+  # @see http://download.autodesk.com/global/docs/maya2012/en_us/index.html?url=files/Polygon_selection_and_creation_Select_an_edge_loop.htm,topicNumber=d28e121344
+  #
+  #
   # @param [Sketchup::Edge]
   #
   # @return [Array<Sketchup::Edge>]
   # @since 0.1.0
   def self.find_edge_loop( origin_edge, step = false )
     raise ArgumentError, 'Invalid Edge' unless origin_edge.is_a?( Sketchup::Edge )
-    # Find initial connected QuadFaces
-    return false unless ( 1..2 ).include?( origin_edge.faces.size )
-    quads = self.connected_quad_faces( origin_edge )
+    # Find initial connected faces
+    face_count = origin_edge.faces.size
+    return false unless ( 1..2 ).include?( face_count )
+    faces = self.connected_faces( origin_edge )
     # Find existing entities affecting the loop.
     selected_edges = origin_edge.model.selection.select { |e| e.is_a?( Sketchup::Edge ) }    
-    # Find ring loop
+    # Find edge loop.
+    step_limit = 0
     loop = []
     stack = [ origin_edge ]
     until stack.empty?
@@ -341,28 +379,34 @@ module TT::Plugins::QuadFaceTools
       # Find connected edges
       next_vertices = []
       for v in edge.vertices
-        next if v.edges.any? { |e| loop.include?( e ) }
+        edges = v.edges.select { |e| !e.soft? }
+        next if edges.size > 4 # Stop at forks
+        next if edges.any? { |e| loop.include?( e ) }
         next_vertices << v
       end
       # Add to loop
       loop << edge
-      break if step && loop.size > 2 # (!) Incorrect unless it grows in both directions.
       # Get connected faces
-      quads.concat( self.connected_quad_faces( edge ) )
+      faces.concat( self.connected_faces( edge ) )
       # Pick next edges
+      valid_edges = 0
       for vertex in next_vertices
         for e in vertex.edges
           next if e == edge
-          next if e.soft?
-          next if quads.any? { |q| q.edges.include?( e ) }
+          next if e.soft? # Ignore QuadFace diagonals. Requires un-smooth loop.
+          next if faces.any? { |f| f.edges.include?( e ) }
           next if loop.include?( e )
           next if selected_edges.include?( e ) # (?) Needed?
-          next if self.connected_quad_faces( e ).empty?
-          # (!) Bug! Branches where a loop meets missing faces. 
-          #     3DSMax also display this in step mode.
+          next unless e.faces.size == face_count
+          valid_edges += 1
           stack << e
         end # for e
       end # for vertex
+      # Stop if the loop is step-grown.
+      if step
+        step_limit = valid_edges if edge == origin_edge
+        break if loop.size > step_limit
+      end
     end # until
     loop
   end
@@ -370,7 +414,24 @@ module TT::Plugins::QuadFaceTools
   
   # @param [Sketchup::Edge]
   #
-  # @return [Array<Sketchup::Edge>]
+  # @return [Array<Sketchup::Face,QuadFace>]
+  # @since 0.1.0
+  def self.connected_faces( edge )
+    faces = []
+    for face in edge.faces
+      if QuadFace.is?( face )
+        faces << QuadFace.new( face )
+      else
+        faces << face
+      end
+    end
+    faces
+  end
+  
+  
+  # @param [Sketchup::Edge]
+  #
+  # @return [Array<QuadFace>]
   # @since 0.1.0
   def self.connected_quad_faces( edge )
     # Get connected faces
