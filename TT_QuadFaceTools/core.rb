@@ -60,12 +60,11 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Grow Ring'
     cmd_grow_ring = cmd
     
-    cmd = UI::Command.new( 'Shrink Ring' )  { self.select_rings( true ) }
+    cmd = UI::Command.new( 'Shrink Ring' )  { self.shrink_rings }
     cmd.small_icon = File.join( PATH_ICONS, 'ShrinkRing_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'ShrinkRing_24.png' )
     cmd.status_bar_text = 'Shrink Ring.'
     cmd.tooltip = 'Shrink Ring'
-    cmd.set_validation_proc { MF_GRAYED }
     cmd_shrink_ring = cmd
     
     cmd = UI::Command.new( 'Loop' ) { self.select_loops }
@@ -82,12 +81,11 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Grow Loop'
     cmd_grow_loop = cmd
     
-    cmd = UI::Command.new( 'Shrink Loop' )  { self.select_loops( true ) }
+    cmd = UI::Command.new( 'Shrink Loop' )  { self.shrink_loops}
     cmd.small_icon = File.join( PATH_ICONS, 'ShrinkLoop_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'ShrinkLoop_24.png' )
     cmd.status_bar_text = 'Shrink Loop.'
     cmd.tooltip = 'Shrink Loop'
-    cmd.set_validation_proc { MF_GRAYED }
     cmd_shrink_loop = cmd
     
     cmd = UI::Command.new( 'Triangulate' )  { self.triangulate_selection}
@@ -163,6 +161,10 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # Ensures that all quad faces in the current selection is triangulated. This
+  # prevents SketchUp's auto-fold feature to break the quad face when it's
+  # transformed such that it becomes non-planar.
+  #
   # @since 0.1.0
   def self.triangulate_selection
     model = Sketchup.active_model
@@ -180,6 +182,12 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # Selects rings based on the selected entities.
+  #
+  # @todo Support face rings.
+  #
+  # @param [Boolean] step
+  #
   # @since 0.1.0
   def self.select_rings( step = false )
     selection = Sketchup.active_model.selection
@@ -194,6 +202,44 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # Shrink ring loops.
+  #
+  # @todo Support face rings.
+  #
+  # @since 0.1.0
+  def self.shrink_rings
+    selection = Sketchup.active_model.selection
+    entities = []
+    for entity in selection
+      next unless entity.is_a?( Sketchup::Edge )
+      next if entity.soft?
+      next unless entity.faces.size == 2
+      # Check neighbouring faces if their opposite edges are selected.
+      # Deselect any edge where not all opposite edges are selected.
+      unless entity.faces.all? { |face|
+        if QuadFace.is?( face )
+          quad = QuadFace.new( face )
+          edge = quad.opposite_edge( entity )
+          selection.include?( edge )
+        else
+          false
+        end
+      }
+        entities << entity
+      end
+    end
+    # Select
+    p entities.size
+    selection.remove( entities )
+  end
+  
+  
+  # Selects loops based on the selected entities.
+  #
+  # @todo Support face loops.
+  #
+  # @param [Boolean] step
+  #
   # @since 0.1.0
   def self.select_loops( step = false )
     selection = Sketchup.active_model.selection
@@ -201,13 +247,40 @@ module TT::Plugins::QuadFaceTools
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
       next if entity.soft?
-      entities.concat( find_edge_loop( entity, step  ) )
+      entities.concat( find_edge_loop( entity, step ) )
     end
     # Select
     selection.add( entities )
   end
   
   
+  # Shrink ring loops.
+  #
+  # @todo Support face rings.
+  #
+  # @since 0.1.0
+  def self.shrink_loops
+    selection = Sketchup.active_model.selection
+    selected = selection.to_a
+    entities = []
+    for entity in selection
+      next unless entity.is_a?( Sketchup::Edge )
+      next if entity.soft?
+      next unless entity.faces.size == 2
+      # Check next edges in loop, if they are not all selected, deselect the
+      # edge.
+      edges = find_edge_loop( entity, true )
+      unless ( edges & selected ).size == edges.size
+        entities << entity
+      end
+    end
+    # Select
+    selection.remove( entities )
+  end
+  
+  
+  # Extend the selection by one entity from the current selection set.
+  #
   # @since 0.1.0
   def self.selection_grow
     selection = Sketchup.active_model.selection
@@ -241,6 +314,8 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # Shrinks the selection by one entity from the current selection set.
+  #
   # @since 0.1.0
   def self.selection_shrink
     selection = Sketchup.active_model.selection
@@ -275,15 +350,6 @@ module TT::Plugins::QuadFaceTools
     end # for entity
     # Update selection
     selection.remove( new_selection )
-  end
-  
-  
-  # @since 0.1.0
-  def self.process_entity( entity )
-    if entity.is_a?( Sketchup::Face ) && QuadFace.is?( entity )
-      entity = QuadFace.new( entity )
-    end
-    entity
   end
   
   
@@ -409,7 +475,10 @@ module TT::Plugins::QuadFaceTools
   end
   
   
-  # @param [Sketchup::Edge]
+  # ----- HELPER METHOD (!) Move to EntitiesProvider ----- #
+  
+  
+  # @param [Sketchup::Edge] edge
   #
   # @return [Array<Sketchup::Face,QuadFace>]
   # @since 0.1.0
@@ -445,14 +514,25 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # @param [Sketchup::Face] triangle1
+  # @param [Sketchup::Face] triangle2
+  #
+  # @return [Sketchup::Edge,Nil]
   # @since 0.1.0
   def self.common_edge( triangle1, triangle2 )
     intersect = triangle1.edges & triangle2.edges
-    return nil if intersect.empty?
-    intersect[0]
+    ( intersect.empty? ) ? nil : intersect[0]
   end
   
   
+  # @overload convert_to_quad( native_quad )
+  #   @param [Sketchup::Face] native_quad
+  #
+  # @overload convert_to_quad( triangle1, triangle2, edge )
+  #   @param [Sketchup::Face] triangle1
+  #   @param [Sketchup::Face] triangle2
+  #   @param [Sketchup::Edge] edge Edge separating the two triangles.
+  #
   # @return [QuadFace]
   # @since 0.1.0
   def self.convert_to_quad( *args )
@@ -466,6 +546,7 @@ module TT::Plugins::QuadFaceTools
       end
       QuadFace.new( face )
     elsif args.size == 3
+      # (?) Third edge argument required? Can be inferred by the two triangles.
       face1, face2, dividing_edge = args
       dividing_edge.soft = true
       dividing_edge.smooth = true
