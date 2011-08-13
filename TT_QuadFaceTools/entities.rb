@@ -69,11 +69,12 @@ module TT::Plugins::QuadFaceTools
         dividing_edge = soft_edges[0]
         return false unless dividing_edge.faces.size == 2
         other_face = ( dividing_edge.faces - [face] ).first
+        return false unless other_face.vertices.size == 3
         soft_edges = other_face.edges.select { |e| e.soft? }
         return false unless soft_edges.size == 1
       else # face.vertices.size == 4
         # Pure Quadface
-        return false if soft_edges.size > 0
+        #return false if soft_edges.size > 0
       end
       true
     end
@@ -86,11 +87,11 @@ module TT::Plugins::QuadFaceTools
     #
     # @return [Boolean]
     # @since 0.1.0
-    def self.dividing_edge?( entity )
-      return false unless entity.is_a?( Sketchup::Edge )
-      edge = entity
-      return false unless edge.soft?
+    def self.dividing_edge?( edge )
+      return false unless edge.is_a?( Sketchup::Edge )
       return false unless edge.faces.size == 2
+      return false unless edge.faces.all? { |face| face.vertices.size == 3 }
+      return false unless edge.soft?
       edge.faces.all? { |face| self.is?( face ) }
     end
     
@@ -99,6 +100,7 @@ module TT::Plugins::QuadFaceTools
     # @return [Boolean]
     # @since 0.1.0
     def self.valid_geometry?( *args )
+      # (?) Unused?
       # Validate arguments
       unless (1..2).include?( args.size )
         raise ArgumentError, 'Must be one or two faces.'
@@ -152,8 +154,12 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def edges
       result = []
-      for face in @faces
-        result.concat( face.edges.select { |e| !e.soft? } )
+      if @faces.size == 1
+        result = @faces[0].edges
+      else
+        for face in @faces
+          result.concat( face.edges.select { |e| !e.soft? } )
+        end
       end
       result
     end
@@ -248,6 +254,13 @@ module TT::Plugins::QuadFaceTools
         face = @faces[0]
         entities = face.parent.entities
         mesh = face.mesh
+        # Ensure a triangulated quad's edges isn't soft.
+        face.edges.each { |edge|
+          if edge.soft?
+            edge.soft = false
+            edge.hidden = true
+          end
+        }
         # Find the splitting segment.
         polygon1 = mesh.polygon_at( 1 ).map{ |i| i.abs }
         polygon2 = mesh.polygon_at( 2 ).map{ |i| i.abs }
@@ -259,6 +272,7 @@ module TT::Plugins::QuadFaceTools
         edge.smooth = true
         # Update references
         @faces = edge.faces
+        true
       else
         false
       end
@@ -268,12 +282,6 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def vertices
       outer_loop.map { |edge| edge.vertices }.flatten.uniq
-    rescue
-      faces.each { |e| e.material = 'orange' }
-      edges.each { |e| e.material = 'red' }
-      p edges
-      p outer_loop
-      raise
     end
     
     private
@@ -307,8 +315,8 @@ module TT::Plugins::QuadFaceTools
         return false unless face2
       else # face.vertices.size == 4
         # Pure Quadface
-        soft_edges = face.edges.select { |e| e.soft? }
-        return false if soft_edges.size > 0
+        #soft_edges = face.edges.select { |e| e.soft? }
+        #return false if soft_edges.size > 0
       end
       true
     end

@@ -194,7 +194,8 @@ module TT::Plugins::QuadFaceTools
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
-      next if entity.soft?
+      #next if entity.soft?
+      next if QuadFace.dividing_edge?( entity )
       entities.concat( find_edge_ring( entity, step ) )
     end
     # Select
@@ -212,7 +213,8 @@ module TT::Plugins::QuadFaceTools
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
-      next if entity.soft?
+      #next if entity.soft?
+      next if QuadFace.dividing_edge?( entity )
       next unless entity.faces.size == 2
       # Check neighbouring faces if their opposite edges are selected.
       # Deselect any edge where not all opposite edges are selected.
@@ -229,7 +231,6 @@ module TT::Plugins::QuadFaceTools
       end
     end
     # Select
-    p entities.size
     selection.remove( entities )
   end
   
@@ -246,7 +247,8 @@ module TT::Plugins::QuadFaceTools
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
-      next if entity.soft?
+      #next if entity.soft?
+      next if QuadFace.dividing_edge?( entity )
       entities.concat( find_edge_loop( entity, step ) )
     end
     # Select
@@ -265,7 +267,8 @@ module TT::Plugins::QuadFaceTools
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
-      next if entity.soft?
+      #next if entity.soft?
+      next if QuadFace.dividing_edge?( entity )
       next unless entity.faces.size == 2
       # Check next edges in loop, if they are not all selected, deselect the
       # edge.
@@ -442,7 +445,8 @@ module TT::Plugins::QuadFaceTools
       # Find connected edges
       next_vertices = []
       for v in edge.vertices
-        edges = v.edges.select { |e| !e.soft? }
+        #edges = v.edges.select { |e| !e.soft? }
+        edges = v.edges.select { |e| !QuadFace.dividing_edge?( e ) }
         next if edges.size > 4 # Stop at forks
         next if edges.any? { |e| loop.include?( e ) }
         next_vertices << v
@@ -456,7 +460,8 @@ module TT::Plugins::QuadFaceTools
       for vertex in next_vertices
         for e in vertex.edges
           next if e == edge
-          next if e.soft? # Ignore QuadFace diagonals. Requires un-smooth loop.
+          #next if e.soft? # Ignore QuadFace diagonals. Requires un-smooth loop.
+          next if QuadFace.dividing_edge?( e ) # Ignore QuadFace diagonals. Requires un-smooth loop.
           next if faces.any? { |f| f.edges.include?( e ) }
           next if loop.include?( e )
           next if selected_edges.include?( e ) # (?) Needed?
