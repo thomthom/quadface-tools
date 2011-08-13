@@ -157,7 +157,7 @@ module TT::Plugins::QuadFaceTools
   
   # @since 0.1.0
   def self.select_quadface_tool
-    Sketchup.active_model.select_tool( SelectQuadFace.new )
+    Sketchup.active_model.select_tool( SelectQuadFaceTool.new )
   end
   
   

@@ -6,9 +6,12 @@
 #-------------------------------------------------------------------------------
 
 module TT::Plugins::QuadFaceTools
-
+  
+  # Selection tool specialised for quad faces. Allows selection based on quads
+  # where the native tool would otherwise not perform the correct selection.
+  #
   # @since 0.1.0
-  class SelectQuadFace
+  class SelectQuadFaceTool
     
     COLOR_EDGE = Sketchup::Color.new( 64, 64, 64 )
     
@@ -80,6 +83,7 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
+    # @since 0.1.0
     def onLButtonDoubleClick( flags, x, y, view )
       picked = pick_entites( flags, x, y, view )
       if picked.is_a?( Array )
