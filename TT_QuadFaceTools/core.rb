@@ -186,6 +186,7 @@ module TT::Plugins::QuadFaceTools
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
+      next if entity.soft?
       entities.concat( find_edge_ring( entity, step ) )
     end
     # Select
@@ -199,6 +200,7 @@ module TT::Plugins::QuadFaceTools
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
+      next if entity.soft?
       entities.concat( find_edge_loop( entity, step  ) )
     end
     # Select
