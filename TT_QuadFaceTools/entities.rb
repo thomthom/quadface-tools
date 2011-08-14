@@ -6,38 +6,6 @@
 #-------------------------------------------------------------------------------
 
 module TT::Plugins::QuadFaceTools
-
-  # (!) Custom QuadFaceEdge class for smarter traversing of the QuadFace mesh.
-  # @since 0.1.0
-  class QuadFaceEdge
-    
-    # @param [Sketchup::Edge] edge
-    #
-    # @since 0.1.0
-    def initialize( edge )
-      raise ArgumentError, 'Invalid Edge' unless edge.is_a?( Sketchup::Edge )
-      @edge = edge
-      @faces = []
-    end
-    
-    # @param [QuadFace] face
-    #
-    # @since 0.1.0
-    def link_face( face )
-      raise ArgumentError, 'Invalid QuadFace' unless face.is_a?( QuadFace )
-      @faces << face unless @faces.include?( face )
-    end
-    
-    # @param [QuadFace] face
-    #
-    # @since 0.1.0
-    def unlink_face( face )
-      raise ArgumentError, 'Invalid QuadFace' unless face.is_a?( QuadFace )
-      @faces.delete( face )
-    end
-    
-  end # class QuadFaceEdge
-
   
   # Wrapper class for making handling of quad faces easier. Since a quad face
   # might be triangulated, this class allows the possibly multiple native

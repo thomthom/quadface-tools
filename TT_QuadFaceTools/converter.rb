@@ -6,7 +6,12 @@
 #-------------------------------------------------------------------------------
 
 module TT::Plugins::QuadFaceTools
-
+  
+  # (!) Refactor this into a class that search for connected quads. That way
+  #     reusable methods can be made without having to pass a long list of
+  #     arguments in order to make the methods aware of the current processing.
+  
+  # @return [<Array<QuadFace>]
   # @since 0.1.0
   def self.convert_connected_mesh_to_quads
     model = Sketchup.active_model
@@ -100,14 +105,16 @@ module TT::Plugins::QuadFaceTools
     #raise
   end
   
-  # TT::Plugins::QuadFaceTools.reload
+  # @param [QuadFace] quadface_origin
   #
+  # @return [Array<QuadFace>]
   # @since 0.1.0
   def self.find_connected_quadfaces( quadface_origin )
-    # Find confirmed quadfaces connected each vertex. (Native or QuadFace)
     faces = [] # Unconfirmed
     quadfaces = [] # Confirmed
     tagged = quadface_origin.faces # Faces processed.
+    
+    # Find confirmed quadfaces connected each vertex. (Native or QuadFace)
     for vertex in quadface_origin.vertices
       for face in vertex.faces
         next if quadface_origin.faces.include?( face )
@@ -261,9 +268,19 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # @param [QuadFace] origin
+  # @param [Array<QuadFace>] existing
+  # @param [Array<Sketchup::Face>] tagged
+  # @param [Array<Sketchup::Face>] neighbours
+  # @param [Sketchup::Face] source Triangle
+  # @param [Sketchup::Face] face1
+  # @param [Sketchup::Face] face2
+  #
   # @return [<Array<VirtualQuadFace>]
   # @since 0.1.0
   def self.find_optimal_quad_solution( origin, existing, tagged, neighbours, source, face1, face2, nn=0 )
+    # (!) Argument `nn` is just a debug flag.
+    
     # Validate the properties of the possible faces.
     face1_valid = (
       face1 &&
@@ -343,6 +360,13 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # @param [QuadFace] origin
+  # @param [Array<QuadFace>] existing
+  # @param [Array<Sketchup::Face>] tagged
+  # @param [Array<Sketchup::Face>] neighbours
+  # @param [Sketchup::Face] face1
+  # @param [Sketchup::Face] face2
+  #
   # @return [<Array<VirtualQuadFace>]
   # @since 0.1.0
   def self.find_possible_quads( quadface_origin, existing, tagged, neighbours, face1, face2, nn=0 )
@@ -429,6 +453,10 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # @param [QuadFace] quadface_origin
+  # @param [Array<QuadFace>] solution
+  #
+  # @return [Boolean]
   # @since 0.1.0
   def self.valid_solution?( quadface_origin, solution )
    # TT.debug 'self.valid_solution?'
