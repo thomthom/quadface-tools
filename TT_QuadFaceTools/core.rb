@@ -207,8 +207,11 @@ module TT::Plugins::QuadFaceTools
     model.commit_operation
   end
   
+  
   # Converts two sets of triangles sharing by a hidden edge with hard edges into
   # QuadFace compatible quads.
+  #
+  # @param [Enumerable<Sketchup::Entity>] entities
   #
   # @since 0.2.0
   def self.convert_blender_quads( entities )
