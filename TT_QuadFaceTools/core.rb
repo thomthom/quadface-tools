@@ -95,13 +95,13 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Triangulate Selected QuadFaces'
     cmd_triangulate_selection = cmd
     
-    cmd = UI::Command.new( 'Convert Connected to Quads' )  {
+    cmd = UI::Command.new( 'Connected Mesh to Quads' )  {
       self.convert_connected_mesh_to_quads
     }
     cmd.small_icon = File.join( PATH_ICONS, 'ConvertToQuads_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'ConvertToQuads_24.png' )
-    cmd.status_bar_text = 'Convert connected geometry to Quads.'
-    cmd.tooltip = 'Convert Connected to Quads'
+    cmd.status_bar_text = 'Convert connected mesh to Quads.'
+    cmd.tooltip = 'Convert Connected Mesh to Quads'
     cmd_convert_connected_mesh_to_quads = cmd
     
     cmd = UI::Command.new( 'Blender Quads to SketchUp Quads' )  {
@@ -129,8 +129,10 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_shrink_loop )
     m.add_separator
     m.add_item( cmd_triangulate_selection )
-    m.add_item( cmd_convert_connected_mesh_to_quads )
-    m.add_item( cmd_convert_blender_quads_to_sketchup_quads )
+    m.add_separator
+    sub_menu = m.add_submenu( 'Convert' )
+    sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
+    sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
     
     # Context menu
     #UI.add_context_menu_handler { |context_menu|
