@@ -250,6 +250,7 @@ module TT::Plugins::QuadFaceTools
           # Shared edge with origin - quadface is a corner.
           divider = ( face.edges - quadface.edges - quadface_origin.edges )[0]
           other_triangle = ( divider.faces - [ face ] )[0]
+          next unless other_triangle
           next unless other_triangle.vertices.size == 3
           next if QuadFace.is?( other_triangle )
           next if tagged.include?( other_triangle )
