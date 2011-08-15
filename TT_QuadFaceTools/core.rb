@@ -104,6 +104,15 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Convert Connected to Quads'
     cmd_convert_connected_mesh_to_quads = cmd
     
+    cmd = UI::Command.new( 'Blender Quads to SketchUp Quads' )  {
+      self.convert_blender_quads_to_sketchup_quads
+    }
+    #cmd.small_icon = File.join( PATH_ICONS, 'ConvertToQuads_16.png' )
+    #cmd.large_icon = File.join( PATH_ICONS, 'ConvertToQuads_24.png' )
+    cmd.status_bar_text = 'Convert Blender quads to SketchUp Quads.'
+    cmd.tooltip = 'Convert Blender quads to SketchUp Quads'
+    cmd_convert_blender_quads_to_sketchup_quads = cmd
+    
     # Menus
     m = TT.menu( 'Tools' ).add_submenu( 'QuadFace Tools' )
     m.add_item( cmd_select )
@@ -121,6 +130,7 @@ module TT::Plugins::QuadFaceTools
     m.add_separator
     m.add_item( cmd_triangulate_selection )
     m.add_item( cmd_convert_connected_mesh_to_quads )
+    m.add_item( cmd_convert_blender_quads_to_sketchup_quads )
     
     # Context menu
     #UI.add_context_menu_handler { |context_menu|
@@ -179,6 +189,44 @@ module TT::Plugins::QuadFaceTools
     end
     model.commit_operation
     selection.add( new_selection )
+  end
+  
+  
+  # DAE models from Blender with quads imports into SketchUp as triangles with
+  # a hidden dividing edge instead of a soft one. This routine converts these
+  # quads into SketchUp quads.
+  #
+  # @since 0.2.0
+  def self.convert_blender_quads_to_sketchup_quads
+    model = Sketchup.active_model
+    selection = model.selection
+    TT::Model.start_operation( 'Blender Quads to SketchUp Quads' )
+      self.convert_blender_quads( model.selection )
+    model.commit_operation
+  end
+  
+  # Converts two sets of triangles sharing by a hidden edge with hard edges into
+  # QuadFace compatible quads.
+  #
+  # @since 0.2.0
+  def self.convert_blender_quads( entities )
+    for entity in entities
+      if TT::Instance.is?( entity )
+        definition = TT::Instance.definition( entity )
+        self.convert_blender_quads( definition.entities )
+      end
+      next unless entity.is_a?( Sketchup::Edge )
+      next unless entity.faces.size == 2
+      next unless entity.hidden?
+      next unless entity.faces.all? { |face|
+        edges = face.edges - [entity]
+        face.vertices.size == 3 &&
+        edges.all? { |edge| !( edge.soft? || edge.hidden? ) }
+      }
+      entity.hidden = false
+      entity.soft = true
+      entity.smooth = true
+    end
   end
   
   
