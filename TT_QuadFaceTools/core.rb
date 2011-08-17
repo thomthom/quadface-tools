@@ -271,6 +271,7 @@ module TT::Plugins::QuadFaceTools
       next unless QuadFace.is?( entity )
       quadface = QuadFace.new( entity )
       quadface.edges.each { |edge|
+        next if edge.faces.size == 1
         edge.hidden = true
         edge.smooth = true
       }
