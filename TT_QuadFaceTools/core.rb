@@ -13,7 +13,15 @@ TT::Lib.compatible?('2.5.4', 'TT QuadFace Tools')
 #-------------------------------------------------------------------------------
 
 module TT::Plugins::QuadFaceTools
+  
+  ### PREFERENCES ### ----------------------------------------------------------
+  
+  @settings = TT::Settings.new( ID )
+  @settings.set_default( :context_menu, false )
+  
+  def self.settings; @settings; end
 
+  
   ### MENU & TOOLBARS ### ------------------------------------------------------
   
   require File.join( PATH, 'entities.rb' )
@@ -46,7 +54,7 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Shrink Selection'
     cmd_selection_shrink = cmd
     
-    cmd = UI::Command.new( 'Ring' ) { self.select_rings }
+    cmd = UI::Command.new( 'Select Ring' ) { self.select_rings }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectRing_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SelectRing_24.png' )
     cmd.status_bar_text = 'Select Ring.'
@@ -67,7 +75,7 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Shrink Ring'
     cmd_shrink_ring = cmd
     
-    cmd = UI::Command.new( 'Loop' ) { self.select_loops }
+    cmd = UI::Command.new( 'Select Loop' ) { self.select_loops }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectLoop_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SelectLoop_24.png' )
     cmd.status_bar_text = 'Select Loop.'
@@ -125,6 +133,16 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Unsmooth the selected Quads\' edges'
     cmd_unsmooth_quad_mesh = cmd
     
+    cmd = UI::Command.new( 'Context Menu' )  {
+      @settings[ :context_menu ] = !@settings[ :context_menu ]
+    }
+    cmd.set_validation_proc  {
+      ( @settings[:context_menu] ) ? MF_CHECKED : MF_UNCHECKED
+    }
+    cmd.status_bar_text = 'Toggles the context menu.'
+    cmd.tooltip = 'Toggles the context menu'
+    cmd_toggle_context_menu = cmd
+    
     
     # Menus
     m = TT.menu( 'Tools' ).add_submenu( 'QuadFace Tools' )
@@ -134,12 +152,7 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_selection_shrink )
     m.add_separator
     m.add_item( cmd_select_ring )
-    m.add_item( cmd_grow_ring )
-    m.add_item( cmd_shrink_ring )
-    m.add_separator
     m.add_item( cmd_select_loop )
-    m.add_item( cmd_grow_loop )
-    m.add_item( cmd_shrink_loop )
     m.add_separator
     m.add_item( cmd_smooth_quad_mesh )
     m.add_item( cmd_unsmooth_quad_mesh )
@@ -149,13 +162,32 @@ module TT::Plugins::QuadFaceTools
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
     sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
+    m.add_separator
+    sub_menu = m.add_submenu( 'Preferences' )
+    sub_menu.add_item( cmd_toggle_context_menu )
     
     # Context menu
-    #UI.add_context_menu_handler { |context_menu|
-    #  model = Sketchup.active_model
-    #  selection = model.selection
-    #  # ...
-    #}
+    UI.add_context_menu_handler { |context_menu|
+      if @settings[ :context_menu ]
+        m = context_menu.add_submenu( 'QuadFace Tools' )
+        m.add_item( cmd_selection_grow )
+        m.add_item( cmd_selection_shrink )
+        m.add_separator
+        m.add_item( cmd_select_ring )
+        m.add_item( cmd_select_loop )
+        # (i) Loop stepping menu items removed as they are too impractical to
+        #     operate via menus which require multiple clicks to trigger.
+        m.add_separator
+        m.add_item( cmd_smooth_quad_mesh )
+        m.add_item( cmd_unsmooth_quad_mesh )
+        m.add_separator
+        m.add_item( cmd_triangulate_selection )
+        m.add_separator
+        sub_menu = m.add_submenu( 'Convert' )
+        sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
+        sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
+      end
+    }
     
     # Toolbar
     toolbar = UI::Toolbar.new( PLUGIN_NAME )
