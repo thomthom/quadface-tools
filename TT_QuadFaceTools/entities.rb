@@ -205,7 +205,7 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<Sketchup::Edge>]
     # @since 0.1.0
     def outer_loop
-      TT::Edges.sort( edges )
+      TT::Edges.sort( edges ).uniq # .uniq to work around a bug in TT_Lib 2.5
     end
     
     # @return [Boolean]
@@ -249,7 +249,29 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<Sketchup::Vertices>]
     # @since 0.1.0
     def vertices
-      outer_loop.map { |edge| edge.vertices }.flatten.uniq
+      # .uniq because .sort_vertices return the first vertex twice when the eges
+      # form a loop.
+      TT::Edges.sort_vertices( outer_loop() ).uniq
+    end
+    
+    # @return [Boolean]
+    # @since 0.2.0
+    def valid?
+      if @faces.size == 1
+        face = @faces[0]
+        face.valid? &&
+        face.vertices.size == 4
+      else
+        @faces.size == 2 &&
+        @faces.all? { |face|
+          face.valid? &&
+          face.vertices.size == 3
+        } &&
+        ( edge = @faces[0].edges & @faces[1].edges ).size == 1 &&
+        edge[0].soft? &&
+        edge[0].faces.size == 2 &&
+        edges.all? { |e| !e.soft? }
+      end
     end
     
     private
