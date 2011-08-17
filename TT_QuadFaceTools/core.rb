@@ -107,11 +107,24 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Blender Quads to SketchUp Quads' )  {
       self.convert_blender_quads_to_sketchup_quads
     }
-    #cmd.small_icon = File.join( PATH_ICONS, 'ConvertToQuads_16.png' )
-    #cmd.large_icon = File.join( PATH_ICONS, 'ConvertToQuads_24.png' )
     cmd.status_bar_text = 'Convert Blender quads to SketchUp Quads.'
     cmd.tooltip = 'Convert Blender quads to SketchUp Quads'
     cmd_convert_blender_quads_to_sketchup_quads = cmd
+    
+    cmd = UI::Command.new( 'Smooth Quads' )  {
+      self.smooth_quad_mesh
+    }
+    cmd.status_bar_text = 'Smooths the selected Quads\' edges.'
+    cmd.tooltip = 'Smooths the selected Quads\' edges'
+    cmd_smooth_quad_mesh = cmd
+    
+    cmd = UI::Command.new( 'Unsmooth Quads' )  {
+      self.unsmooth_quad_mesh
+    }
+    cmd.status_bar_text = 'Unsmooth the selected Quads\' edges.'
+    cmd.tooltip = 'Unsmooth the selected Quads\' edges'
+    cmd_unsmooth_quad_mesh = cmd
+    
     
     # Menus
     m = TT.menu( 'Tools' ).add_submenu( 'QuadFace Tools' )
@@ -127,6 +140,9 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_select_loop )
     m.add_item( cmd_grow_loop )
     m.add_item( cmd_shrink_loop )
+    m.add_separator
+    m.add_item( cmd_smooth_quad_mesh )
+    m.add_item( cmd_unsmooth_quad_mesh )
     m.add_separator
     m.add_item( cmd_triangulate_selection )
     m.add_separator
@@ -191,6 +207,43 @@ module TT::Plugins::QuadFaceTools
     end
     model.commit_operation
     selection.add( new_selection )
+  end
+  
+  
+  # Smooths and hides the edges of selected quads.
+  #
+  # @since 0.2.0
+  def self.smooth_quad_mesh
+    model = Sketchup.active_model
+    TT::Model.start_operation( 'Smooth Quads' )
+    for entity in model.selection
+      next unless QuadFace.is?( entity )
+      quadface = QuadFace.new( entity )
+      quadface.edges.each { |edge|
+        edge.hidden = true
+        edge.smooth = true
+      }
+    end
+    model.commit_operation
+  end
+  
+  
+  # Unmooths and unhides the edges of selected quads.
+  #
+  # @since 0.2.0
+  def self.unsmooth_quad_mesh
+    model = Sketchup.active_model
+    TT::Model.start_operation( 'Unsmooth Quads' )
+    for entity in model.selection
+      next unless QuadFace.is?( entity )
+      quadface = QuadFace.new( entity )
+      quadface.edges.each { |edge|
+        edge.hidden = false
+        edge.smooth = false
+        edge.soft = false
+      }
+    end
+    model.commit_operation
   end
   
   
