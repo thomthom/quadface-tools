@@ -603,29 +603,26 @@ module TT::Plugins::QuadFaceTools
       # Find connected edges
       next_vertices = []
       for v in edge.vertices
-        #edges = v.edges.select { |e| !e.soft? }
         edges = v.edges.select { |e| !QuadFace.dividing_edge?( e ) }
         next if edges.size > 4 # Stop at forks
         next if edges.any? { |e| loop.include?( e ) }
         next_vertices << v
       end
-      # Add to loop
+      # Add current edge to loop stack.
       loop << edge
-      # Get connected faces
-      faces.concat( self.connected_faces( edge ) )
       # Pick next edges
       valid_edges = 0
       for vertex in next_vertices
         for e in vertex.edges
           next if e == edge
-          #next if e.soft? # Ignore QuadFace diagonals. Requires un-smooth loop.
-          next if QuadFace.dividing_edge?( e ) # Ignore QuadFace diagonals. Requires un-smooth loop.
+          next if QuadFace.dividing_edge?( e )
           next if faces.any? { |f| f.edges.include?( e ) }
           next if loop.include?( e )
           next if selected_edges.include?( e ) # (?) Needed?
           next unless e.faces.size == face_count
           valid_edges += 1
           stack << e
+          faces.concat( self.connected_faces( e ) )
         end # for e
       end # for vertex
       # Stop if the loop is step-grown.
