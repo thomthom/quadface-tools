@@ -32,6 +32,10 @@ module TT::Plugins::QuadFaceTools
   ### MENU & TOOLBARS ### ------------------------------------------------------
   
   unless file_loaded?( __FILE__ )
+    
+    @commands = {}
+    def self.commands; @commands; end
+    
     # Commands
     cmd = UI::Command.new( 'Select' )   { self.select_quadface_tool }
     cmd.small_icon = File.join( PATH_ICONS, 'Select_16.png' )
@@ -39,6 +43,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Select Tool.'
     cmd.tooltip = 'Select'
     cmd_select = cmd
+    @commands[:select] = cmd
     
     cmd = UI::Command.new( 'Grow Selection' ) { self.selection_grow }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectionGrow_16.png' )
@@ -46,6 +51,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Grow Selection.'
     cmd.tooltip = 'Grow Selection'
     cmd_selection_grow = cmd
+    @commands[:selection_grow] = cmd
     
     cmd = UI::Command.new( 'Shrink Selection' ) { self.selection_shrink }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectionShrink_16.png' )
@@ -53,6 +59,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Shrink Selection.'
     cmd.tooltip = 'Shrink Selection'
     cmd_selection_shrink = cmd
+    @commands[:selection_shrink] = cmd
     
     cmd = UI::Command.new( 'Select Ring' ) { self.select_rings }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectRing_16.png' )
@@ -60,6 +67,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Select Ring.'
     cmd.tooltip = 'Select Ring'
     cmd_select_ring = cmd
+    @commands[:select_ring] = cmd
     
     cmd = UI::Command.new( 'Grow Ring' )  { self.select_rings( true ) }
     cmd.small_icon = File.join( PATH_ICONS, 'GrowRing_16.png' )
@@ -67,6 +75,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Grow Ring.'
     cmd.tooltip = 'Grow Ring'
     cmd_grow_ring = cmd
+    @commands[:grow_ring] = cmd
     
     cmd = UI::Command.new( 'Shrink Ring' )  { self.shrink_rings }
     cmd.small_icon = File.join( PATH_ICONS, 'ShrinkRing_16.png' )
@@ -74,6 +83,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Shrink Ring.'
     cmd.tooltip = 'Shrink Ring'
     cmd_shrink_ring = cmd
+    @commands[:shrink_ring] = cmd
     
     cmd = UI::Command.new( 'Select Loop' ) { self.select_loops }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectLoop_16.png' )
@@ -81,6 +91,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Select Loop.'
     cmd.tooltip = 'Select Loop'
     cmd_select_loop = cmd
+    @commands[:select_loop] = cmd
     
     cmd = UI::Command.new( 'Grow Loop' )  { self.select_loops( true ) }
     cmd.small_icon = File.join( PATH_ICONS, 'GrowLoop_16.png' )
@@ -88,6 +99,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Grow Loop.'
     cmd.tooltip = 'Grow Loop'
     cmd_grow_loop = cmd
+    @commands[:grow_loop] = cmd
     
     cmd = UI::Command.new( 'Shrink Loop' )  { self.shrink_loops}
     cmd.small_icon = File.join( PATH_ICONS, 'ShrinkLoop_16.png' )
@@ -95,6 +107,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Shrink Loop.'
     cmd.tooltip = 'Shrink Loop'
     cmd_shrink_loop = cmd
+    @commands[:shrink_loop] = cmd
     
     cmd = UI::Command.new( 'Triangulate' )  { self.triangulate_selection}
     cmd.small_icon = File.join( PATH_ICONS, 'Triangulate_16.png' )
@@ -102,6 +115,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Triangulate selected QuadFaces.'
     cmd.tooltip = 'Triangulate Selected QuadFaces'
     cmd_triangulate_selection = cmd
+    @commands[:triangulate] = cmd
     
     cmd = UI::Command.new( 'Connected Mesh to Quads' )  {
       self.convert_connected_mesh_to_quads
@@ -111,6 +125,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Convert connected mesh to Quads.'
     cmd.tooltip = 'Convert Connected Mesh to Quads'
     cmd_convert_connected_mesh_to_quads = cmd
+    @commands[:mesh_to_quads] = cmd
     
     cmd = UI::Command.new( 'Blender Quads to SketchUp Quads' )  {
       self.convert_blender_quads_to_sketchup_quads
@@ -118,6 +133,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Convert Blender quads to SketchUp Quads.'
     cmd.tooltip = 'Convert Blender quads to SketchUp Quads'
     cmd_convert_blender_quads_to_sketchup_quads = cmd
+    @commands[:blender_to_quads] = cmd
     
     cmd = UI::Command.new( 'Smooth Quads' )  {
       self.smooth_quad_mesh
@@ -125,6 +141,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Smooths the selected Quads\' edges.'
     cmd.tooltip = 'Smooths the selected Quads\' edges'
     cmd_smooth_quad_mesh = cmd
+    @commands[:smooth_quads] = cmd
     
     cmd = UI::Command.new( 'Unsmooth Quads' )  {
       self.unsmooth_quad_mesh
@@ -132,6 +149,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Unsmooth the selected Quads\' edges.'
     cmd.tooltip = 'Unsmooth the selected Quads\' edges'
     cmd_unsmooth_quad_mesh = cmd
+    @commands[:unsmooth_quads] = cmd
     
     cmd = UI::Command.new( 'Context Menu' )  {
       @settings[ :context_menu ] = !@settings[ :context_menu ]
@@ -142,6 +160,7 @@ module TT::Plugins::QuadFaceTools
     cmd.status_bar_text = 'Toggles the context menu.'
     cmd.tooltip = 'Toggles the context menu'
     cmd_toggle_context_menu = cmd
+    @commands[:context_menu] = cmd
     
     
     # Menus

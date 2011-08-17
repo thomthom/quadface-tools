@@ -166,6 +166,26 @@ module TT::Plugins::QuadFaceTools
       UI.set_cursor( cursor )
     end
     
+    # @since 0.2.0
+    def getMenu( menu )
+      menu.add_item( PLUGIN.commands[ :select ] )
+      menu.add_separator
+      menu.add_item( PLUGIN.commands[ :selection_grow ] )
+      menu.add_item( PLUGIN.commands[ :selection_shrink ] )
+      menu.add_separator
+      menu.add_item( PLUGIN.commands[ :select_ring ] )
+      menu.add_item( PLUGIN.commands[ :select_loop ] )
+      menu.add_separator
+      menu.add_item( PLUGIN.commands[ :smooth_quads ] )
+      menu.add_item( PLUGIN.commands[ :unsmooth_quads ] )
+      menu.add_separator
+      menu.add_item( PLUGIN.commands[ :triangulate ] )
+      menu.add_separator
+      sub_menu = menu.add_submenu( 'Convert' )
+      sub_menu.add_item( PLUGIN.commands[ :mesh_to_quads ] )
+      sub_menu.add_item( PLUGIN.commands[ :blender_to_quads ] )
+    end
+    
     private
     
     def pick_entites( flags, x, y, view )

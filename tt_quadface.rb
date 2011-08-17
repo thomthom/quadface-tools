@@ -18,9 +18,10 @@ module TT::Plugins::QuadFaceTools
   
   # Plugin information
   ID          = 'TT_QuadFaceTools'.freeze
+  PLUGIN      = TT::Plugins::QuadFaceTools
+  PLUGIN_NAME = 'QuadFace Tools'.freeze
   #VERSION     = TT::Version.new(0,1,0).freeze # TT::Lib version 2.6
   VERSION     = '0.2.0'.freeze
-  PLUGIN_NAME = 'QuadFace Tools'.freeze
   
   # Resource paths
   PATH_ROOT   = File.dirname( __FILE__ ).freeze
