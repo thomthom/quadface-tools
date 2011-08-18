@@ -181,6 +181,8 @@ module TT::Plugins::QuadFaceTools
       menu.add_separator
       menu.add_item( PLUGIN.commands[ :triangulate ] )
       menu.add_separator
+      menu.add_item( PLUGIN.commands[ :make_planar ] )
+      menu.add_separator
       sub_menu = menu.add_submenu( 'Convert' )
       sub_menu.add_item( PLUGIN.commands[ :mesh_to_quads ] )
       sub_menu.add_item( PLUGIN.commands[ :blender_to_quads ] )

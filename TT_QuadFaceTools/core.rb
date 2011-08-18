@@ -151,6 +151,14 @@ module TT::Plugins::QuadFaceTools
     cmd_unsmooth_quad_mesh = cmd
     @commands[:unsmooth_quads] = cmd
     
+    cmd = UI::Command.new( 'Make Planar' )  {
+      self.make_planar
+    }
+    cmd.status_bar_text = 'Projects the selected faces to a best fit plane.'
+    cmd.tooltip = 'Projects selected faces to a best fit plane'
+    cmd_make_planar = cmd
+    @commands[:make_planar] = cmd
+    
     cmd = UI::Command.new( 'Context Menu' )  {
       @settings[ :context_menu ] = !@settings[ :context_menu ]
     }
@@ -178,6 +186,8 @@ module TT::Plugins::QuadFaceTools
     m.add_separator
     m.add_item( cmd_triangulate_selection )
     m.add_separator
+    m.add_item( cmd_make_planar )
+    m.add_separator
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
     sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
@@ -201,6 +211,8 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_unsmooth_quad_mesh )
         m.add_separator
         m.add_item( cmd_triangulate_selection )
+        m.add_separator
+        m.add_item( cmd_make_planar )
         m.add_separator
         sub_menu = m.add_submenu( 'Convert' )
         sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
@@ -296,6 +308,49 @@ module TT::Plugins::QuadFaceTools
       }
     end
     model.commit_operation
+  end
+  
+  
+  # Project the selected entities to a best fit plane.
+  #
+  # @since 0.2.0
+  def self.make_planar
+    model = Sketchup.active_model
+    selection = model.selection
+    vertices = []
+    for face in model.selection
+      vertices << face.vertices if face.is_a?( Sketchup::Face )
+    end
+    vertices.flatten!
+    vertices.uniq!
+    return false if vertices.empty?
+    TT::Model.start_operation( 'Make Planar' )
+    # Triangulate connected quads to ensure they are not broken.
+    for vertex in vertices
+      for face in vertex.faces
+        next if selection.include?( face )
+        next unless QuadFace.is?( face )
+        quad = QuadFace.new( face )
+        next if quad.triangulated?
+        quad.triangulate!
+      end
+    end
+    # Project the vertices to a best fit plane.
+    plane = Geom.fit_plane_to_points( vertices )
+    entities = []
+    vectors = []
+    for vertex in vertices
+      new_point = vertex.position.project_to_plane( plane )
+      vector = vertex.position.vector_to( new_point )
+      next unless vector.valid?
+      entities << vertex
+      vectors << vector
+    end
+    model.active_entities.transform_by_vectors( entities, vectors )
+    model.commit_operation
+  rescue
+    model.abort_operation
+    raise
   end
   
   
