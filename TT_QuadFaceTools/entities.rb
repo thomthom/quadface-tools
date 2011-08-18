@@ -206,7 +206,12 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<Sketchup::Edge>]
     # @since 0.1.0
     def outer_loop
-      TT::Edges.sort( edges ).uniq # .uniq to work around a bug in TT_Lib 2.5
+      if @faces.size == 1
+        @faces[0].outer_loop.edges
+      else
+        # (?) Verify order. Direction?
+        TT::Edges.sort( edges ).uniq # .uniq to work around a bug in TT_Lib 2.5
+      end
     end
     
     # @return [Boolean]
