@@ -365,4 +365,116 @@ module TT::Plugins::QuadFaceTools
     
   end # class VirtualQuadFace
   
+  
+  # @since 0.2.0
+  class EntitiesProvider
+    
+    include Enumerable
+    
+    # @since 0.2.0
+    attr_reader( :model, :parent )
+    
+    # @param [Enumerable] entities
+    #
+    # @since 0.2.0
+    def initialize( entities )
+      # Model references
+      @model = nil
+      @parent = nil
+      unless entities.empty?
+        entity = entities[0]
+        @parent = entity.parent
+        @model = entity.model
+      end
+      # Entities
+      @entities = entities.to_a
+      @faces_to_quads = {}
+      @faces_and_quads = []
+      @faces = [] # All native faces in collection, including Quad's faces.
+      @quads = [] # All QuadFaces in collection
+      @edges = []
+      for entity in entities
+        if entity.is_a?( Sketchup::Edge )
+          @edges << entity
+        elsif entity.is_a?( Sketchup::Face )
+          unless @faces_to_quads[ entity ]
+            if QuadFace.is?( entity )
+              quad = QuadFace.new( entity )
+              @faces << quad.faces[0]
+              @faces << quad.faces[1]
+              @faces_and_quads << quad
+              @faces_to_quads[ quad.faces[0] ] = quad
+              @faces_to_quads[ quad.faces[1] ] = quad
+            else
+              @faces << entity
+              @faces_and_quads << entity
+            end
+          end
+        end
+      end
+    end
+    
+    # @since 0.2.0
+    def each( &block )
+      @entities.each( &block )
+    end
+    
+    # @return [Array<Sketchup::Face,QuadFace>]
+    # @since 0.2.0
+    def faces
+      @faces_and_quads.to_a
+    end
+    
+    # @return [Array<QuadFace>]
+    # @since 0.2.0
+    def quads
+      @quads.to_a
+    end
+    
+    # @return [Array<Sketchup::Face>]
+    # @since 0.2.0
+    def native_faces
+      @faces.to_a
+    end
+    
+    # @return [Array<Sketchup::Edge>]
+    # @since 0.2.0
+    def edges
+      @edges.to_a
+    end
+    
+    # @return [QuadFace,Sketchup::Face]
+    # @since 0.2.0
+    def get_face( face )
+      @faces_to_quads[ face ] || face
+    end
+    
+    # @return [Array<Sketchup::Entity,QuadFace>]
+    # @since 0.2.0
+    def to_a
+      @entities.to_a
+    end
+    
+    # @return [Integer]
+    # @since 0.2.0
+    def length
+      @entities.length
+    end
+    alias :size :length
+    
+    # @return [Boolean]
+    # @since 0.2.0
+    def empty?
+      @entities.empty?
+    end
+    
+    # @return [String]
+    # @since 1.0.0
+    def inspect
+      hex_id = TT.object_id_hex( self )
+      "#<#{self.class.name}:#{hex_id}>"
+    end
+    
+  end # class EntitiesProvider
+  
 end # module
