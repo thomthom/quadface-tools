@@ -101,13 +101,19 @@ module TT::Plugins::QuadFaceTools
     cmd_grow_loop = cmd
     @commands[:grow_loop] = cmd
     
-    cmd = UI::Command.new( 'Shrink Loop' )  { self.shrink_loops}
+    cmd = UI::Command.new( 'Shrink Loop' )  { self.shrink_loops }
     cmd.small_icon = File.join( PATH_ICONS, 'ShrinkLoop_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'ShrinkLoop_24.png' )
     cmd.status_bar_text = 'Shrink Loop.'
     cmd.tooltip = 'Shrink Loop'
     cmd_shrink_loop = cmd
     @commands[:shrink_loop] = cmd
+    
+    cmd = UI::Command.new( 'Select Region to Loop' )  { self.region_to_loop }
+    cmd.status_bar_text = 'Select a loop of edges around selected entities.'
+    cmd.tooltip = 'Select a loop of edges around selected entities'
+    cmd_region_to_loop = cmd
+    @commands[:region_to_loop] = cmd
     
     cmd = UI::Command.new( 'Triangulate' )  { self.triangulate_selection}
     cmd.small_icon = File.join( PATH_ICONS, 'Triangulate_16.png' )
@@ -186,6 +192,7 @@ module TT::Plugins::QuadFaceTools
     m.add_separator
     m.add_item( cmd_select_ring )
     m.add_item( cmd_select_loop )
+    m.add_item( cmd_region_to_loop )
     m.add_separator
     m.add_item( cmd_smooth_quad_mesh )
     m.add_item( cmd_unsmooth_quad_mesh )
@@ -211,6 +218,7 @@ module TT::Plugins::QuadFaceTools
         m.add_separator
         m.add_item( cmd_select_ring )
         m.add_item( cmd_select_loop )
+        m.add_item( cmd_region_to_loop )
         # (i) Loop stepping menu items removed as they are too impractical to
         #     operate via menus which require multiple clicks to trigger.
         m.add_separator
@@ -420,6 +428,52 @@ module TT::Plugins::QuadFaceTools
       entity.soft = true
       entity.smooth = true
     end
+  end
+  
+  
+  # Converts selected entities into edge loops.
+  #
+  # @see http://wiki.blender.org/index.php/Template:Release_Notes/2.42/Mesh/Editing
+  #
+  # @since 0.2.0
+  def self.region_to_loop
+    model = Sketchup.active_model
+    selection = model.selection
+    # Collect faces in selection.
+    region = []
+    for entity in selection
+      if entity.is_a?( Sketchup::Face )
+        region << entity
+      elsif entity.is_a?( Sketchup::Edge )
+        region << self.connected_faces( entity )
+      end
+    end
+    region.flatten!
+    region.uniq!
+    faces = region.map { |face|
+      if face.is_a?( QuadFace )
+        face.faces
+      else
+        face
+      end
+    }
+    faces.flatten!
+    faces.uniq!
+    # Find edges bordering the faces.
+    edges = []
+    for face in region
+      for edge in face.edges
+        if edge.faces.size == 1
+          edges << edge
+        elsif !edge.faces.all? { |f| faces.include?( f ) }
+          edges << edge
+        end
+      end
+    end
+    edges.uniq!
+    # Select loops.
+    selection.clear
+    selection.add( edges )
   end
   
   
