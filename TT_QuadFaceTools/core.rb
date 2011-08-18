@@ -117,6 +117,12 @@ module TT::Plugins::QuadFaceTools
     cmd_triangulate_selection = cmd
     @commands[:triangulate] = cmd
     
+    cmd = UI::Command.new( 'Remove Triangulation' )  { self.remove_triangulation}
+    cmd.status_bar_text = 'Remove triangulation from selected planar Quads.'
+    cmd.tooltip = 'Remove triangulation from selected planar Quads'
+    cmd_remove_triangulation = cmd
+    @commands[:remove_triangulation] = cmd
+    
     cmd = UI::Command.new( 'Connected Mesh to Quads' )  {
       self.convert_connected_mesh_to_quads
     }
@@ -185,6 +191,7 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_unsmooth_quad_mesh )
     m.add_separator
     m.add_item( cmd_triangulate_selection )
+    m.add_item( cmd_remove_triangulation )
     m.add_separator
     m.add_item( cmd_make_planar )
     m.add_separator
@@ -211,6 +218,7 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_unsmooth_quad_mesh )
         m.add_separator
         m.add_item( cmd_triangulate_selection )
+        m.add_item( cmd_remove_triangulation )
         m.add_separator
         m.add_item( cmd_make_planar )
         m.add_separator
@@ -270,6 +278,25 @@ module TT::Plugins::QuadFaceTools
     end
     model.commit_operation
     selection.add( new_selection )
+  end
+  
+  
+  # Converts selected planar triangualted quads into native quads.
+  #
+  # @since 0.2.0
+  def self.remove_triangulation
+    model = Sketchup.active_model
+    TT::Model.start_operation( 'Remove Triangulation' )
+    for entity in model.selection.to_a
+      next unless QuadFace.is?( entity )
+      quadface = QuadFace.new( entity )
+      next unless quadface.planar?
+      quadface.detriangulate!
+    end
+    model.commit_operation
+  rescue
+    model.abort_operation
+    raise
   end
   
   

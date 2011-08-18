@@ -27,6 +27,7 @@ module TT::Plugins::QuadFaceTools
     # @return [Boolean]
     # @since 0.1.0
     def self.is?( entity )
+      return false unless entity.valid?
       return false unless entity.is_a?( Sketchup::Face )
       face = entity
       return false unless (3..4).include?( face.vertices.size )
@@ -209,6 +210,16 @@ module TT::Plugins::QuadFaceTools
     end
     
     # @return [Boolean]
+    # @since 0.2.0
+    def planar?
+      if @faces.size == 1
+        true
+      else
+        TT::Geom3d.planar_points?( vertices() )
+      end
+    end
+    
+    # @return [Boolean]
     # @since 0.1.0
     def triangulated?
       @faces.size > 1
@@ -243,6 +254,18 @@ module TT::Plugins::QuadFaceTools
         true
       else
         false
+      end
+    end
+    
+    # @return [Boolean]
+    # @since 0.1.0
+    def detriangulate!
+      if @faces.size == 2 && planar?
+        edge = ( @faces[0].edges & @faces[1].edges )[0]
+        edge.erase!
+        @faces = @faces.select { |face| face.valid? }
+      else
+        true
       end
     end
     
