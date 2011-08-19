@@ -7,6 +7,11 @@
 
 module TT::Plugins::QuadFaceTools
   
+  # Custom Exceptions
+  
+  # @since 0.2.0
+  class InvalidQuadFace < StandardError; end
+  
   # Wrapper class for making handling of quad faces easier. Since a quad face
   # might be triangulated, this class allows the possibly multiple native
   # SketchUp entities to be treated as one object.
@@ -26,14 +31,15 @@ module TT::Plugins::QuadFaceTools
     #
     # @return [Boolean]
     # @since 0.1.0
-    def self.is?( entity )
-      return false unless entity.valid?
-      return false unless entity.is_a?( Sketchup::Face )
-      face = entity
-      return false unless (3..4).include?( face.vertices.size )
-      soft_edges = face.edges.select { |e| e.soft? }
-      if face.vertices.size == 3
-        # Triangulated QuadFace
+    def self.is?( face )
+      return false unless face.valid?
+      return false unless face.is_a?( Sketchup::Face )
+      vertex_count = face.vertices.size
+      return false if vertex_count < 3
+      return false if vertex_count > 4
+      # Triangulated QuadFace needs special treatment.
+      if vertex_count == 3
+        soft_edges = face.edges.select { |e| e.soft? }
         return false unless soft_edges.size == 1
         dividing_edge = soft_edges[0]
         return false unless dividing_edge.faces.size == 2
@@ -41,9 +47,6 @@ module TT::Plugins::QuadFaceTools
         return false unless other_face.vertices.size == 3
         soft_edges = other_face.edges.select { |e| e.soft? }
         return false unless soft_edges.size == 1
-      else # face.vertices.size == 4
-        # Pure Quadface
-        #return false if soft_edges.size > 0
       end
       true
     end
@@ -58,9 +61,9 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def self.dividing_edge?( edge )
       return false unless edge.is_a?( Sketchup::Edge )
+      return false unless edge.soft?
       return false unless edge.faces.size == 2
       return false unless edge.faces.all? { |face| face.vertices.size == 3 }
-      return false unless edge.soft?
       edge.faces.all? { |face| self.is?( face ) }
     end
     
@@ -96,12 +99,11 @@ module TT::Plugins::QuadFaceTools
     #
     # @since 0.1.0
     def initialize( face )
-      unless valid_native_face?( face )
-        raise ArgumentError, 'Invalid QuadFace'
+      # (!) The creating of a QuadFace is slow. Improve.
+      unless face2 = valid_native_face?( face )
+        raise( InvalidQuadFace, 'Invalid QuadFace' )
       end
       @faces = [ face ]
-      # Check if the quadface is triangualted.
-      face2 = other_native_face( face )
       @faces << face2 if face2.is_a?( Sketchup::Face )
     end
     
@@ -111,7 +113,7 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def common_edge( quadface )
       unless quadface.is_a?( QuadFace )
-        raise ArgumentError, 'Invalid QuadFace'
+        raise( InvalidQuadFace, 'Invalid QuadFace' )
       end
       other_edges = quadface.edges
       match = edges.select { |edge| other_edges.include?( edge ) }
@@ -314,29 +316,30 @@ module TT::Plugins::QuadFaceTools
       return nil unless soft_edges.size == 1
       dividing_edge = soft_edges[0]
       return nil unless dividing_edge.faces.size == 2
-      ( dividing_edge.faces - [face] ).first
+      #( dividing_edge.faces - [face] ).first
+      dividing_edge.faces.find { |f| f != face }
     end
     
     # @param [Sketchup::Face] face
     #
-    # @return [Boolean]
+    # @return [Boolean] for native quad
+    # @return [Sketchup::Face,Nil,False] for triangualted quads
     # @since 0.1.0
     def valid_native_face?( face )
       return false unless face.is_a?( Sketchup::Face )
-      return false unless (3..4).include?( face.vertices.size )
+      vertex_count = face.vertices.size
+      return false if vertex_count < 3
+      return false if vertex_count > 4
       # Check for bordering soft edges. Triangulated QuadFaces should have one
       # soft edge - where it joins the other triangle.
       # Native quads should have none.
-      if face.vertices.size == 3
-        # Triangulated QuadFace
+      if vertex_count == 3
+        soft_edges = face.edges.select { |e| e.soft? }
+        return false unless soft_edges.size == 1
         face2 = other_native_face( face )
-        return false unless face2
-      else # face.vertices.size == 4
-        # Pure Quadface
-        #soft_edges = face.edges.select { |e| e.soft? }
-        #return false if soft_edges.size > 0
+      else
+        true # Native Quad
       end
-      true
     end
   
   end # class Quadface
@@ -350,7 +353,7 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def initialize( triangle1, triangle2 )
       unless triangle1.is_a?( Sketchup::Face ) && triangle2.is_a?( Sketchup::Face )
-        raise ArgumentError, 'Invalid faces.'
+        raise( InvalidQuadFace, 'Invalid faces.' )
       end
       @faces = [ triangle1, triangle2 ]
     end
@@ -381,7 +384,7 @@ module TT::Plugins::QuadFaceTools
       # Model references
       @model = nil
       @parent = nil
-      unless entities.empty?
+      unless entities.length == 0
         entity = entities[0]
         @parent = entity.parent
         @model = entity.model
@@ -429,6 +432,12 @@ module TT::Plugins::QuadFaceTools
     # @since 0.2.0
     def quads
       @quads.to_a
+    end
+    
+    # @return [Array<QuadFace>]
+    # @since 0.2.0
+    def quad_faces
+      @faces_to_quads.keys
     end
     
     # @return [Array<Sketchup::Face>]
