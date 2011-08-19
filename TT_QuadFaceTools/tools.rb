@@ -17,24 +17,8 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.1.0
     def initialize
-      model = Sketchup.active_model
-      # Find QuadFaces
-      @faces = []
-      @quads = []
-      for entity in model.active_entities
-        next unless QuadFace.is?( entity )
-        quad = QuadFace.new( entity )
-        @quads << quad
-        @faces << quad.faces
-      end
-      @faces.flatten!
-      @faces.uniq!
-      # Build draw cache
-      @edges = @quads.map { |quad| quad.edges }
-      @edges.flatten!
-      @edges.uniq!
-      @segments = @edges.map { |e| [e.start.position, e.end.position] }
-      @lines = @segments.flatten
+      @model_observer = ModelChangeObserver.new( self )
+      update_geometry_cache()
       # Used by onSetCursor
       @key_ctrl = false
       @key_shift = false
@@ -47,6 +31,8 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.1.0
     def activate
+      Sketchup.active_model.remove_observer( @model_observer )
+      Sketchup.active_model.add_observer( @model_observer )
       Sketchup.active_model.active_view.invalidate
     end
     
@@ -57,6 +43,7 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.1.0
     def deactivate( view )
+      view.model.remove_observer( @model_observer )
       view.invalidate
     end
     
@@ -190,8 +177,14 @@ module TT::Plugins::QuadFaceTools
       sub_menu.add_item( PLUGIN.commands[ :blender_to_quads ] )
     end
     
+    # @since 0.2.0
+    def onModelChange( model )
+      update_geometry_cache()
+    end
+    
     private
     
+    # @since 0.1.0
     def pick_entites( flags, x, y, view )
       ph = view.pick_helper
       picked_edge = nil
@@ -234,6 +227,110 @@ module TT::Plugins::QuadFaceTools
       picked
     end
     
+    # @since 0.2.0
+    def update_geometry_cache
+      # Collect entities.
+      @faces = []
+      @edges = []
+      for entity in Sketchup.active_model.active_entities
+        next unless QuadFace.is?( entity )
+        @faces << entity
+        if entity.vertices.size == 4
+          for edge in entity.edges
+            @edges << edge
+          end
+        else
+          for edge in entity.edges
+            @edges << edge unless edge.soft?
+          end
+        end
+      end
+      # Build draw cache.
+      @edges.uniq!
+      @segments = []
+      @lines = []
+      for edge in @edges
+        pt1 = edge.start.position
+        pt2 = edge.end.position
+        @segments << [ pt1, pt2 ]
+        @lines << pt1
+        @lines << pt2
+      end
+    end
+    
   end # class QuadFaceInspector
+  
+  
+  # Observer class used by Tools to be notified on changes to the model.
+  #
+  # @since 0.2.0
+  class ModelChangeObserver < Sketchup::ModelObserver
+    
+    # @since 0.2.0
+    def initialize( tool )
+      @tool = tool
+      @delay = 0
+    end
+    
+    # @param [Sketchup::Model] model
+    #
+    # @since 0.2.0
+    def onTransactionStart( model )
+      #puts 'onTransactionStart'
+      UI.stop_timer( @delay )
+    end
+    
+    # @param [Sketchup::Model] model
+    #
+    # @since 0.2.0
+    def onTransactionCommit( model )
+      #puts 'onTransactionCommit'
+      #@tool.onModelChange( model )
+      # (!) onTransactionStart and onTransactionCommit mistriggers between
+      #     model.start/commit_operation.
+      #
+      # Because of this its impossible to know when an operation has completed.
+      # Executing the cache on each change will slow everything down.
+      #
+      # For now a very ugly timer hack is used to delay the trigger. It's nasty,
+      # filthy and only works in SU8.0+ as UI.start_timer was bugged in earlier
+      # versions.
+      #
+      # Simple tests indicate that the delayed event triggers correctly with the
+      # timer set to 0.0 - so it might work even with older versions. But more
+      # testing is needed to see if it is reliable and doesn't allow for the
+      # delayed event to trigger in mid-operation and slow things down.
+      #
+      # Since the event only trigger reading of geometry the only side-effect of
+      # a mistrigger would be a slowdown.
+      UI.stop_timer( @delay )
+      @delay = UI.start_timer( 0.001, false ) {
+        #puts 'Delayed onTransactionCommit'
+        # Just to be safe in case of any modal windows being popped up due to
+        # the called method the timer is killed. SU doesn't kill the timer until
+        # the block has completed so a modal window will make the timer repeat.
+        UI.stop_timer( @delay )
+        @tool.onModelChange( model )
+        model.active_view.invalidate
+      }
+    end
+    
+    # @param [Sketchup::Model] model
+    #
+    # @since 0.2.0
+    def onTransactionUndo( model )
+      #puts 'onTransactionUndo'
+      @tool.onModelChange( model )
+    end
+    
+    # @param [Sketchup::Model] model
+    #
+    # @since 0.2.0
+    def onTransactionRedo( model )
+      #puts 'onTransactionRedo'
+      @tool.onModelChange( model )
+    end
+    
+  end # class ToolModelObserver
   
 end # module
