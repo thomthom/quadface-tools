@@ -135,6 +135,16 @@ module TT::Plugins::QuadFaceTools
       result
     end
     
+    # @since 0.3.0
+    def erase!
+      if triangulated?
+        edge = ( @faces[0].edges & @faces[1].edges )[0]
+        edge.erase!
+      else
+        @faces[0].erase!
+      end
+    end
+    
     # @return [Array<Sketchup::Face>]
     # @since 0.1.0
     def faces
