@@ -775,13 +775,13 @@ module TT::Plugins::QuadFaceTools
   # ----- HELPER METHOD (!) Move to EntitiesProvider ----- #
   
   
-  # @param [Sketchup::Edge] edge
+  # @param [#faces] entity
   #
   # @return [Array<Sketchup::Face,QuadFace>]
   # @since 0.1.0
-  def self.connected_faces( edge )
+  def self.connected_faces( entity )
     faces = []
-    for face in edge.faces
+    for face in entity.faces
       if QuadFace.is?( face )
         faces << QuadFace.new( face )
       else
