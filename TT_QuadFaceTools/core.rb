@@ -171,6 +171,14 @@ module TT::Plugins::QuadFaceTools
     cmd_make_planar = cmd
     @commands[:make_planar] = cmd
     
+    cmd = UI::Command.new( 'Split Face' )   { self.select_split_tool }
+    cmd.small_icon = File.join( PATH_ICONS, 'Select_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'Select_24.png' )
+    cmd.status_bar_text = 'Split Face.'
+    cmd.tooltip = 'Split Face'
+    cmd_split_face = cmd
+    @commands[:split_face] = cmd
+    
     cmd = UI::Command.new( 'Context Menu' )  {
       @settings[ :context_menu ] = !@settings[ :context_menu ]
     }
@@ -202,6 +210,8 @@ module TT::Plugins::QuadFaceTools
     m.add_separator
     m.add_item( cmd_make_planar )
     m.add_separator
+    m.add_item( cmd_split_face )
+    m.add_separator
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
     sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
@@ -230,6 +240,8 @@ module TT::Plugins::QuadFaceTools
         m.add_separator
         m.add_item( cmd_make_planar )
         m.add_separator
+        m.add_item( cmd_split_face )
+        m.add_separator
         sub_menu = m.add_submenu( 'Convert' )
         sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
         sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
@@ -253,6 +265,7 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_separator
     toolbar.add_item( cmd_triangulate_selection )
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
+    toolbar.add_item( cmd_split_face )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -265,6 +278,12 @@ module TT::Plugins::QuadFaceTools
   # @since 0.1.0
   def self.select_quadface_tool
     Sketchup.active_model.select_tool( SelectQuadFaceTool.new )
+  end
+  
+  
+  # @since 0.3.0
+  def self.select_split_tool
+    Sketchup.active_model.select_tool( SplitFaceTool.new )
   end
   
   

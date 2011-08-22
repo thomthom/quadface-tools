@@ -7,6 +7,260 @@
 
 module TT::Plugins::QuadFaceTools
   
+  # @since 0.3.0
+  class SplitFaceTool
+    
+    # @since 0.3.0
+    def initialize
+      @ip_mouse = Sketchup::InputPoint.new
+      @ip_pick = Sketchup::InputPoint.new
+      
+      @valid_targets = []
+      @source_entity = nil
+      
+      @polygons = []
+      @segments = []
+    end
+    
+    # @since 0.3.0
+    def activate
+      
+    end
+    
+    # @since 0.3.0
+    def resume( view )
+      view.invalidate
+    end
+    
+    # @since 0.3.0
+    def deactivate( view )
+      view.invalidate
+    end
+    
+    # @since 0.3.0
+    def onCancel( reason, view )
+      reset()
+      view.invalidate
+    end
+    
+    # @since 0.3.0
+    def onLButtonDown( flags, x, y, view )
+      if @ip_mouse.edge || @ip_mouse.vertex
+        if @ip_pick.valid?
+          if mouse_pick_valid?
+            puts 'Split!'
+            pick = @ip_mouse.edge || @ip_mouse.vertex
+            split_face( @ip_pick, @ip_mouse )
+            
+            #face = ( @source_entity.faces & pick.faces )
+            #view.model.selection.clear
+            #view.model.selection.add( face ) if face
+            
+            #reset()
+            @ip_pick.copy!( @ip_mouse )
+            if @ip_pick.edge
+              cache_pick( @ip_pick.edge )
+            elsif @ip_pick.vertex
+              cache_pick( @ip_pick.vertex )
+            end
+          else
+            view.tooltip = 'Invalid Target!'
+            UI.beep
+          end
+        else
+          @ip_pick.copy!( @ip_mouse )
+        end
+      else
+        view.tooltip = 'Invalid Pick!'
+        UI.beep
+      end
+      view.invalidate
+    end
+    
+    # @since 0.3.0
+    def onMouseMove( flags, x, y, view )
+      @ip_mouse.pick( view, x, y )
+      view.tooltip = @ip_mouse.tooltip
+      
+      # (i) InputPoint.depth returns 1 for Midpoint inference.
+      if !@ip_pick.valid? && @ip_mouse.depth <= 1
+        if @ip_mouse.edge
+          Sketchup.status_text = 'Edge Pick'
+          cache_pick( @ip_mouse.edge )
+        elsif @ip_mouse.vertex
+          Sketchup.status_text = 'Vertex Pick'
+          cache_pick( @ip_mouse.vertex )
+        else
+          Sketchup.status_text = 'Invalid Pick'
+          cache_pick( nil )
+        end
+      end
+      
+      view.invalidate
+    end
+    
+    # @since 0.3.0
+    def draw( view )
+      if @ip_pick.valid?        
+        pt1 = @ip_pick.position
+        pt2 = @ip_mouse.position
+        view.line_width = 2
+        view.line_stipple = ''
+        view.drawing_color = ( mouse_pick_valid? ) ? [ 0, 128, 0 ] : [ 128, 0, 0 ]
+        view.draw( GL_LINES, pt1, pt2 )
+        
+        view.line_stipple = '-'
+        spt1 = view.screen_coords( pt1 )
+        spt2 = view.screen_coords( pt2 )
+        view.draw2d( GL_LINES, spt1, spt2 )
+      end
+      
+      unless @segments.empty?
+        view.line_width = 3
+        view.line_stipple = ''
+        view.drawing_color = [ 0, 128, 0 ]
+        view.draw_lines( @segments )
+      end
+      
+      unless @polygons.empty?
+        view.line_width = 3
+        view.line_stipple = ''
+        view.drawing_color = [ 0, 128, 0, 32 ]
+        view.draw( GL_TRIANGLES, @polygons )
+      end
+      
+      @ip_mouse.draw( view ) if @ip_mouse.display?
+    end
+    
+    private
+    
+    # @since 0.3.0
+    def reset
+      @valid_targets.clear
+      @ip_mouse.clear
+      @ip_pick.clear
+      @segments.clear
+      @polygons.clear
+    end
+    
+    # @since 0.3.0
+    def mouse_pick_valid?
+      valid = false
+      if @ip_mouse.edge && @valid_targets.include?( @ip_mouse.edge )
+        valid = true
+      elsif @ip_mouse.vertex && @valid_targets.find { |edge|
+        edge.vertices.include?( @ip_mouse.vertex )
+      }
+        valid = true
+      end
+    end
+    
+    # @since 0.3.0
+    def split_face( ip_start, ip_end )
+      start_entity = ip_start.edge || ip_start.vertex
+      end_entity = ip_end.edge || ip_end.vertex
+      model = start_entity.model
+      entities = start_entity.parent.entities
+      # Find common face
+      faces = PLUGIN.connected_faces( start_entity ) # (!) Find connected surface
+      face = faces.find { |face|
+        if end_entity.is_a?( Sketchup::Edge )
+          face.edges.include?( end_entity )
+        else
+          face.vertices.include?( end_entity )
+        end
+      }
+      # Sort the two halves
+      start_point = ip_start.position
+      end_point = ip_end.position
+      
+      if face.is_a?( QuadFace )
+        points = face.vertices.map { |v| v.position }
+      else
+        points = face.outer_loop.vertices.map { |v| v.position }
+      end
+      points << points.first
+      
+      segments = []
+      for i in ( 0...points.size-1 )
+        segments << points[i,2]
+      end
+      
+      start_index = nil
+      end_index = nil
+      segments.each_with_index { |segment, index|
+        pt1, pt2 = segment
+        if TT::Point3d.between?( pt1, pt2, start_point, false )
+          start_index = index
+        end
+        if TT::Point3d.between?( pt1, pt2, end_point, false )
+          end_index = index
+        end
+      }
+      puts "Start: #{start_index} - End: #{end_index}"
+      
+      if start_index < end_index
+        half1 = segments[start_index+1..end_index-1]
+      else
+        puts 'wraparound'
+        half1 = segments[start_index+1..-1] + segments[0..end_index-1]
+      end
+      half1 << [ half1.last[1], end_point ]
+      half1 << [ end_point, start_point ]
+      #half1 << [ start_point,  half1.first[0] ]
+      half1.unshift( [ start_point, half1.first[0] ] )
+      p half1.size
+      loop1 = half1.map { |segment| segment[0] }
+      #p *loop1
+      #p half1
+      model.start_operation( 'Split' )
+      face.erase!
+      f1 = entities.add_face( loop1[0..2] )
+      f2 = entities.add_face( loop1[0], loop1[2], loop1[3] )
+      div = ( f1.edges & f2.edges )[0]
+      div.soft = true
+      div.smooth = true
+      model.commit_operation
+      # Recreate faces / surfaces
+    end
+    
+    # @since 0.3.0
+    def cache_pick( entity )
+      return false if entity == @source_entity
+      @source_entity = entity
+      @valid_targets.clear
+      @segments.clear
+      @polygons.clear
+      return false if entity.nil?
+      edges = []
+      for face in entity.faces
+        if QuadFace.is?( face )
+          f = QuadFace.new( face )
+        else
+          f = face
+        end
+        edges << f.edges
+        mesh = f.mesh
+        for i in ( 1..mesh.count_polygons )
+          @polygons.concat( mesh.polygon_points_at( i ) )
+        end
+      end
+      edges.flatten!
+      edges.uniq!
+      for edge in edges
+        if entity.is_a?( Sketchup::Vertex )
+          @valid_targets << edge unless entity.edges.include?( edge )
+        elsif entity.is_a?( Sketchup::Edge )
+          @valid_targets << edge unless edge == entity
+        end
+        @segments << edge.start.position
+        @segments << edge.end.position
+      end
+    end
+    
+  end # class SplitFaceTool
+  
+  
   # Selection tool specialised for quad faces. Allows selection based on quads
   # where the native tool would otherwise not perform the correct selection.
   #
@@ -171,6 +425,8 @@ module TT::Plugins::QuadFaceTools
       menu.add_item( PLUGIN.commands[ :remove_triangulation ] )
       menu.add_separator
       menu.add_item( PLUGIN.commands[ :make_planar ] )
+      menu.add_separator
+      menu.add_item( PLUGIN.commands[ :split_face ] )
       menu.add_separator
       sub_menu = menu.add_submenu( 'Convert' )
       sub_menu.add_item( PLUGIN.commands[ :mesh_to_quads ] )
