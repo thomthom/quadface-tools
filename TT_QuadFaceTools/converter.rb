@@ -70,17 +70,21 @@ module TT::Plugins::QuadFaceTools
     until stack.empty?
       # <debug>
       i+=1
-      if i > 5000
+      if i > 50000
         puts "LOOP!"
         UI.beep
         break
       end
       # </debug>
       
+      
       quad = stack.shift
       next if ( tagged & quad.faces ).size > 0
       
       j+=1 # <debug/>
+      
+      Sketchup.status_text = "Working... (#{j} QuadFaces found.)"
+      TT::SketchUp.refresh
       
       tagged.concat( quad.faces )
       #quad.material = 'pink' # <debug/>
