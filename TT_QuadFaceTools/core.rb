@@ -16,7 +16,7 @@ module TT::Plugins::QuadFaceTools
   
   ### PREFERENCES ### ----------------------------------------------------------
   
-  @settings = TT::Settings.new( ID )
+  @settings = TT::Settings.new( PLUGIN_ID )
   @settings.set_default( :context_menu, false )
   @settings.set_default( :connect_splits, 1 )
   @settings.set_default( :connect_pinch, 0 )

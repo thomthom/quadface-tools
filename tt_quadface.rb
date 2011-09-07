@@ -17,11 +17,11 @@ module TT::Plugins::QuadFaceTools
   ### CONSTANTS ### ------------------------------------------------------------
   
   # Plugin information
-  ID          = 'TT_QuadFaceTools'.freeze
   PLUGIN      = TT::Plugins::QuadFaceTools
+  PLUGIN_ID   = 'TT_QuadFaceTools'.freeze
   PLUGIN_NAME = 'QuadFace Tools'.freeze
-  #VERSION     = TT::Version.new(0,1,0).freeze # TT::Lib version 2.6
-  VERSION     = '0.2.0'.freeze
+  #PLUGIN_VERSION     = TT::Version.new(0,1,0).freeze # TT::Lib version 2.6
+  PLUGIN_VERSION     = '0.3.0'.freeze
   
   # Resource paths
   PATH_ROOT   = File.dirname( __FILE__ ).freeze
@@ -34,7 +34,7 @@ module TT::Plugins::QuadFaceTools
   path = File.dirname( __FILE__ )
   core = File.join( PATH, 'core.rb' )
   ex = SketchupExtension.new( PLUGIN_NAME, core )
-  ex.version = VERSION
+  ex.version = PLUGIN_VERSION
   ex.copyright = 'Thomas Thomassen © 2011'
   ex.creator = 'Thomas Thomassen (thomas@thomthom.net)'
   ex.description = 'Suite of tools for manipulating quad faces.'
