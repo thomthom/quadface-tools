@@ -121,6 +121,52 @@ module TT::Plugins::QuadFaceTools
       match[0]
     end
     
+    # @return [Sketchup::Edge,Nil]
+    # @since 0.3.0
+    def divider
+      if @faces.size == 1
+        nil
+      else
+        face1, face2 = @faces
+        ( face1.edges & face2.edges )[0]
+      end
+    end
+    
+    # @param [Sketchup::Edge]
+    #
+    # @return [Boolean]
+    # @since 0.1.0
+    def edge_reversed?( edge )
+      for face in @faces
+        next unless face.edges.include?( edge )
+        return edge.reversed_in?( face )
+      end
+    end
+    
+    # Returns the edge positions in the same order as the outer loop of the quad.
+    #
+    # @param [Sketchup::Edge] edge
+    #
+    # @return [Array<Geom::Point3d>]
+    # @since 0.3.0
+    def edge_positions( edge )
+      edge_vertices( edge ).map { |vertex| vertex.position }
+    end
+    
+    # Returns the edge vertices in the same order as the outer loop of the quad.
+    #
+    # @param [Sketchup::Edge] edge
+    #
+    # @return [Array<Sketchup::Vertex>]
+    # @since 0.3.0
+    def edge_vertices( edge )
+      if edge_reversed?( edge )
+        edge.vertices.reverse
+      else
+        edge.vertices
+      end
+    end
+    
     # @return [Array<Sketchup::Edge>]
     # @since 0.1.0
     def edges
@@ -221,8 +267,11 @@ module TT::Plugins::QuadFaceTools
       if @faces.size == 1
         @faces[0].outer_loop.edges
       else
-        # (?) Verify order. Direction?
-        TT::Edges.sort( edges ).uniq # .uniq to work around a bug in TT_Lib 2.5
+        sorted = TT::Edges.sort( edges ).uniq # .uniq due to a bug in TT_Lib 2.5
+        # Ensure the edges run in the same direction as native outer loops.
+        face = ( @faces & sorted[0].faces )[0]
+        sorted.reverse! if sorted[0].reversed_in?( face )
+        sorted
       end
     end
     
