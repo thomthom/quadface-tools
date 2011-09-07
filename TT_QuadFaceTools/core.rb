@@ -29,7 +29,7 @@ module TT::Plugins::QuadFaceTools
   require File.join( PATH, 'entities.rb' )
   require File.join( PATH, 'tools.rb' )
   require File.join( PATH, 'edge_connect.rb' )
-  require File.join( PATH, 'converter.rb' )
+  require File.join( PATH, 'mesh_converter.rb' )
   require File.join( PATH, 'gl.rb' )
   
   
