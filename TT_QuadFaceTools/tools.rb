@@ -54,12 +54,20 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.3.0
     def onLButtonDown( flags, x, y, view )
-      hud_click( x, y, view )
+      hud_onLButtonDown( flags, x, y, view )
+    end
+    
+    # @since 0.3.0
+    def onLButtonUp( flags, x, y, view )
+      hud_onLButtonUp( flags, x, y, view )
     end
     
     # @since 0.3.0
     def onMouseMove( flags, x, y, view )
-      hud_onMouseMove( x, y, view )
+      if hud_onMouseMove( flags, x, y, view )
+        view.invalidate
+        return false
+      end
       # Get key modifier controlling how the selection should be modified.
       # Using standard SketchUp selection modifier keys.
       key_ctrl = flags & COPY_MODIFIER_MASK == COPY_MODIFIER_MASK
@@ -98,7 +106,7 @@ module TT::Plugins::QuadFaceTools
     def onReturn( view )
       puts 'onReturn'
       do_splits()
-      view.model.select_tool( nil )
+      close_tool()
     end
     
     # @since 0.3.0
@@ -112,8 +120,8 @@ module TT::Plugins::QuadFaceTools
         Sketchup.active_model.selection.clear
       }
       menu.add_separator
-      menu.add_item( 'Apply' ) { puts 'Apply' }
-      menu.add_item( 'Cancel' ) { puts 'Cancel' }
+      menu.add_item( 'Apply' ) { do_splits(); close_tool() }
+      menu.add_item( 'Cancel' ) { close_tool() }
     end
     
     # @since 0.3.0
@@ -202,6 +210,11 @@ module TT::Plugins::QuadFaceTools
     end
     
     # @since 0.3.0
+    def close_tool
+      Sketchup.active_model.active_view.model.select_tool( nil )
+    end
+    
+    # @since 0.3.0
     def do_splits
       model = Sketchup.active_model
       TT::Model.start_operation( 'Connect Edges' )
@@ -213,13 +226,16 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.3.0
     def init_HUD
+      # (!) Implement proper UI classes that takes cares of child controls.
+      #     Wrapping everything up neatly.
+      
       view = Sketchup.active_model.active_view
       
       screen_x = ( view.vpwidth / 2 ) + 0.5
       screen_y = ( view.vpheight / 2 ) + 0.5
 
       @window = GL_Window.new( screen_x, screen_y, 76, 90 )
-      @window.background_color = [ 0, 0, 0, 160 ]
+      @window.background_color = [ 0, 0, 0, 180 ]
       @window.border_color = [ 32, 32, 32 ]
       
       @titlebar = GL_Window.new( screen_x + 2, screen_y + 2, @window.rect.width - 4 , 8 )
@@ -249,6 +265,29 @@ module TT::Plugins::QuadFaceTools
       @txt_pinch.border_color = [ 32, 32, 32 ]
       @txt_pinch.text = @edge_connect.pinch.to_s
       
+      @btnApply = GL_Button.new(
+        @window.rect.x + 5,
+        @window.rect.bottom - 25,
+        30,
+        20
+      ) {
+        puts 'Apply!'
+        do_splits()
+        close_tool()
+      }
+      @btnApply.label = 'Apply'
+      
+      @btnCancel = GL_Button.new(
+        @btnApply.rect.right + 5,
+        @window.rect.bottom - 25,
+        30,
+        20
+      ) {
+        puts 'Cancel!'
+        close_tool()
+      }
+      @btnCancel.label = 'Cancel'
+      
       @controls = [ @txt_splits, @txt_pinch ]
       
       hud_set_focus( @txt_splits )
@@ -256,15 +295,13 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.3.0
     def hud_set_focus( control )
-      #puts "hud_set_focus( #{control} )"
       @controls.each { |c| c.focus = false }
       @active_control = control
       @active_control.focus = true
     end
     
     # @since 0.3.0
-    def hud_click( x, y, view )
-      #puts 'hud_click'
+    def hud_onLButtonDown( flags, x, y, view )
       for control in @controls
         next unless control.rect.inside?( x, y )
         hud_set_focus( control )
@@ -272,14 +309,31 @@ module TT::Plugins::QuadFaceTools
         view.invalidate
         return true
       end
+      for control in [ @btnApply, @btnCancel ]
+        next unless control.onLButtonDown( flags, x, y, view )
+        return true
+      end
       false
     end
     
     # @since 0.3.0
-    def hud_onMouseMove( x, y, view )
+    def hud_onLButtonUp( flags, x, y, view )
+      for control in [ @btnApply, @btnCancel ]
+        next unless control.onLButtonUp( flags, x, y, view )
+        return true
+      end
+      false
+    end
+    
+    # @since 0.3.0
+    def hud_onMouseMove( flags, x, y, view )
       for control in @controls
         next unless control.rect.inside?( x, y )
         view.tooltip = control.label
+        return true
+      end
+      for control in [ @btnApply, @btnCancel ]
+        next unless control.onMouseMove( flags, x, y, view )
         return true
       end
       false
@@ -298,6 +352,43 @@ module TT::Plugins::QuadFaceTools
       @titlebar.draw( view )
       @txt_splits.draw( view )
       @txt_pinch.draw( view )
+      @btnApply.draw( view )
+      @btnCancel.draw( view )
+      # Draw UI Graphics
+      view.line_stipple = ''
+      view.line_width = 1
+      # Segments
+      x = @window.rect.x + 7 + 0.5
+      y = @txt_splits.rect.y + 2
+      rect = [x,y,0],[x+15,y,0],[x+15,y+15,0],[x,y+15,0]
+      view.drawing_color = [128,128,128]
+      view.draw2d( GL_LINE_LOOP, rect )
+      view.drawing_color = [64,64,64]
+      view.draw2d( GL_QUADS, rect )
+      view.drawing_color = [100,100,255]
+      view.draw2d( GL_LINES, [x+4.5,y,0],[x+4.5,y+15,0], [x+10.5,y,0],[x+10.5,y+15,0] )
+      
+      # Pinch
+      x = @window.rect.x + 8 + 0.5
+      y = @txt_pinch.rect.y
+      view.drawing_color = [255,255,255]
+      view.draw2d( GL_LINES, [x,y+10,0],[x+5,y+10,0], [x+10,y+10,0],[x+15,y+10,0] )
+      view.draw2d( GL_TRIANGLES, [x+6,y+10,0],[x+3,y+7,0],[x+3,y+13,0] )
+      view.draw2d( GL_TRIANGLES, [x+9,y+10,0],[x+12,y+7,0],[x+12,y+13,0] )
+      
+      # Apply
+      x = @btnApply.rect.x + 8 + 0.5
+      y = @btnApply.rect.y + 10
+      view.line_width = 3
+      view.drawing_color = [0,168,0]
+      view.draw2d( GL_LINE_STRIP, [x,y,0],[x+5,y+5,0],[x+14,y-6,0] )
+      
+      # Cancel
+      x = @btnCancel.rect.x + 7 + 0.5
+      y = @btnCancel.rect.y + 4
+      view.line_width = 3
+      view.drawing_color = [192,0,0]
+      view.draw2d( GL_LINES, [x,y,0],[x+14,y+11,0],[x+14,y,0],[x,y+11,0] )
     end
     
   end # class ConnectTool

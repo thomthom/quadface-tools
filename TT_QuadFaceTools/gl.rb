@@ -134,8 +134,8 @@ module TT::Plugins::QuadFaceTools
       super( x, y, width, height )
       @label = ''
       @proc = block
-      @color = Sketchup::Color.new( 0, 0, 0, 160 )
-      @color_hover = Sketchup::Color.new( 0, 0, 0, 200 )
+      @background_color = Sketchup::Color.new( 0, 0, 0, 30 )
+      @color_hover = Sketchup::Color.new( 0, 0, 0, 80 )
       @color_pressed = Sketchup::Color.new( 255, 160, 0, 160 )
       
       @pressed = false
@@ -146,6 +146,7 @@ module TT::Plugins::QuadFaceTools
     def onLButtonDown( flags, x, y, view )
       if rect.inside?( x, y )
         @pressed = true
+        view.invalidate
         true
       else
         false
@@ -156,19 +157,30 @@ module TT::Plugins::QuadFaceTools
     def onLButtonUp( flags, x, y, view )
       if rect.inside?( x, y )
         @proc.call
+        @pressed = false
+        view.invalidate
         true
       else
+        if @pressed
+          @pressed = false
+          view.invalidate
+        end
         false
       end
     end
     
     # @since 0.3.0
     def onMouseMove( flags, x, y, view )
-      if rect.inside?( x, y )
-        @mouseover = true
-        true
-      else
-        false
+      new_state = rect.inside?( x, y )
+      view.tooltip = self.label if new_state
+      if new_state != @mouseover
+        @mouseover = new_state
+        view.invalidate
+        if @mouseover
+          @pressed
+        else
+          false
+        end
       end
     end
     
