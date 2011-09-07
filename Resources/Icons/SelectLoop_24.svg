@@ -13,7 +13,7 @@
    height="24"
    id="svg2985"
    version="1.1"
-   inkscape:version="0.48.1 "
+   inkscape:version="0.48.2 r9819"
    sodipodi:docname="SelectLoop_24.svg"
    inkscape:export-filename="C:\Users\thm.ARC\Dropbox\Plugins\Main Home Computer Extra\QuadFace Tools\TT_QuadFaceTools\Icons\SelectLoop_24.png"
    inkscape:export-xdpi="90"
@@ -30,12 +30,12 @@
      inkscape:zoom="22.197802"
      inkscape:cx="10.834158"
      inkscape:cy="8"
-     inkscape:current-layer="layer13"
+     inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:grid-bbox="true"
      inkscape:document-units="px"
-     inkscape:window-width="1600"
-     inkscape:window-height="1138"
+     inkscape:window-width="1920"
+     inkscape:window-height="1018"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1">
@@ -67,9 +67,9 @@
     <rect
        style="fill:#ffffff;fill-opacity:1;stroke:#388a2e;stroke-width:0;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect3784"
-       width="14"
+       width="22"
        height="3"
-       x="5"
+       x="1.0000001"
        y="2" />
     <path
        style="fill:#388a2e;fill-opacity:1;stroke:#388a2e;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
