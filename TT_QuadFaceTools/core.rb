@@ -135,6 +135,14 @@ module TT::Plugins::QuadFaceTools
     cmd_insert_loops = cmd
     @commands[:insert_loops] = cmd
     
+    cmd = UI::Command.new( 'Remove Loops' )   { self.remove_loops }
+    cmd.small_icon = File.join( PATH_ICONS, 'RemoveLoop_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'RemoveLoop_24.png' )
+    cmd.status_bar_text = 'Remove Loops.'
+    cmd.tooltip = 'Remove Loops'
+    cmd_remove_loops = cmd
+    @commands[:remove_loops] = cmd
+    
     cmd = UI::Command.new( 'Triangulate' )  { self.triangulate_selection}
     cmd.small_icon = File.join( PATH_ICONS, 'Triangulate_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Triangulate_24.png' )
@@ -219,6 +227,7 @@ module TT::Plugins::QuadFaceTools
     m.add_separator
     m.add_item( cmd_connect )
     m.add_item( cmd_insert_loops )
+    m.add_item( cmd_remove_loops )
     m.add_separator
     m.add_item( cmd_triangulate_selection )
     m.add_item( cmd_remove_triangulation )
@@ -250,6 +259,7 @@ module TT::Plugins::QuadFaceTools
         m.add_separator
         m.add_item( cmd_connect )
         m.add_item( cmd_insert_loops )
+        m.add_item( cmd_remove_loops )
         m.add_separator
         m.add_item( cmd_triangulate_selection )
         m.add_item( cmd_remove_triangulation )
@@ -279,6 +289,7 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_separator
     toolbar.add_item( cmd_connect )
     toolbar.add_item( cmd_insert_loops )
+    toolbar.add_item( cmd_remove_loops )
     toolbar.add_separator
     toolbar.add_item( cmd_triangulate_selection )
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
@@ -303,13 +314,12 @@ module TT::Plugins::QuadFaceTools
   end
   
   
-  # @param [Boolean] step
-  #
   # @since 0.3.0
   def self.insert_loops
     model = Sketchup.active_model
     selection = model.selection
     entities = []
+    # Find Edge Rings in Selection
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
       next if QuadFace.dividing_edge?( entity )
@@ -325,6 +335,80 @@ module TT::Plugins::QuadFaceTools
     selection.clear
     selection.add( edges )
   end
+  
+  
+  # @since 0.3.0
+  def self.remove_loops
+    model = Sketchup.active_model
+    selection = model.selection
+    # Proccess each loop
+    TT::Model.start_operation( 'Remove Loops' )
+    for entity in selection.to_a
+      next unless entity.valid?
+      next unless entity.is_a?( Sketchup::Edge )
+      next if QuadFace.dividing_edge?( entity )
+      loop = find_edge_loop( entity )
+      vertices = {}
+      # Make loop edges planar between neighbour faces.
+      for edge in loop
+        next unless edge.faces.all? { |face| QuadFace.is?( face ) }
+        quads = edge.faces.map { |face| QuadFace.new( face ) }
+        quad_edges = quads.map { |quad| quad.edges }.flatten.uniq
+        for vertex in edge.vertices
+          next if vertices[ vertex ]
+          edges = vertex.edges & quad_edges - [edge]
+          e1, e2 = edges
+          v1 = e1.other_vertex( vertex )
+          v2 = e2.other_vertex( vertex )
+          line = [ v1.position, v2.position ]
+          new_pt = vertex.position.project_to_line( line )
+          vertices[ vertex ] = vertex.position.vector_to( new_pt )
+        end
+      end
+      # Calculate vectors to make the loop vertices co-linear with their
+      # adjecent edges - required to merge the quads connected to the loop.
+      vertex_entities = []
+      vectors = []
+      for vertex, vector in vertices
+        next unless vector.valid?
+        vertex_entities << vertex
+        vectors << vector
+      end
+      # Remove loop edges.
+      erase_edges = []
+      erase_faces = []
+      new_quads = []
+      for edge in loop
+        next unless edge.faces.all? { |face| QuadFace.is?( face ) }
+        quads = edge.faces.map { |face| QuadFace.new( face ) }
+        # Find the vertices of the merged face.
+        q1, q2 = quads
+        e1 = q1.opposite_edge( edge )
+        e2 = q2.opposite_edge( edge )
+        pts = q1.edge_positions( e1 ) + q2.edge_positions( e2 )
+        # Mark edge for deletion.
+        erase_edges << edge
+        # If the connected quads are triangulated or the merged face is not
+        # planar, erase the faces and re-generate new quad.
+        planar = TT::Geom3d.planar_points?( pts )
+        triangulated = quads.any? { |quad| quad.triangulated? }
+        if !planar || triangulated
+          erase_faces.concat( q1.faces + q2.faces )
+          new_quads << pts
+        end
+      end
+      # Reshape and merge the entities.
+      active_entities = model.active_entities
+      active_entities.erase_entities( erase_faces )
+      active_entities.transform_by_vectors( vertex_entities, vectors )
+      active_entities.erase_entities( erase_edges )
+      for points in new_quads
+        self.fill_face( active_entities, points )
+      end
+    end
+    model.commit_operation
+  end
+  
   
   # Ensures that all quad faces in the current selection is triangulated. This
   # prevents SketchUp's auto-fold feature to break the quad face when it's
