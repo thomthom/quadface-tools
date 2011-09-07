@@ -621,8 +621,6 @@ module TT::Plugins::QuadFaceTools
   
   # Selects rings based on the selected entities.
   #
-  # @todo Support face rings.
-  #
   # @param [Boolean] step
   #
   # @since 0.1.0
@@ -631,8 +629,8 @@ module TT::Plugins::QuadFaceTools
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
-      #next if entity.soft?
       next if QuadFace.dividing_edge?( entity )
+      next if !step && entities.include?( entity )
       entities.concat( find_edge_ring( entity, step ) )
     end
     # Select
@@ -641,8 +639,6 @@ module TT::Plugins::QuadFaceTools
   
   
   # Shrink ring loops.
-  #
-  # @todo Support face rings.
   #
   # @since 0.1.0
   def self.shrink_rings
@@ -674,8 +670,6 @@ module TT::Plugins::QuadFaceTools
   
   # Selects loops based on the selected entities.
   #
-  # @todo Support face loops.
-  #
   # @param [Boolean] step
   #
   # @since 0.1.0
@@ -684,8 +678,8 @@ module TT::Plugins::QuadFaceTools
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
-      #next if entity.soft?
       next if QuadFace.dividing_edge?( entity )
+      next if !step && entities.include?( entity )
       entities.concat( find_edge_loop( entity, step ) )
     end
     # Select
@@ -694,8 +688,6 @@ module TT::Plugins::QuadFaceTools
   
   
   # Shrink ring loops.
-  #
-  # @todo Support face rings.
   #
   # @since 0.1.0
   def self.shrink_loops
@@ -800,7 +792,7 @@ module TT::Plugins::QuadFaceTools
   def self.find_edge_ring( origin_edge, step = false )
     raise ArgumentError, 'Invalid Edge' unless origin_edge.is_a?( Sketchup::Edge )
     # Find initial connected QuadFaces
-    return false unless ( 1..2 ).include?( origin_edge.faces.size )
+    return [] unless ( 1..2 ).include?( origin_edge.faces.size )
     valid_faces = origin_edge.faces.select { |f| QuadFace.is?( f ) }
     quads = valid_faces.map { |face| QuadFace.new( face ) }
     # Find ring loop
