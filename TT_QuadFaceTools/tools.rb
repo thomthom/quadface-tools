@@ -555,6 +555,7 @@ module TT::Plugins::QuadFaceTools
       menu.add_item( PLUGIN.commands[ :unsmooth_quads ] )
       menu.add_separator
       menu.add_item( PLUGIN.commands[ :connect ] )
+      menu.add_item( PLUGIN.commands[ :insert_loops ] )
       menu.add_separator
       menu.add_item( PLUGIN.commands[ :triangulate ] )
       menu.add_item( PLUGIN.commands[ :remove_triangulation ] )

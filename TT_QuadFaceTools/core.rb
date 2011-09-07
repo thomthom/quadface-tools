@@ -127,6 +127,14 @@ module TT::Plugins::QuadFaceTools
     cmd_connect = cmd
     @commands[:connect] = cmd
     
+    cmd = UI::Command.new( 'Insert Loops' )   { self.insert_loops }
+    cmd.small_icon = File.join( PATH_ICONS, 'InsertLoop_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'InsertLoop_24.png' )
+    cmd.status_bar_text = 'Insert Loops.'
+    cmd.tooltip = 'Insert Loops'
+    cmd_insert_loops = cmd
+    @commands[:insert_loops] = cmd
+    
     cmd = UI::Command.new( 'Triangulate' )  { self.triangulate_selection}
     cmd.small_icon = File.join( PATH_ICONS, 'Triangulate_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Triangulate_24.png' )
@@ -210,6 +218,7 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_unsmooth_quad_mesh )
     m.add_separator
     m.add_item( cmd_connect )
+    m.add_item( cmd_insert_loops )
     m.add_separator
     m.add_item( cmd_triangulate_selection )
     m.add_item( cmd_remove_triangulation )
@@ -240,6 +249,7 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_unsmooth_quad_mesh )
         m.add_separator
         m.add_item( cmd_connect )
+        m.add_item( cmd_insert_loops )
         m.add_separator
         m.add_item( cmd_triangulate_selection )
         m.add_item( cmd_remove_triangulation )
@@ -268,6 +278,7 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_shrink_loop )
     toolbar.add_separator
     toolbar.add_item( cmd_connect )
+    toolbar.add_item( cmd_insert_loops )
     toolbar.add_separator
     toolbar.add_item( cmd_triangulate_selection )
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
@@ -291,6 +302,29 @@ module TT::Plugins::QuadFaceTools
     Sketchup.active_model.select_tool( ConnectTool.new )
   end
   
+  
+  # @param [Boolean] step
+  #
+  # @since 0.3.0
+  def self.insert_loops
+    model = Sketchup.active_model
+    selection = model.selection
+    entities = []
+    for entity in selection
+      next unless entity.is_a?( Sketchup::Edge )
+      next if QuadFace.dividing_edge?( entity )
+      next if entities.include?( entity )
+      entities.concat( find_edge_ring( entity ) )
+    end
+    # Edge Connect
+    TT::Model.start_operation( 'Insert Loops' )
+    edge_connect = EdgeConnect.new( entities )
+    edges = edge_connect.connect!
+    model.commit_operation
+    # Select
+    selection.clear
+    selection.add( edges )
+  end
   
   # Ensures that all quad faces in the current selection is triangulated. This
   # prevents SketchUp's auto-fold feature to break the quad face when it's
