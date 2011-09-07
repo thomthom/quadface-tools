@@ -18,6 +18,8 @@ module TT::Plugins::QuadFaceTools
   
   @settings = TT::Settings.new( ID )
   @settings.set_default( :context_menu, false )
+  @settings.set_default( :connect_splits, 1 )
+  @settings.set_default( :connect_pinch, 0 )
   
   def self.settings; @settings; end
 
@@ -26,7 +28,9 @@ module TT::Plugins::QuadFaceTools
   
   require File.join( PATH, 'entities.rb' )
   require File.join( PATH, 'tools.rb' )
+  require File.join( PATH, 'edge_connect.rb' )
   require File.join( PATH, 'converter.rb' )
+  require File.join( PATH, 'gl.rb' )
   
   
   ### MENU & TOOLBARS ### ------------------------------------------------------
@@ -115,6 +119,14 @@ module TT::Plugins::QuadFaceTools
     cmd_region_to_loop = cmd
     @commands[:region_to_loop] = cmd
     
+    cmd = UI::Command.new( 'Connect Edges' )   { self.connect_tool }
+    cmd.small_icon = File.join( PATH_ICONS, 'Connect_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'Connect_24.png' )
+    cmd.status_bar_text = 'Connect Edges Tool.'
+    cmd.tooltip = 'Connect Edges'
+    cmd_connect = cmd
+    @commands[:connect] = cmd
+    
     cmd = UI::Command.new( 'Triangulate' )  { self.triangulate_selection}
     cmd.small_icon = File.join( PATH_ICONS, 'Triangulate_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Triangulate_24.png' )
@@ -197,6 +209,8 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_smooth_quad_mesh )
     m.add_item( cmd_unsmooth_quad_mesh )
     m.add_separator
+    m.add_item( cmd_connect )
+    m.add_separator
     m.add_item( cmd_triangulate_selection )
     m.add_item( cmd_remove_triangulation )
     m.add_separator
@@ -225,6 +239,8 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_smooth_quad_mesh )
         m.add_item( cmd_unsmooth_quad_mesh )
         m.add_separator
+        m.add_item( cmd_connect )
+        m.add_separator
         m.add_item( cmd_triangulate_selection )
         m.add_item( cmd_remove_triangulation )
         m.add_separator
@@ -251,6 +267,8 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_grow_loop )
     toolbar.add_item( cmd_shrink_loop )
     toolbar.add_separator
+    toolbar.add_item( cmd_connect )
+    toolbar.add_separator
     toolbar.add_item( cmd_triangulate_selection )
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
     if toolbar.get_last_state == TB_VISIBLE
@@ -265,6 +283,12 @@ module TT::Plugins::QuadFaceTools
   # @since 0.1.0
   def self.select_quadface_tool
     Sketchup.active_model.select_tool( SelectQuadFaceTool.new )
+  end
+  
+  
+  # @since 0.3.0
+  def self.connect_tool
+    Sketchup.active_model.select_tool( ConnectTool.new )
   end
   
   
@@ -803,6 +827,55 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # Wrapper for creating faces where the points might belong to QuadFaces that
+  # are not planar.
+  #
+  # A QuadFace is returned for all faces with four vertices.
+  #
+  # @param [Sketchup::Entities] entities 
+  # @param [Array<Geom::Point3d>] points
+  #
+  # @return [QuadFace,Sketchup::Face]
+  # @since 0.3.0
+  def self.add_face( entities, points )
+    if points.size == 4 && !TT::Geom3d.planar_points?( points )
+      face1 = entities.add_face( points[0], points[1], points[2] )
+      face2 = entities.add_face( points[2], points[1], points[3] )
+      edge = ( face1.edges & face2.edges )[0]
+      edge.soft = true
+      edge.smooth = true
+      QuadFace.new( face1 )
+    else
+      face = entities.add_face( points )
+      face = QuadFace.new( face ) if points.size == 4
+      face
+    end
+  end
+  
+  
+  # Acts like #add_face, but doesn't have the overhead of returning QuadFaces.
+  #
+  # @see #add_face
+  #
+  # @param [Sketchup::Entities] entities 
+  # @param [Array<Geom::Point3d>] points
+  #
+  # @return [Nil]
+  # @since 0.3.0
+  def self.fill_face( entities, points )
+    if points.size == 4 && !TT::Geom3d.planar_points?( points )
+      face1 = entities.add_face( points[0], points[1], points[2] )
+      face2 = entities.add_face( points[0], points[2], points[3] )
+      edge = ( face1.edges & face2.edges )[0]
+      edge.soft = true
+      edge.smooth = true
+    else
+      entities.add_face( points )
+    end
+    nil
+  end
+  
+  
   # @since 0.1.0
   def self.transform
     # (!)
@@ -864,6 +937,30 @@ module TT::Plugins::QuadFaceTools
   
 
   ### DEBUG ### ----------------------------------------------------------------  
+  
+  
+  # @since 0.3.0
+  def self.debug_loop
+    model = Sketchup.active_model
+    sel = model.selection
+    model.start_operation( 'Debug Loop' )
+    for entity in sel
+      next unless QuadFace.is?( entity )
+      quad = QuadFace.new( entity )
+      quad.outer_loop.each_with_index { |e,i|
+        pt1 = e.start.position
+        pt2 = e.end.position
+        mid = Geom.linear_combination( 0.5, pt1, 0.5, pt2 )
+        model.active_entities.add_text( i.to_s, mid, [-2,-2,2] )
+        
+        start = ( quad.edge_reversed?( e ) ) ? pt2 : pt1
+        pt3 = Geom.linear_combination( 0.5, start, 0.5, mid )
+        model.active_entities.add_text( 'S', pt3, [-1,-1,1] )
+      }
+    end
+    model.commit_operation
+  end
+  
   
   # @note Debug method to reload the plugin.
   #
