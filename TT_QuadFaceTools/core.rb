@@ -343,11 +343,14 @@ module TT::Plugins::QuadFaceTools
     selection = model.selection
     # Proccess each loop
     TT::Model.start_operation( 'Remove Loops' )
-    for entity in selection.to_a
+    stack = selection.to_a
+    until stack.empty?
+      entity = stack.shift
       next unless entity.valid?
       next unless entity.is_a?( Sketchup::Edge )
       next if QuadFace.dividing_edge?( entity )
       loop = find_edge_loop( entity )
+      stack -= loop
       vertices = {}
       # Make loop edges planar between neighbour faces.
       for edge in loop
@@ -861,10 +864,8 @@ module TT::Plugins::QuadFaceTools
     raise ArgumentError, 'Invalid Edge' unless origin_edge.is_a?( Sketchup::Edge )
     # Find initial connected faces
     face_count = origin_edge.faces.size
-    return false unless ( 1..2 ).include?( face_count )
+    return [] unless ( 1..2 ).include?( face_count )
     faces = self.connected_faces( origin_edge )
-    # Find existing entities affecting the loop.
-    selected_edges = origin_edge.model.selection.select { |e| e.is_a?( Sketchup::Edge ) }    
     # Find edge loop.
     step_limit = 0
     loop = []
@@ -889,7 +890,6 @@ module TT::Plugins::QuadFaceTools
           next if QuadFace.dividing_edge?( e )
           next if faces.any? { |f| f.edges.include?( e ) }
           next if loop.include?( e )
-          next if selected_edges.include?( e ) # (?) Needed?
           next unless e.faces.size == face_count
           valid_edges += 1
           stack << e
