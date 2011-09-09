@@ -143,6 +143,14 @@ module TT::Plugins::QuadFaceTools
     cmd_remove_loops = cmd
     @commands[:remove_loops] = cmd
     
+    cmd = UI::Command.new( 'Flip Edge' )  { self.flip_edge_tool }
+    cmd.small_icon = File.join( PATH_ICONS, 'FlipEdge_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'FlipEdge_24.png' )
+    cmd.status_bar_text = 'Flips the dividing edge in triangulated quads.'
+    cmd.tooltip = 'Flips the dividing edge in triangulated quads'
+    cmd_flip_edge = cmd
+    @commands[:flip_edge] = cmd
+    
     cmd = UI::Command.new( 'Triangulate' )  { self.triangulate_selection}
     cmd.small_icon = File.join( PATH_ICONS, 'Triangulate_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Triangulate_24.png' )
@@ -229,6 +237,7 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_insert_loops )
     m.add_item( cmd_remove_loops )
     m.add_separator
+    m.add_item( cmd_flip_edge )
     m.add_item( cmd_triangulate_selection )
     m.add_item( cmd_remove_triangulation )
     m.add_separator
@@ -261,6 +270,7 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_insert_loops )
         m.add_item( cmd_remove_loops )
         m.add_separator
+        m.add_item( cmd_flip_edge )
         m.add_item( cmd_triangulate_selection )
         m.add_item( cmd_remove_triangulation )
         m.add_separator
@@ -291,6 +301,7 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_insert_loops )
     toolbar.add_item( cmd_remove_loops )
     toolbar.add_separator
+    toolbar.add_item( cmd_flip_edge )
     toolbar.add_item( cmd_triangulate_selection )
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
     if toolbar.get_last_state == TB_VISIBLE
@@ -311,6 +322,12 @@ module TT::Plugins::QuadFaceTools
   # @since 0.3.0
   def self.connect_tool
     Sketchup.active_model.select_tool( ConnectTool.new )
+  end
+  
+  
+  # @since 0.3.0
+  def self.flip_edge_tool
+    Sketchup.active_model.select_tool( FlipEdgeTool.new )
   end
   
   

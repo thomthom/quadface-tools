@@ -8,6 +8,88 @@
 module TT::Plugins::QuadFaceTools
   
   # @since 0.3.0
+  class FlipEdgeTool
+    
+    # @since 0.3.0
+    def initialize
+      @quadface = nil
+    end
+    
+    # @since 0.3.0
+    def activate
+      update_ui()
+    end
+    
+    # @since 0.3.0
+    def resume( view )
+      update_ui()
+      view.invalidate
+    end
+    
+    # @since 0.3.0
+    def deactivate( view )
+      view.invalidate
+    end
+    
+    # @since 0.3.0
+    def onLButtonDown( flags, x, y, view )
+      if @quadface && @quadface.triangulated?
+        TT::Model.start_operation( 'Flip Edge' )
+        @quadface.flip_edge
+        view.model.commit_operation
+      end
+      view.invalidate
+    end
+    
+    # @since 0.3.0
+    def onMouseMove( flags, x, y, view )
+      ph = view.pick_helper
+      ph.do_pick( x, y )
+      face = ph.picked_face
+      if QuadFace.is?( face )
+        if @quadface
+          unless @quadface.faces.include?( face )
+            @quadface = QuadFace.new( face )
+            view.invalidate
+          end
+        else
+          @quadface = QuadFace.new( face )
+          view.invalidate
+        end
+      else
+        if @quadface
+          @quadface = nil
+          view.invalidate
+        end
+      end
+    end
+    
+    # @since 0.3.0
+    def draw( view )
+      return unless @quadface
+      view.line_stipple = ''
+      view.line_width = 3
+      view.drawing_color = ( @quadface.triangulated? ) ? [0,192,0] : [255,0,0]
+      view.draw( GL_LINE_LOOP, @quadface.vertices.map { |v| v.position } )
+      if @quadface.triangulated?
+        view.line_width = 2
+        view.drawing_color = [64,64,255] 
+        edge = @quadface.divider
+        view.draw( GL_LINES, edge.vertices.map { |v| v.position } )
+      end
+    end
+    
+    private
+    
+    # @since 0.3.0
+    def update_ui
+      Sketchup.status_text = %{Click a triangulated QuadFace to flip it's internal edge.}
+    end
+    
+  end # class FlipEdgeTool
+  
+  
+  # @since 0.3.0
   class ConnectTool
     
     # @since 0.3.0
@@ -558,6 +640,7 @@ module TT::Plugins::QuadFaceTools
       menu.add_item( PLUGIN.commands[ :insert_loops ] )
       menu.add_item( PLUGIN.commands[ :remove_loops ] )
       menu.add_separator
+      menu.add_item( PLUGIN.commands[ :flip_edge ] )
       menu.add_item( PLUGIN.commands[ :triangulate ] )
       menu.add_item( PLUGIN.commands[ :remove_triangulation ] )
       menu.add_separator

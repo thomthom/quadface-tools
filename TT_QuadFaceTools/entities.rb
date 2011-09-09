@@ -32,8 +32,8 @@ module TT::Plugins::QuadFaceTools
     # @return [Boolean]
     # @since 0.1.0
     def self.is?( face )
-      return false unless face.valid?
       return false unless face.is_a?( Sketchup::Face )
+      return false unless face.valid?
       vertex_count = face.vertices.size
       return false if vertex_count < 3
       return false if vertex_count > 4
@@ -205,8 +205,119 @@ module TT::Plugins::QuadFaceTools
       @faces.include?( face )
     end
     
+    # @return [Boolean]
+    # @since 0.3.0
+    def flip_edge
+      if triangulated?
+        verts = vertices()
+        pts = verts.map { |v| v.position }
+        div = divider()
+        f1, f2 = @faces
+        edges1 = f1.edges - [ div ]
+        edges2 = f2.edges - [ div ]
+        e1, e2 = edges1
+        e3, e4 = edges2
+        v1 = TT::Edges.common_vertex( e1, e2 )
+        v2 = TT::Edges.common_vertex( e3, e4 )
+        i1 = verts.index( v1 )
+        # Materials
+        material_front = material()
+        material_back = back_material()
+        texture_on_front = material_front && material_front.texture
+        texture_on_back  = material_back  && material_back.texture
+        if texture_on_front || texture_on_back
+          tw = Sketchup.create_texture_writer
+          uv_front = {}
+          uv_back = {}
+          for face in @faces
+            uvh = face.get_UVHelper
+            for vertex in face.vertices
+              if texture_on_front && !uv_front[ vertex ]
+                uvq = uvh.get_front_UVQ( vertex.position )
+                uv_front[ vertex ] = TT::UVQ.normalize( uvq )
+              end
+              if texture_on_back && !uv_back[ vertex ]
+                uvq = uvh.get_back_UVQ( vertex.position )
+                uv_back[ vertex ] = TT::UVQ.normalize( uvq )
+              end
+            end
+          end
+        end
+        # Reorder points
+        p1 = i1 
+        p2 = ( p1 + 1 ) % 4
+        p3 = ( p2 + 1 ) % 4
+        p4 = ( p3 + 1 ) % 4
+        pt1 = pts[ p1 ]
+        pt2 = pts[ p2 ]
+        pt3 = pts[ p3 ]
+        pt4 = pts[ p4 ]
+        # Recreate quadface
+        entities = div.parent.entities
+        div.erase!
+        face1 = entities.add_face( pt1, pt2, pt3 )
+        face2 = entities.add_face( pt1, pt4, pt3 )
+        @faces = [ face1, face2 ]
+        div = ( face1.edges & face2.edges )[0]
+        div.soft = true
+        div.smooth = true
+        # Restore materials
+        if texture_on_front
+          for face in @faces
+            uvs = []
+            for vertex in face.vertices
+              uvs << vertex.position
+              uvs << uv_front[ vertex ]
+            end
+            face.position_material( material_front, uvs, true )
+          end
+        else
+          material = material_front
+        end
+        if texture_on_back
+          for face in @faces
+            uvs = []
+            for vertex in face.vertices
+              uvs << vertex.position
+              uvs << uv_back[ vertex ]
+            end
+            face.position_material( material_back, uvs, false )
+          end
+        else
+          back_material = material_back
+        end
+        true
+      else
+        false
+      end
+    end
+    
+    # @return [Sketchup::Material]
+    # @since 0.3.0
+    def material
+      @faces[0].material
+    end
+    
+    # @return [Sketchup::Material]
+    # @since 0.3.0
+    def material=( new_material )
+      @faces.each { |face| face.material = new_material }
+    end
+    
+    # @return [Sketchup::Material]
+    # @since 0.3.0
+    def back_material
+      @faces[0].back_material
+    end
+    
+    # @return [Sketchup::Material]
+    # @since 0.3.0
+    def back_material=( new_material )
+      @faces.each { |face| face.back_material = new_material }
+    end
+    
     # @return [String]
-    # @since 1.0.0
+    # @since 0.1.0
     def inspect
       name = self.class.name.split('::').last
       hex_id = TT.object_id_hex( self )
