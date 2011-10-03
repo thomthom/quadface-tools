@@ -14,12 +14,6 @@ module TT::Plugins::QuadFaceTools
     CLR_V_AXIS = Sketchup::Color.new( 0, 128, 0 )
     
     # @since 0.4.0
-    def self.select_tool
-      model = Sketchup.active_model
-      model.select_tool( UV_GridTool.new( UV_MapTool, model.selection ) )
-    end
-    
-    # @since 0.4.0
     def initialize
       @ip_mouse = Sketchup::InputPoint.new
       
