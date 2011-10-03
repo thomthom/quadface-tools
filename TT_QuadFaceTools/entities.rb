@@ -388,6 +388,15 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def triangulate!
       if @faces.size == 1
+        # Materials
+        material_front = material()
+        material_back = back_material()
+        texture_on_front = material_front && material_front.texture
+        texture_on_back  = material_back  && material_back.texture
+        if texture_on_front || texture_on_back
+          uv_front = uv_get()
+          uv_back = uv_get( false )
+        end
         # (?) Validation required?
         face = @faces[0]
         entities = face.parent.entities
@@ -410,6 +419,9 @@ module TT::Plugins::QuadFaceTools
         edge.smooth = true
         # Update references
         @faces = edge.faces
+        # Restore materials
+        uv_set( material_front, uv_front ) if texture_on_front
+        uv_set( material_front, uv_back, false ) if texture_on_back
         true
       else
         false
@@ -420,11 +432,24 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def detriangulate!
       if @faces.size == 2 && planar?
-        edge = ( @faces[0].edges & @faces[1].edges )[0]
-        edge.erase!
+        # Materials
+        material_front = material()
+        material_back = back_material()
+        texture_on_front = material_front && material_front.texture
+        texture_on_back  = material_back  && material_back.texture
+        if texture_on_front || texture_on_back
+          uv_front = uv_get()
+          uv_back = uv_get( false )
+        end
+        # Erase divider
+        divider().erase!
         @faces = @faces.select { |face| face.valid? }
-      else
+        # Restore materials
+        uv_set( material_front, uv_front ) if texture_on_front
+        uv_set( material_front, uv_back, false ) if texture_on_back
         true
+      else
+        false
       end
     end
     
