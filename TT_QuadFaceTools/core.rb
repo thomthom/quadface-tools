@@ -14,6 +14,20 @@ TT::Lib.compatible?( '2.5.4', 'TT QuadFace Tools' )
 
 module TT::Plugins::QuadFaceTools
   
+  ### LIB FREDO UPDATER ### ----------------------------------------------------
+  
+  def self.register_plugin_for_LibFredo6
+    {   
+      :name => PLUGIN_NAME,
+      :author => 'thomthom',
+      :version => PLUGIN_VERSION.to_s,
+      :date => '03 Oct 11',   
+      :description => @ex.description,
+      :link_info => 'https://bitbucket.org/thomthom/quadface-tools/'
+    }
+  end
+  
+  
   ### PREFERENCES ### ----------------------------------------------------------
   
   @settings = TT::Settings.new( PLUGIN_ID )

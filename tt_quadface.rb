@@ -33,12 +33,16 @@ module TT::Plugins::QuadFaceTools
   
   path = File.dirname( __FILE__ )
   core = File.join( PATH, 'core.rb' )
-  ex = SketchupExtension.new( PLUGIN_NAME, core )
-  ex.version = PLUGIN_VERSION
-  ex.copyright = 'Thomas Thomassen © 2011'
-  ex.creator = 'Thomas Thomassen (thomas@thomthom.net)'
-  ex.description = 'Suite of tools for manipulating quad faces.'
-  Sketchup.register_extension( ex, true )
+  @ex = SketchupExtension.new( PLUGIN_NAME, core )
+  @ex.version = PLUGIN_VERSION
+  @ex.copyright = 'Thomas Thomassen © 2011'
+  @ex.creator = 'Thomas Thomassen (thomas@thomthom.net)'
+  @ex.description = 'Suite of tools for manipulating quad faces.'
+  Sketchup.register_extension( @ex, true )
+  
+  def self.extension
+    @ex
+  end
   
 end # module
 
