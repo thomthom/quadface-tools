@@ -67,6 +67,16 @@ module TT::Plugins::QuadFaceTools
       edge.faces.all? { |face| self.is?( face ) }
     end
     
+    # Evaluates if the edge is part of a QuadFace.
+    #
+    # @param [Sketchup::Edge,Sketchup::Vertex] entity
+    #
+    # @return [Boolean]
+    # @since 0.4.0
+    def self.entity_in_quad?( entity )
+      entity.faces.any? { |face| self.is?( face ) }
+    end
+    
     # @param [Sketchup::Entity] entity
     #
     # @return [Boolean]
@@ -226,22 +236,8 @@ module TT::Plugins::QuadFaceTools
         texture_on_front = material_front && material_front.texture
         texture_on_back  = material_back  && material_back.texture
         if texture_on_front || texture_on_back
-          tw = Sketchup.create_texture_writer
-          uv_front = {}
-          uv_back = {}
-          for face in @faces
-            uvh = face.get_UVHelper
-            for vertex in face.vertices
-              if texture_on_front && !uv_front[ vertex ]
-                uvq = uvh.get_front_UVQ( vertex.position )
-                uv_front[ vertex ] = TT::UVQ.normalize( uvq )
-              end
-              if texture_on_back && !uv_back[ vertex ]
-                uvq = uvh.get_back_UVQ( vertex.position )
-                uv_back[ vertex ] = TT::UVQ.normalize( uvq )
-              end
-            end
-          end
+          uv_front = uv_get()
+          uv_back = uv_get( false )
         end
         # Reorder points
         p1 = i1 
@@ -263,26 +259,12 @@ module TT::Plugins::QuadFaceTools
         div.smooth = true
         # Restore materials
         if texture_on_front
-          for face in @faces
-            uvs = []
-            for vertex in face.vertices
-              uvs << vertex.position
-              uvs << uv_front[ vertex ]
-            end
-            face.position_material( material_front, uvs, true )
-          end
+          uv_set( material_front, uv_front )
         else
           material = material_front
         end
         if texture_on_back
-          for face in @faces
-            uvs = []
-            for vertex in face.vertices
-              uvs << vertex.position
-              uvs << uv_back[ vertex ]
-            end
-            face.position_material( material_back, uvs, false )
-          end
+          uv_set( material_front, uv_back, false )
         else
           back_material = material_back
         end
@@ -446,12 +428,54 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
+    # @since 0.4.0
+    def uv_get( front = true )
+      tw = Sketchup.create_texture_writer
+      mapping = {}
+      for face in @faces
+        uvh = face.get_UVHelper
+        for vertex in face.vertices
+          next if mapping[ vertex ]
+          if front
+            uvq = uvh.get_front_UVQ( vertex.position )
+          else
+            uvq = uvh.get_back_UVQ( vertex.position )
+          end
+          mapping[ vertex ] = TT::UVQ.normalize( uvq )
+        end
+      end
+      mapping
+    end
+    
+    # @since 0.4.0
+    def uv_set( new_material, mapping, front = true )
+      unless new_material && new_material.texture
+        material = new_material
+        return false
+      end
+      for face in @faces
+        uvs = []
+        for vertex in face.vertices
+          uvs << vertex.position
+          uvs << mapping[ vertex ]
+        end
+        face.position_material( new_material, uvs, front )
+      end
+      true
+    end
+    
     # @return [Array<Sketchup::Vertices>]
     # @since 0.1.0
     def vertices
       # .uniq because .sort_vertices return the first vertex twice when the eges
       # form a loop.
       TT::Edges.sort_vertices( outer_loop() ).uniq
+    end
+    
+    # @return [Array<Geom::Point3d>]
+    # @since 0.4.0
+    def positions
+      vertices.map { |vertex| vertex.position }
     end
     
     # @return [Boolean]

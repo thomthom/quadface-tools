@@ -8,7 +8,7 @@
 require 'sketchup.rb'
 require 'TT_Lib2/core.rb'
 
-TT::Lib.compatible?('2.5.4', 'TT QuadFace Tools')
+TT::Lib.compatible?( '2.5.4', 'TT QuadFace Tools' )
 
 #-------------------------------------------------------------------------------
 
@@ -17,9 +17,23 @@ module TT::Plugins::QuadFaceTools
   ### PREFERENCES ### ----------------------------------------------------------
   
   @settings = TT::Settings.new( PLUGIN_ID )
+  # UI
   @settings.set_default( :context_menu, false )
+  # Connect Edge
   @settings.set_default( :connect_splits, 1 )
   @settings.set_default( :connect_pinch, 0 )
+  # UV Mapping
+  @settings.set_default( :uv_draw_uv_grid, false )
+  @settings.set_default( :uv_continuous, true )
+  @settings.set_default( :uv_scale_proportional, false )
+  @settings.set_default( :uv_scale_absolute, false )
+  if @settings[ :uv_scale_absolute ]
+    @settings.set_default( :uv_u_scale, 500.mm )
+    @settings.set_default( :uv_v_scale, 500.mm )
+  else
+    @settings.set_default( :uv_u_scale, 1.0 )
+    @settings.set_default( :uv_v_scale, 1.0 )
+  end
   
   def self.settings; @settings; end
 
@@ -28,6 +42,7 @@ module TT::Plugins::QuadFaceTools
   
   require File.join( PATH, 'entities.rb' )
   require File.join( PATH, 'tools.rb' )
+  require File.join( PATH, 'uv_mapping.rb' )
   require File.join( PATH, 'edge_connect.rb' )
   require File.join( PATH, 'mesh_converter.rb' )
   require File.join( PATH, 'gl.rb' )
@@ -207,6 +222,26 @@ module TT::Plugins::QuadFaceTools
     cmd_make_planar = cmd
     @commands[:make_planar] = cmd
     
+    cmd = UI::Command.new( 'UV Map' )  {
+      self.uv_map_tool
+    }
+    cmd.small_icon = File.join( PATH_ICONS, 'UV_Map_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'UV_Map_24.png' )
+    cmd.status_bar_text = 'UV Map selected Quads.'
+    cmd.tooltip = 'UV Map selected Quads'
+    cmd_uv_map = cmd
+    @commands[:uv_map] = cmd
+    
+    cmd = UI::Command.new( 'UV Transfer' )  {
+      UI.beep
+    }
+    cmd.small_icon = File.join( PATH_ICONS, 'UV_Transfer_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'UV_Transfer_24.png' )
+    cmd.status_bar_text = 'Transfer UV mapping from one quad-mesh to another.'
+    cmd.tooltip = 'Transfer UV mapping from one quad-mesh to another'
+    cmd_uv_transfer = cmd
+    @commands[:uv_transfer] = cmd
+    
     cmd = UI::Command.new( 'Context Menu' )  {
       @settings[ :context_menu ] = !@settings[ :context_menu ]
     }
@@ -243,6 +278,9 @@ module TT::Plugins::QuadFaceTools
     m.add_separator
     m.add_item( cmd_make_planar )
     m.add_separator
+    m.add_item( cmd_uv_map )
+    m.add_item( cmd_uv_transfer )
+    m.add_separator
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
     sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
@@ -276,6 +314,9 @@ module TT::Plugins::QuadFaceTools
         m.add_separator
         m.add_item( cmd_make_planar )
         m.add_separator
+        m.add_item( cmd_uv_map )
+        m.add_item( cmd_uv_transfer )
+        m.add_separator
         sub_menu = m.add_submenu( 'Convert' )
         sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
         sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
@@ -304,6 +345,9 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_flip_edge )
     toolbar.add_item( cmd_triangulate_selection )
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
+    toolbar.add_separator
+    toolbar.add_item( cmd_uv_map )
+    toolbar.add_item( cmd_uv_transfer )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -328,6 +372,13 @@ module TT::Plugins::QuadFaceTools
   # @since 0.3.0
   def self.flip_edge_tool
     Sketchup.active_model.select_tool( FlipEdgeTool.new )
+  end
+  
+  
+  # @since 0.4.0
+  def self.uv_map_tool
+    #Sketchup.active_model.select_tool( UV_Grid.new( UV_Map ) )
+    UV_MapTool.select_tool
   end
   
   
@@ -951,6 +1002,9 @@ module TT::Plugins::QuadFaceTools
     # Get connected faces
     valid_faces = edge.faces.select { |f| QuadFace.is?( f ) }
     quads = valid_faces.map { |face| QuadFace.new( face ) }
+  end
+  class << self
+    alias :connected_quads :connected_quad_faces
   end
   
   
