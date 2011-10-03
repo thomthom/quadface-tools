@@ -8,6 +8,139 @@
 module TT::Plugins::QuadFaceTools
   
   # @since 0.4.0
+  class UV_CopyTool
+    
+    @@clipboard = nil
+    
+    # @since 0.4.0
+    def self.clipboard
+      @@clipboard
+    end
+    
+    # @since 0.4.0
+    def initialize
+      @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
+    end
+    
+    # @since 0.4.0
+    def activate
+      if @uv_grid.mapping
+        copy_uv( @uv_grid )
+        Sketchup.active_model.select_tool( nil )
+      else
+        Sketchup.active_model.tools.push_tool( @uv_grid )
+      end
+    end
+    
+    # @since 0.4.0
+    def resume( view )
+      view.invalidate
+    end
+    
+    # @since 0.4.0
+    def deactivate( view )
+      view.invalidate
+    end
+    
+    # @param [Array<Hash>] grid
+    #
+    # @return [Nil]
+    # @since 0.4.0
+    def copy_uv( grid, front = true )
+      uv_mapping = {}
+      for data in grid.mapping
+        coordinate = data[ :coordinate ]
+        quad = data[ :quad ]
+        vertices = grid.ordered_vertices( data )
+        source_uv = quad.uv_get( front )
+        new_uv = Array.new( 4 )
+        for vertex, uv in source_uv
+          index = vertices.index( vertex )
+          new_uv[ index ] = uv
+        end
+        uv_mapping[ coordinate ] = {
+          :material => quad.material,
+          :uv_mapping => new_uv
+        }
+      end
+      @@clipboard = uv_mapping
+      nil
+    end
+  
+  end # class UV_TransferTool
+  
+  
+  # @since 0.4.0
+  class UV_PasteTool
+    
+    # @since 0.4.0
+    def initialize
+      @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
+    end
+    
+    # @since 0.4.0
+    def activate
+      if @uv_grid.mapping
+        paste_uv( @uv_grid )
+        Sketchup.active_model.select_tool( nil )
+      else
+        Sketchup.active_model.tools.push_tool( @uv_grid )
+      end
+    end
+    
+    # @since 0.4.0
+    def resume( view )
+      view.invalidate
+    end
+    
+    # @since 0.4.0
+    def deactivate( view )
+      view.invalidate
+    end
+    
+    # @param [Array<Hash>] grid
+    #
+    # @return [Nil]
+    # @since 0.4.0
+    def paste_uv( grid, front = true )
+      TT::Model.start_operation( 'Paste UV Mapping' )
+      uv_mapping = UV_CopyTool.clipboard
+      for data in grid.mapping
+        coordinate = data[ :coordinate ]
+        quad = data[ :quad ]
+        # Fetch data from clipboard source
+        source_data = uv_mapping[ coordinate ]
+        next unless source_data
+        material = source_data[ :material ]
+        # Validate Material
+        next unless TT::Material.in_model?( material )
+        # Apply Material
+        if material && material.texture
+          vertices = grid.ordered_vertices( data )
+          uv_data = source_data[ :uv_mapping ]
+          new_uv = {}
+          for i in ( 0..3 )
+            vertex = vertices[i]
+            uv = uv_data[i]
+            new_uv[ vertex ] = uv
+          end
+          quad.uv_set( material, new_uv, front )
+        else
+          if front
+            quad.material = material
+          else
+            quad.back_material = material
+          end
+        end
+      end
+      Sketchup.active_model.commit_operation
+      nil
+    end
+  
+  end # class UV_TransferTool
+  
+  
+  # @since 0.4.0
   class UV_MapTool
     
     CLR_U_AXIS = Sketchup::Color.new( 192, 0, 0 )
@@ -782,7 +915,7 @@ module TT::Plugins::QuadFaceTools
         @v_edge = @mouse_edge if @mouse_edge
         @valid_pick = nil
         @mapping = compute_mapping()
-        puts '> Pushing child tool...'
+        #puts '> Pushing child tool...'
         view.model.tools.push_tool( @child_tool )
         @mouse_origin = nil
         @mouse_edge = nil
@@ -1232,6 +1365,23 @@ module TT::Plugins::QuadFaceTools
         :v2_edge => next_v2,
         :coordinate => [ next_x, next_y ]
       }
+    end
+    
+    # @param [Hash] data
+    #
+    # @return [Array<Sketchup::Vertex>]
+    # @since 0.4.0
+    def ordered_vertices( data )
+      vertices = []
+      u1 = data[ :u_edge ]
+      v1 = data[ :v_edge ]
+      u2 = data[ :u2_edge ]
+      v2 = data[ :v2_edge ]
+      vertices << TT::Edges.common_vertex( u1, v1 )
+      vertices << u1.other_vertex( vertices[0] )
+      vertices << v1.other_vertex( vertices[0] )
+      vertices << u2.other_vertex( vertices[2] )
+      vertices
     end
     
   end # class UV_GridTool

@@ -232,15 +232,28 @@ module TT::Plugins::QuadFaceTools
     cmd_uv_map = cmd
     @commands[:uv_map] = cmd
     
-    cmd = UI::Command.new( 'UV Transfer' )  {
-      UI.beep
+    cmd = UI::Command.new( 'UV Copy' )  {
+      self.uv_copy_tool
     }
-    cmd.small_icon = File.join( PATH_ICONS, 'UV_Transfer_16.png' )
-    cmd.large_icon = File.join( PATH_ICONS, 'UV_Transfer_24.png' )
-    cmd.status_bar_text = 'Transfer UV mapping from one quad-mesh to another.'
-    cmd.tooltip = 'Transfer UV mapping from one quad-mesh to another'
-    cmd_uv_transfer = cmd
-    @commands[:uv_transfer] = cmd
+    cmd.small_icon = File.join( PATH_ICONS, 'UV_Copy_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'UV_Copy_24.png' )
+    cmd.status_bar_text = 'Copy UV mapping from a quad-mesh.'
+    cmd.tooltip = 'Copy UV mapping from a quad-mesh'
+    cmd_uv_copy = cmd
+    @commands[:uv_copy] = cmd
+    
+    cmd = UI::Command.new( 'UV Paste' )  {
+      self.uv_paste_tool
+    }
+    cmd.set_validation_proc  {
+      ( UV_CopyTool.clipboard ) ? MF_ENABLED : MF_GRAYED
+    }
+    cmd.small_icon = File.join( PATH_ICONS, 'UV_Paste_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'UV_Paste_24.png' )
+    cmd.status_bar_text = 'Paste UV mapping to a quad-mesh.'
+    cmd.tooltip = 'Paste UV mapping to a quad-mesh'
+    cmd_uv_paste = cmd
+    @commands[:uv_paste] = cmd
     
     cmd = UI::Command.new( 'Context Menu' )  {
       @settings[ :context_menu ] = !@settings[ :context_menu ]
@@ -279,7 +292,8 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_make_planar )
     m.add_separator
     m.add_item( cmd_uv_map )
-    m.add_item( cmd_uv_transfer )
+    m.add_item( cmd_uv_copy )
+    m.add_item( cmd_uv_paste )
     m.add_separator
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
@@ -315,7 +329,8 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_make_planar )
         m.add_separator
         m.add_item( cmd_uv_map )
-        m.add_item( cmd_uv_transfer )
+        m.add_item( cmd_uv_copy )
+        m.add_item( cmd_uv_paste )
         m.add_separator
         sub_menu = m.add_submenu( 'Convert' )
         sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
@@ -347,7 +362,8 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
     toolbar.add_separator
     toolbar.add_item( cmd_uv_map )
-    toolbar.add_item( cmd_uv_transfer )
+    toolbar.add_item( cmd_uv_copy )
+    toolbar.add_item( cmd_uv_paste )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -377,9 +393,18 @@ module TT::Plugins::QuadFaceTools
   
   # @since 0.4.0
   def self.uv_map_tool
-    #Sketchup.active_model.select_tool( UV_Grid.new( UV_MapTool ) )
-    #UV_MapTool.select_tool
     Sketchup.active_model.select_tool( UV_MapTool.new )
+  end
+  
+  
+  # @since 0.4.0
+  def self.uv_copy_tool
+    Sketchup.active_model.select_tool( UV_CopyTool.new )
+  end
+  
+  # @since 0.4.0
+  def self.uv_paste_tool
+    Sketchup.active_model.select_tool( UV_PasteTool.new )
   end
   
   

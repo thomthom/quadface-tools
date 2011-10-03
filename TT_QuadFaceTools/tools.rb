@@ -646,7 +646,8 @@ module TT::Plugins::QuadFaceTools
       menu.add_separator
       menu.add_separator
       menu.add_item( PLUGIN.commands[ :uv_map ] )
-      menu.add_item( PLUGIN.commands[ :uv_transfer ] )
+      menu.add_item( PLUGIN.commands[ :uv_copy ] )
+      menu.add_item( PLUGIN.commands[ :uv_paste ] )
       menu.add_separator
       sub_menu = menu.add_submenu( 'Convert' )
       sub_menu.add_item( PLUGIN.commands[ :mesh_to_quads ] )
