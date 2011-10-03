@@ -220,6 +220,14 @@ module TT::Plugins::QuadFaceTools
     cmd_convert_blender_quads_to_sketchup_quads = cmd
     @commands[:blender_to_quads] = cmd
     
+    cmd = UI::Command.new( 'QuadFace R1 to QuadFace R2' )  {
+      self.convert_quadmesh_r1_to_r2
+    }
+    cmd.status_bar_text = 'Convert Quads from Revision 1 definition to Revision 2.'
+    cmd.tooltip = 'Convert Quads from Revision 1 definition to Revision 2'
+    cmd_convert_quadmesh_r1_to_r2 = cmd
+    @commands[:quad_r1_to_r2] = cmd
+    
     cmd = UI::Command.new( 'Smooth Quads' )  {
       self.smooth_quad_mesh
     }
@@ -321,6 +329,8 @@ module TT::Plugins::QuadFaceTools
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
     sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
+    sub_menu.add_separator
+    sub_menu.add_item( cmd_convert_quadmesh_r1_to_r2 )
     m.add_separator
     sub_menu = m.add_submenu( 'Preferences' )
     sub_menu.add_item( cmd_toggle_context_menu )
@@ -359,6 +369,8 @@ module TT::Plugins::QuadFaceTools
         sub_menu = m.add_submenu( 'Convert' )
         sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
         sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
+        sub_menu.add_separator
+        sub_menu.add_item( cmd_convert_quadmesh_r1_to_r2 )
       end
     }
     
@@ -671,6 +683,39 @@ module TT::Plugins::QuadFaceTools
   rescue
     model.abort_operation
     raise
+  end
+  
+  
+  # In QuadFace 0.3 and older a quad was defined as:
+  # * Native quad
+  # * Two triangles with a soft dividing edge and non-soft edges.
+  #
+  # In QuadFace 0.4 the definition was updated to:
+  # * Native quad
+  # * Two triangles with smooth + soft + hidden divider. Border edges can have
+  #   any of the properties as long as they don't use them all at the same time.
+  #
+  # @since 0.4.0
+  def self.convert_quadmesh_r1_to_r2
+    model = Sketchup.active_model
+    selection = model.selection
+    TT::Model.start_operation( 'Convert Revision 1 quads to Revision 2' )
+    # Only triangualted quads needs converting.
+    for face in selection
+      next unless face.is_a?( Sketchup::Face )
+      next unless face.vertices.size == 3
+      soft_edges = face.edges.select { |e| e.soft? }
+      next unless soft_edges.size == 1
+      divider = soft_edges[0]
+      next unless divider.faces.size == 2
+      other_face = ( divider.faces - [ face ] )[0]
+      next unless other_face.edges.size == 3
+      next unless other_face.edges.select { |e| e.soft? }.size == 1
+      divider.soft = true
+      divider.smooth = true
+      divider.hidden = true
+    end
+    model.commit_operation
   end
   
   
