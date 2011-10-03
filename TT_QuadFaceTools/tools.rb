@@ -632,6 +632,7 @@ module TT::Plugins::QuadFaceTools
       menu.add_item( PLUGIN.commands[ :select_ring ] )
       menu.add_item( PLUGIN.commands[ :select_loop ] )
       menu.add_item( PLUGIN.commands[ :region_to_loop ] )
+      menu.add_item( PLUGIN.commands[ :select_quads_from_edges ] )
       menu.add_separator
       menu.add_item( PLUGIN.commands[ :smooth_quads ] )
       menu.add_item( PLUGIN.commands[ :unsmooth_quads ] )

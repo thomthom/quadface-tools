@@ -148,6 +148,14 @@ module TT::Plugins::QuadFaceTools
     cmd_region_to_loop = cmd
     @commands[:region_to_loop] = cmd
     
+    cmd = UI::Command.new( 'Select Quads from Edges' )  {
+      self.select_quads_from_edges
+    }
+    cmd.status_bar_text = 'Selects quads with two or more edges selected.'
+    cmd.tooltip = 'Selects quads with two or more edges selected'
+    cmd_select_quads_from_edges = cmd
+    @commands[:select_quads_from_edges] = cmd
+    
     cmd = UI::Command.new( 'Connect Edges' )   { self.connect_tool }
     cmd.small_icon = File.join( PATH_ICONS, 'Connect_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Connect_24.png' )
@@ -291,6 +299,7 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_select_ring )
     m.add_item( cmd_select_loop )
     m.add_item( cmd_region_to_loop )
+    m.add_item( cmd_select_quads_from_edges )
     m.add_separator
     m.add_item( cmd_smooth_quad_mesh )
     m.add_item( cmd_unsmooth_quad_mesh )
@@ -326,6 +335,7 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_select_ring )
         m.add_item( cmd_select_loop )
         m.add_item( cmd_region_to_loop )
+        m.add_item( cmd_select_quads_from_edges )
         # (i) Loop stepping menu items removed as they are too impractical to
         #     operate via menus which require multiple clicks to trigger.
         m.add_separator
@@ -419,6 +429,28 @@ module TT::Plugins::QuadFaceTools
   # @since 0.4.0
   def self.uv_paste_tool
     Sketchup.active_model.select_tool( UV_PasteTool.new )
+  end
+  
+  
+  # @since 0.4.0
+  def self.select_quads_from_edges
+    model = Sketchup.active_model
+    selection = model.selection
+    faces = {}
+    # Find quads with two or more edges selected
+    for entity in selection
+      next unless entity.is_a?( Sketchup::Edge )
+      for face in entity.faces
+        next if faces[ face ]
+        next unless QuadFace.is?( face )
+        quad = QuadFace.new( face )
+        for f in quad.faces
+          faces[ f ] = f
+        end
+      end
+    end
+    # Select
+    selection.add( faces.keys )
   end
   
   
