@@ -377,8 +377,9 @@ module TT::Plugins::QuadFaceTools
   
   # @since 0.4.0
   def self.uv_map_tool
-    #Sketchup.active_model.select_tool( UV_Grid.new( UV_Map ) )
-    UV_MapTool.select_tool
+    #Sketchup.active_model.select_tool( UV_Grid.new( UV_MapTool ) )
+    #UV_MapTool.select_tool
+    Sketchup.active_model.select_tool( UV_MapTool.new )
   end
   
   

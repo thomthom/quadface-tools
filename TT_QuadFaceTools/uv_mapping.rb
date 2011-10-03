@@ -20,7 +20,7 @@ module TT::Plugins::QuadFaceTools
     end
     
     # @since 0.4.0
-    def initialize( parent_uv_grid )
+    def initialize
       @ip_mouse = Sketchup::InputPoint.new
       
       @u_axis = nil # Array<Vertex>
@@ -38,8 +38,7 @@ module TT::Plugins::QuadFaceTools
       @u_handle_mouse = false
       @v_handle_mouse = false
       
-      @uv_grid = parent_uv_grid
-      calculate_axes()
+      @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
     end
     
     # @since 0.4.0
@@ -49,22 +48,28 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.4.0
     def activate
-      puts 'UVMapTool'
-      
-      @draw_uv_grid = PLUGIN.settings[ :uv_draw_uv_grid ]
-      @continuous = PLUGIN.settings[ :uv_continuous ]
-      @scale_proportional = PLUGIN.settings[ :uv_scale_proportional ]
-      @u_scale = PLUGIN.settings[ :uv_u_scale ]
-      @v_scale = PLUGIN.settings[ :uv_v_scale ]
-      
-      @u_handle = point_on_axis( @u_origin, @u_axis, @u_scale )
-      @v_handle = point_on_axis( @v_origin, @v_axis, @v_scale )
-      
-      TT::Model.start_operation( 'UV Map Quads' )
-      map_mesh()
-      Sketchup.active_model.commit_operation
-      
-      update_ui()
+      #puts 'UVMapTool'
+      if @uv_grid.mapping
+        #puts '> Mapping...'
+        @draw_uv_grid = PLUGIN.settings[ :uv_draw_uv_grid ]
+        @continuous = PLUGIN.settings[ :uv_continuous ]
+        @scale_proportional = PLUGIN.settings[ :uv_scale_proportional ]
+        @u_scale = PLUGIN.settings[ :uv_u_scale ]
+        @v_scale = PLUGIN.settings[ :uv_v_scale ]
+        
+        calculate_axes()
+        @u_handle = point_on_axis( @u_origin, @u_axis, @u_scale )
+        @v_handle = point_on_axis( @v_origin, @v_axis, @v_scale )
+        
+        TT::Model.start_operation( 'UV Map Quads' )
+        map_mesh()
+        Sketchup.active_model.commit_operation
+        
+        update_ui()
+      else
+        #puts '> No Grid'
+        Sketchup.active_model.tools.push_tool( @uv_grid )
+      end
     end
     
     # @since 0.4.0
@@ -183,7 +188,7 @@ module TT::Plugins::QuadFaceTools
       @v_scale = v
       @u_handle = point_on_axis( @u_origin, @u_axis, @u_scale )
       @v_handle = point_on_axis( @v_origin, @v_axis, @v_scale )
-      TT::Model.start_operation( 'UV Map Quads' )
+      TT::Model.start_operation( 'Change UV Scale' )
       map_mesh()
       view.model.commit_operation
       update_ui()
@@ -306,6 +311,7 @@ module TT::Plugins::QuadFaceTools
       }
     end
     
+    # @return [Nil]
     # @since 0.4.0
     def update_ui
       Sketchup.status_text = 'Set U and V mapping scale.'
@@ -320,6 +326,7 @@ module TT::Plugins::QuadFaceTools
         v = format_float( @v_scale, 2 )
       end
       Sketchup.vcb_value = "#{u}#{list_separator} #{v}"
+      nil
     end
     
     # @note Taken from TT_Lib2 temporarily as 2.5 is bugged.
@@ -338,6 +345,12 @@ module TT::Plugins::QuadFaceTools
       num
     end
     
+    # @param [Array<Sketchup::Vertex>] axis
+    # @param [Integer] x
+    # @param [Integer] y
+    # @param [Sketchup::View] view
+    #
+    # @return [Sketchup::InputPoint,Nil]
     # @since 0.4.0
     def pick_on_axis( axis, x, y, view )
       ip = view.inputpoint( x, y )
@@ -356,6 +369,11 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
+    # @param [Geom::Point3d] point
+    # @param [Array<Sketchup::Vertex>] axis
+    # @param [Integer] origin Index of origin vertex in axis
+    #
+    # @return [Length,Nil]
     # @since 0.4.0
     def point_on_axis_to_length( point, axis, origin = 0 )
       length = 0.to_l
@@ -371,6 +389,11 @@ module TT::Plugins::QuadFaceTools
       return nil
     end
     
+    # @param [Geom::Point3d] point
+    # @param [Array<Sketchup::Vertex>] axis
+    # @param [Integer] origin Index of origin vertex in axis
+    #
+    # @return [Float,Nil]
     # @since 0.4.0
     def point_on_axis_to_ratio( point, axis, origin = 0 )
       ratio = 0.0
@@ -388,6 +411,9 @@ module TT::Plugins::QuadFaceTools
       return nil
     end
     
+    # @param [Sketchup::InputPoint] ip
+    #
+    # @return [Nil]
     # @since 0.4.0
     def scale_u( ip )
       if @u_scale.is_a?( Length )
@@ -411,6 +437,9 @@ module TT::Plugins::QuadFaceTools
       update_ui()
     end
     
+    # @param [Sketchup::InputPoint] ip
+    #
+    # @return [Nil]
     # @since 0.4.0
     def scale_v( ip )
       if @v_scale.is_a?( Length )
@@ -434,17 +463,22 @@ module TT::Plugins::QuadFaceTools
       update_ui()
     end
     
+    # @return [Nil]
     # @since 0.4.0
     def calculate_axes
       origin = @uv_grid.origin
       u_edge = @uv_grid.u_edge
       v_edge = @uv_grid.v_edge
       
-      @u_axis = get_axis( origin, u_edge )
-      @v_axis = get_axis( origin, v_edge )
+      axes = get_axes( @uv_grid.mapping )
+      #Sketchup.active_model.selection.add( axes.x )
+      #Sketchup.active_model.selection.add( axes.y )
+      @u_axis = get_axis( axes.x, origin, u_edge )
+      @v_axis = get_axis( axes.y, origin, v_edge )
       
       @u_origin = @u_axis.index( origin )
       @v_origin = @v_axis.index( origin )
+      nil
     end
     
     # @return [Nil]
@@ -452,11 +486,8 @@ module TT::Plugins::QuadFaceTools
     def map_mesh
       if @continuous && @uv_grid.get_mapping_grid( @uv_grid.mapping )
         # Continuous Mapping
-        #puts 'Grid Mapping'
         if @u_scale.is_a?( Length )
-          #puts 'U Mapping'
           u_mapping = map_axis_to_uv( @u_origin, @u_axis, @u_scale )
-          #puts 'V Mapping'
           v_mapping = map_axis_to_uv( @v_origin, @v_axis, @v_scale )
           @uv_grid.map_grid_by_length( @uv_grid.mapping, u_mapping, v_mapping )
         else
@@ -464,7 +495,6 @@ module TT::Plugins::QuadFaceTools
         end
       else
         # Induvidual Mapping
-        #puts 'No Grid'
         @uv_grid.map_mesh_induvidually( @uv_grid.mapping, @u_scale, @v_scale )
       end
       nil
@@ -477,7 +507,6 @@ module TT::Plugins::QuadFaceTools
     # @return [Hash]
     # @since 0.4.0
     def point_on_axis( origin_index, axis, length )
-      #raise( ArgumentError, 'Scale must be Length.' ) unless length.is_a?( Length )
       if @u_scale.is_a?( Length )
         total_length = 0.to_l
         origin_index.upto( axis.size-2 ) { |i|
@@ -498,6 +527,7 @@ module TT::Plugins::QuadFaceTools
         return nil unless index <= axis.size
         v1 = axis[ index ]
         v2 = axis[ index + 1 ]
+        return nil unless v1 && v2
         edge = v1.common_edge( v2 )
         ratio = ( 1.0 / length ) % 1.0
         distance = edge.length * ratio
@@ -557,17 +587,14 @@ module TT::Plugins::QuadFaceTools
       mapping
     end
     
-    # @param [Sketchup::Vertex] origin
-    # @param [Sketchup::Edge] edge
+    # @param [Array<Sketchup::Edge>] axis Unsorted array of edges.
+    # @param [Sketchup::Vertex] origin A vertex from one of the edges in +axis+.
+    # @param [Sketchup::Edge] edge Connected to +origin+.
     #
     # @return [Array<Sketchup::Vertex>]
     # @since 0.4.0
-    def get_axis( origin, edge )
-      # (?) Better way to get the axis's edges?
-      #     Use the mapped grid to get the edges as the loop might not follow
-      #     the grid.
-      loop = PLUGIN.find_edge_loop( edge )
-      sorted_loop = TT::Edges.sort( loop )
+    def get_axis( axis, origin, edge )
+      sorted_loop = TT::Edges.sort( axis )
       vertices = TT::Edges.sort_vertices( sorted_loop )
       index = vertices.index( origin )
       next_index = vertices.index( edge.other_vertex( origin ) )
@@ -589,12 +616,64 @@ module TT::Plugins::QuadFaceTools
       vertices
     end
     
+    # @param [Array<Hash>] mapping_set
+    #
+    # @return [Array<Array<Sketchup::Edge>,Array<Sketchup::Edge>]
+    # @since 0.4.0
+    def get_axes( mapping_set )
+      # Check for loops
+      looping_u = true
+      looping_v = true
+      # (!) In Looping rows the coordinates might not align themselves if there
+      #     is a hole in the mesh on the positive side of the axis. The mapping
+      #     shifts due to the way it traverses the mesh.
+      #max_u = 0
+      #max_v = 0
+      for data in mapping_set
+        u = data[ :coordinate ].x
+        v = data[ :coordinate ].y
+        looping_u = false if u < 0
+        looping_v = false if v < 0
+        #max_u = u if u > max_u
+        #max_v = v if v > max_v
+      end
+      u_axis = []
+      v_axis = []
+      for data in mapping_set
+        u = data[ :coordinate ].x
+        v = data[ :coordinate ].y
+        if u == 0
+          v_axis << data[ :v_edge ]
+        end
+        if v == 0
+          u_axis << data[ :u_edge ]
+        end
+        if looping_u
+          #v_axis << data[ :v2_edge ] if u == max_u
+        else
+          v_axis << data[ :v2_edge ] if u == -1
+        end
+        if looping_v
+          #u_axis << data[ :u2_edge ] if v == max_v
+        else
+          u_axis << data[ :u2_edge ] if v == -1
+        end
+      end
+      [ u_axis.uniq, v_axis.uniq ]
+    end
+    
   end # class UV_MapTool
   
   
   # Tool class used to pick the origin, u and v direction for the UV mapping
   # of a mesh. Once that is picked a second tool is pushed to the tool stack
   # and takes over the processing.
+  #
+  # The tool requires the user to pick a point of origin and U and V direction.
+  # From that, the quad-mesh is traversed and mapped into a 2D grid if possible.
+  #
+  # When a 2D grid has been mapped, it can be traversed and addressed using
+  # simple X,Y coordinates. This predictabilty makes it easy to map the mesh.
   #
   # @since 0.4.0
   class UV_GridTool
@@ -609,12 +688,15 @@ module TT::Plugins::QuadFaceTools
       Sketchup::Color.new( 0, 0, 192, 40 )
     ]
     
-    attr_reader( :mapping )
+    attr_reader( :mapping, :contraints )
     attr_reader( :origin, :u_edge, :v_edge )
     
+    # @param [Sketchup::Tool] parent_tool
+    # @param [Enumerable] contraints Set of faces to contrain mapping to.
+    #
     # @since 0.4.0
-    def initialize( tool_class, contraints = [] )
-      @child_tool = tool_class#.new( self )
+    def initialize( parent_tool, contraints = [] )
+      @child_tool = parent_tool
       
       @origin = nil
       @u_edge = nil
@@ -639,7 +721,7 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.4.0
     def activate
-      puts 'UV_Grid'
+      #puts 'UV_Grid'
       update_ui()
     end
     
@@ -706,10 +788,8 @@ module TT::Plugins::QuadFaceTools
         @v_edge = @mouse_edge if @mouse_edge
         @valid_pick = nil
         @mapping = compute_mapping()
-        #map_mesh( @mapping )
         puts '> Pushing child tool...'
-        view.model.tools.push_tool( @child_tool.new( self ) )
-        #view.invalidate
+        view.model.tools.push_tool( @child_tool )
         @mouse_origin = nil
         @mouse_edge = nil
         @ip_mouse.clear
@@ -826,8 +906,6 @@ module TT::Plugins::QuadFaceTools
       
     end
     
-    #private
-    
     # @since 0.4.0
     def update_ui
       if state_pick_origin?
@@ -836,8 +914,6 @@ module TT::Plugins::QuadFaceTools
         Sketchup.status_text = %{Pick an edge for U direction.}
       elsif state_pick_v?
         Sketchup.status_text = %{Pick an edge for V direction.}
-      #else
-      #  Sketchup.status_text = %{Set U and V mapping scale.}
       end
     end
     
@@ -862,7 +938,7 @@ module TT::Plugins::QuadFaceTools
     # However, meshes with E and N poles will not be able to generate a 2D
     # grid. In such cases this method return nil.
     #
-    # @param [Array<Hash>]
+    # @param [Array<Hash>] mapping_set
     #
     # @return [Hash,Nil]
     # @since 0.4.0
@@ -876,7 +952,12 @@ module TT::Plugins::QuadFaceTools
       grid
     end
     
-    # @param [Array<Hash>]
+    # Maps each quad induvidually without any regard to continuity between the
+    # quads.
+    #
+    # @param [Array<Hash>] mapping_set
+    # @param [Float,Length] u_scale
+    # @param [Float,Length] v_scale
     #
     # @return [Boolean]
     # @since 0.4.0
@@ -920,7 +1001,12 @@ module TT::Plugins::QuadFaceTools
       true
     end
     
-    # @param [Array<Hash>]
+    # Maps the set of quads based on relative ratios, keeping continutity
+    # between the quads.
+    #
+    # @param [Array<Hash>] mapping_set
+    # @param [Float] u_scale
+    # @param [Float] v_scale
     #
     # @return [Boolean]
     # @since 0.4.0
@@ -931,7 +1017,6 @@ module TT::Plugins::QuadFaceTools
         UI.messagebox( 'Selected material is not added to the model yet.' )
         return false
       end
-      #TT::Model.start_operation( 'UV Map Quads' )
       Sketchup.status_text = 'UV Mapping Quads...'
       for data in mapping_set
         quad = data[ :quad ]
@@ -961,11 +1046,15 @@ module TT::Plugins::QuadFaceTools
         }
         quad.uv_set( material, mapping )
       end
-      #model.commit_operation
       true
     end
     
-    # @param [Array<Hash>]
+    # Maps the set of quads based on absolute length along the U and V axes,
+    # keeping continutity between the quads.
+    #
+    # @param [Array<Hash>] mapping_set
+    # @param [Length] u_scale
+    # @param [Length] v_scale
     #
     # @return [Boolean]
     # @since 0.4.0
@@ -976,7 +1065,6 @@ module TT::Plugins::QuadFaceTools
         UI.messagebox( 'Selected material is not added to the model yet.' )
         return false
       end
-      #TT::Model.start_operation( 'UV Map Quads' )
       Sketchup.status_text = 'UV Mapping Quads...'
       for data in mapping_set
         quad = data[ :quad ]
@@ -1007,15 +1095,15 @@ module TT::Plugins::QuadFaceTools
         }
         quad.uv_set( material, mapping )
       end
-      #model.commit_operation
       true
     end
     
+    # Traverse the connected mesh of the picked origin and attempts to map it
+    # to a 2D grid.
+    #
     # @return [Array<Hash>]
     # @since 0.4.0
     def compute_mapping
-      # (!) Check for selection contraint.
-      
       # Prepare origin quad
       u_quads = PLUGIN.connected_quad_faces( @u_edge )
       origin_quad = u_quads.find { |quad| quad.edges.include?( @v_edge ) }
@@ -1087,8 +1175,10 @@ module TT::Plugins::QuadFaceTools
       mapped
     end
     
-    # @param [Hash] data Origin dataset connected to +edge+.
-    # @param [Sketchup::Edge] edge
+    # Determines the next quad based on the source.
+    #
+    # @param [Hash] data Origin dataset connected to +common_edge+.
+    # @param [Sketchup::Edge] common_edge
     # @param [Array<Sketchup::Face>] processed Already processed faces.
     #
     # @return [Hash,False]
