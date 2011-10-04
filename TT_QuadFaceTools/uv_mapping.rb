@@ -8,6 +8,173 @@
 module TT::Plugins::QuadFaceTools
   
   # @since 0.4.0
+  class UV_UnwrapGridTool
+    
+    # @since 0.4.0
+    def initialize
+      @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
+      @group = nil
+    end
+    
+    # @since 0.4.0
+    def activate
+      if @uv_grid.mapping
+        unwrap_grid( @uv_grid )
+      else
+        Sketchup.active_model.tools.push_tool( @uv_grid )
+      end
+    end
+    
+    # @since 0.4.0
+    def resume( view )
+      view.invalidate
+    end
+    
+    # @since 0.4.0
+    def deactivate( view )
+      view.invalidate
+    end
+    
+    # @since 0.4.0
+    def onLButtonDown( flags, x, y, view )
+      if @group
+        view.model.commit_operation
+        view.model.select_tool( nil )
+      end
+    end
+    
+    # @since 0.4.0
+    def onMouseMove( flags, x, y, view )
+      if @group
+        ip = view.inputpoint( x, y )
+        origin = @group.transformation.origin
+        vector = origin.vector_to( ip.position )
+        if vector.valid?
+          tr = Geom::Transformation.new( vector )
+          @group.transform!( tr )
+        end
+      end
+    end
+    
+    def onCancel( reason, view )
+      if @group
+        @group = nil
+        view.model.abort_operation
+        @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
+        view.model.tools.push_tool( @uv_grid )
+      end
+    end
+    
+    # @param [Array<Hash>] grid
+    #
+    # @return [Nil]
+    # @since 0.4.0
+    def unwrap_grid( grid )
+      # Get U and V size
+      u_size = {}
+      v_size = {}
+      for data in grid.mapping
+        coordinate = data[ :coordinate ]
+        u, v = coordinate
+        v_size[v] = data[ :v_edge ].length if u == 0
+        u_size[u] = data[ :u_edge ].length if v == 0
+      end
+      # Unwrap
+      model = Sketchup.active_model
+      model.start_operation( 'Unwrap UV Grid' )
+      group = model.active_entities.add_group
+      for data in grid.mapping
+        coordinate = data[ :coordinate ]
+        quad = data[ :quad ]
+        u, v = coordinate
+        # Calculate position
+        x = 0.0
+        y = 0.0
+        if u < 0
+          ( u...0 ).each { |i| x -= u_size[ i ] }
+        else
+          ( 0...u ).each { |i| x += u_size[ i ] }
+        end
+        if v < 0
+          ( v...0 ).each { |i| y -= v_size[ i ] }
+        else
+          ( 0...v ).each { |i| y += v_size[ i ] }
+        end
+        # Calculate size
+        width  = u_size[ coordinate.x ]
+        height = v_size[ coordinate.y ]
+        # Calculate points
+        points = []
+        points << Geom::Point3d.new( x, y, 0 )
+        points << Geom::Point3d.new( x + width, y, 0 )
+        points << Geom::Point3d.new( x + width, y + height, 0 )
+        points << Geom::Point3d.new( x, y + height, 0 )
+        # Recreate unwrapped quad
+        #   Edges must be created in a spesific order so we can transfer the UV
+        #   mapping correctly.
+        u1_edge = group.entities.add_line( points[0], points[1] )
+        v1_edge = group.entities.add_line( points[0], points[3] )
+        u2_edge = group.entities.add_line( points[2], points[3] )
+        v2_edge = group.entities.add_line( points[1], points[2] )
+        face = group.entities.add_face( u1_edge, v2_edge, u2_edge, v1_edge )
+        face.reverse! if face.normal.z < 0
+        # Order vertex data
+        new_data = {}
+        new_data[ :u_edge ] = u1_edge
+        new_data[ :v_edge ] = v1_edge
+        new_data[ :u2_edge ] = u2_edge
+        new_data[ :v2_edge ] = v2_edge
+        source_vertices = grid.ordered_vertices( data )
+        vertices = grid.ordered_vertices( new_data )
+        # Match triangulation
+        if quad.triangulated?
+          edge = quad.divider
+          indexes = edge.vertices.map { |v| source_vertices.index( v ) }
+          new_points = indexes.map { |i| vertices[ i ] }
+          new_edge = group.entities.add_line( new_points[0], new_points[1] )
+          new_edge.soft = true
+          new_edge.smooth = true
+          new_edge.hidden = true
+        end
+        # Get the new quad
+        new_quad = QuadFace.new( face )
+        # Transfer UV mapping
+        front_material = quad.material
+        back_material = quad.back_material
+        if front_material && front_material.texture
+          uv_data = quad.uv_get
+          new_uv_data = {}
+          source_vertices.each_with_index { |vertex, index|
+            uv = uv_data[ vertex ]
+            v = vertices[ index ]
+            new_uv_data[ v ] = uv
+          }
+          new_quad.uv_set( front_material, new_uv_data )
+        else
+          new_quad.material = front_material
+        end
+        if back_material && back_material.texture
+          uv_data = quad.uv_get( false )
+          new_uv_data = {}
+          source_vertices.each_with_index { |vertex, index|
+            uv = uv_data[ vertex ]
+            v = vertices[ index ]
+            new_uv_data[ v ] = uv
+          }
+          new_quad.uv_set( back_material, new_uv_data, false )
+        else
+          new_quad.back_material = back_material
+        end
+      end
+      Sketchup.active_model.selection.add( group )
+      @group = group
+      nil
+    end
+  
+  end # class UV_UnwrapGridTool
+  
+  
+  # @since 0.4.0
   class UV_CopyTool
     
     @@clipboard = nil

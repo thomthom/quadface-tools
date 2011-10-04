@@ -285,6 +285,16 @@ module TT::Plugins::QuadFaceTools
     cmd_uv_paste = cmd
     @commands[:uv_paste] = cmd
     
+    cmd = UI::Command.new( 'Unwrap UV Grid' )  {
+      self.unwrap_uv_grid_tool
+    }
+    cmd.small_icon = File.join( PATH_ICONS, 'UV_Unwrap_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'UV_Unwrap_24.png' )
+    cmd.status_bar_text = 'Unwraps picked UV grid.'
+    cmd.tooltip = 'Unwraps picked UV grid'
+    cmd_unwrap_uv_grid = cmd
+    @commands[:unwrap_uv_grid] = cmd
+    
     cmd = UI::Command.new( 'Context Menu' )  {
       @settings[ :context_menu ] = !@settings[ :context_menu ]
     }
@@ -325,6 +335,7 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_uv_map )
     m.add_item( cmd_uv_copy )
     m.add_item( cmd_uv_paste )
+    m.add_item( cmd_unwrap_uv_grid )
     m.add_separator
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
@@ -365,6 +376,7 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_uv_map )
         m.add_item( cmd_uv_copy )
         m.add_item( cmd_uv_paste )
+        m.add_item( cmd_unwrap_uv_grid )
         m.add_separator
         sub_menu = m.add_submenu( 'Convert' )
         sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
@@ -400,6 +412,7 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_uv_map )
     toolbar.add_item( cmd_uv_copy )
     toolbar.add_item( cmd_uv_paste )
+    toolbar.add_item( cmd_unwrap_uv_grid )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -441,6 +454,12 @@ module TT::Plugins::QuadFaceTools
   # @since 0.4.0
   def self.uv_paste_tool
     Sketchup.active_model.select_tool( UV_PasteTool.new )
+  end
+  
+  
+  # @since 0.4.0
+  def self.unwrap_uv_grid_tool
+    Sketchup.active_model.select_tool( UV_UnwrapGridTool.new )
   end
   
   
