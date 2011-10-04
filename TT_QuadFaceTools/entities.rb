@@ -138,6 +138,23 @@ module TT::Plugins::QuadFaceTools
       edge
     end
     
+    # @param [Array<Sketchup::Vertex>] vertices
+    #
+    # @return [QuadFace,Nil]
+    # @since 0.4.0
+    def self.from_vertices( vertices )
+      return nil unless vertices.size == 4
+      vertex = vertices.first
+      face = vertex.faces.find { |f|
+        f.vertices.all? { |v| vertices.include?( v ) }
+      }
+      return nil unless face
+      return nil unless self.is?( face )
+      quad = self.new( face )
+      return nil unless quad.vertices.all? { |v| vertices.include?( v ) }
+      quad
+    end
+    
     # @param [Sketchup::Face] face
     #
     # @since 0.1.0
@@ -148,6 +165,14 @@ module TT::Plugins::QuadFaceTools
       end
       @faces = [ face ]
       @faces << face2 if face2.is_a?( Sketchup::Face )
+    end
+    
+    # @return [Float]
+    # @since 0.4.0
+    def area
+      total_area = 0.0
+      @faces.each { |face| total_area += face.area }
+      total_area
     end
     
     # @param [QuadFace] quadface

@@ -602,6 +602,7 @@ module TT::Plugins::QuadFaceTools
       erase_edges = []
       erase_faces = []
       new_quads = []
+      uv_mapping = []
       for edge in loop
         next unless edge.faces.all? { |face| QuadFace.is?( face ) }
         quads = edge.faces.map { |face| QuadFace.new( face ) }
@@ -610,6 +611,61 @@ module TT::Plugins::QuadFaceTools
         e1 = q1.opposite_edge( edge )
         e2 = q2.opposite_edge( edge )
         pts = q1.edge_positions( e1 ) + q2.edge_positions( e2 )
+        # Remember UV mapping
+        new_quad = {}
+        new_quad[ :vertices ] = q1.vertices + q2.vertices
+        # > Test material properties
+        q1_textured = q1.material && q1.material.texture
+        q1_textured_back = q1.back_material && q1.back_material.texture
+        q2_textured = q2.material && q2.material.texture
+        q2_textured_back = q2.back_material && q2.back_material.texture
+        # > Pick material to use
+        if q1_textured == q2_textured
+          # Prefer material from the larger face.
+          front_material = ( q1.area > q2.area ) ? q1.material : q2.material
+        else
+          # If one is is not textured we cannot combine the UV mapping. Then
+          # the plain material is chosen.
+          front_material = ( q1_textured ) ? q2.material : q1.material
+        end
+        if q1_textured_back == q2_textured_back
+          back_material = ( q1.area > q2.area ) ? q1.back_material : q2.back_material
+        else
+          back_material = ( q1_textured_back ) ? q2.back_material : q1.back_material
+        end
+        new_quad[ :front_material ] = front_material
+        new_quad[ :back_material ] = back_material
+        # > Sample UV Mapping
+        front_textured = q1_textured && q2_textured
+        back_textured = q1_textured_back && q2_textured_back
+        if front_textured
+          uv1 = q1.uv_get
+          uv2 = q2.uv_get
+          uv_new = {}
+          for vertex, uv in uv1
+            next if edge.vertices.include?( vertex )
+            uv_new[ vertex ] = uv
+          end
+          for vertex, uv in uv2
+            next if edge.vertices.include?( vertex )
+            uv_new[ vertex ] = uv
+          end
+          new_quad[ :uv_front ] = uv_new
+        end
+        if back_textured
+          uv1 = q1.uv_get
+          uv2 = q2.uv_get
+          uv_new = {}
+          for vertex, uv in uv1
+            next if edge.vertices.include?( vertex )
+            uv_new[ vertex ] = uv
+          end
+          for vertex, uv in uv2
+            next if edge.vertices.include?( vertex )
+            uv_new[ vertex ] = uv
+          end
+          new_quad[ :uv_back ] = uv_new
+        end
         # Mark edge for deletion.
         erase_edges << edge
         # If the connected quads are triangulated or the merged face is not
@@ -619,15 +675,46 @@ module TT::Plugins::QuadFaceTools
         if !planar || triangulated
           erase_faces.concat( q1.faces + q2.faces )
           new_quads << pts
+          new_quad[ :points ] = pts
         end
+        uv_mapping << new_quad
       end
       # Reshape and merge the entities.
       active_entities = model.active_entities
       active_entities.erase_entities( erase_faces )
       active_entities.transform_by_vectors( vertex_entities, vectors )
       active_entities.erase_entities( erase_edges )
+      # Rebuild triangulated and non-planar quads.
+      mapped_quads = []
       for points in new_quads
-        self.fill_face( active_entities, points )
+        quad = self.add_face( active_entities, points )
+        # Restore UV mapping
+        for data in uv_mapping
+          next unless data[ :points ] == points
+          mapped_quads << [ quad, data ]
+        end
+      end
+      # Find the remaining quads where the dividing edge between coplanar faces
+      # where removed.
+      for data in uv_mapping
+        next unless data[ :faces ]
+        vertices = data[ :vertices ].select { |v| v.valid? }
+        quad = QuadFace.from_vertices( vertices )
+        next unless quad
+        mapped_quads << [ quad, data ]
+      end
+      # Restore UV mapping
+      for quad, data in mapped_quads
+        if data[ :uv_front ]
+          quad.uv_set( data[ :front_material ], data[ :uv_front ] )
+        else
+          quad.material = data[ :front_material ]
+        end
+        if data[ :uv_back ]
+          quad.uv_set( data[ :back_material ], data[ :uv_back ], false )
+        else
+          quad.back_material = data[ :back_material ]
+        end
       end
     end
     model.commit_operation
@@ -1202,7 +1289,7 @@ module TT::Plugins::QuadFaceTools
   def self.add_face( entities, points )
     if points.size == 4 && !TT::Geom3d.planar_points?( points )
       face1 = entities.add_face( points[0], points[1], points[2] )
-      face2 = entities.add_face( points[2], points[1], points[3] )
+      face2 = entities.add_face( points[0], points[2], points[3] )
       edge = ( face1.edges & face2.edges )[0]
       QuadFace.set_divider_props( edge )
       QuadFace.new( face1 )
