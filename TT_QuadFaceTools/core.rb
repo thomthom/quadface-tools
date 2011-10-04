@@ -156,6 +156,14 @@ module TT::Plugins::QuadFaceTools
     cmd_select_quads_from_edges = cmd
     @commands[:select_quads_from_edges] = cmd
     
+    cmd = UI::Command.new( 'Select Bounding Edges' )  {
+      self.select_bounding_edges
+    }
+    cmd.status_bar_text = 'Selects all edges that bounds a face.'
+    cmd.tooltip = 'Selects all edges that bounds a face'
+    cmd_select_bounding_edges = cmd
+    @commands[:select_bounding_edges] = cmd
+    
     cmd = UI::Command.new( 'Connect Edges' )   { self.connect_tool }
     cmd.small_icon = File.join( PATH_ICONS, 'Connect_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Connect_24.png' )
@@ -318,6 +326,7 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_select_loop )
     m.add_item( cmd_region_to_loop )
     m.add_item( cmd_select_quads_from_edges )
+    m.add_item( cmd_select_bounding_edges )
     m.add_separator
     m.add_item( cmd_smooth_quad_mesh )
     m.add_item( cmd_unsmooth_quad_mesh )
@@ -357,6 +366,7 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_select_loop )
         m.add_item( cmd_region_to_loop )
         m.add_item( cmd_select_quads_from_edges )
+        m.add_item( cmd_select_bounding_edges )
         # (i) Loop stepping menu items removed as they are too impractical to
         #     operate via menus which require multiple clicks to trigger.
         m.add_separator
@@ -460,6 +470,27 @@ module TT::Plugins::QuadFaceTools
   # @since 0.4.0
   def self.unwrap_uv_grid_tool
     Sketchup.active_model.select_tool( UV_UnwrapGridTool.new )
+  end
+  
+  
+  # @since 0.4.0
+  def self.select_bounding_edges
+    model = Sketchup.active_model
+    selection = model.selection
+    edges = []
+    # Find quads with two or more edges selected
+    for face in selection
+      next unless face.is_a?( Sketchup::Face )
+      if QuadFace.is?( face )
+        quad = QuadFace.new( face )
+        edges.concat( quad.edges + quad.faces )
+      else
+        edges.concat( face.edges )
+      end
+    end
+    edges.uniq!
+    # Select
+    selection.add( edges )
   end
   
   
