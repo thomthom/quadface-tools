@@ -164,6 +164,14 @@ module TT::Plugins::QuadFaceTools
     cmd_select_bounding_edges = cmd
     @commands[:select_bounding_edges] = cmd
     
+    cmd = UI::Command.new( 'Deselect Triangulation' )  {
+      self.deselect_triangulation
+    }
+    cmd.status_bar_text = 'Deselects all dividing edges in triangulated quads.'
+    cmd.tooltip = 'Deselects all dividing edges in triangulated quads'
+    cmd_deselect_triangulation = cmd
+    @commands[:deselect_triangulation] = cmd
+    
     cmd = UI::Command.new( 'Connect Edges' )   { self.connect_tool }
     cmd.small_icon = File.join( PATH_ICONS, 'Connect_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Connect_24.png' )
@@ -327,6 +335,7 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_region_to_loop )
     m.add_item( cmd_select_quads_from_edges )
     m.add_item( cmd_select_bounding_edges )
+    m.add_item( cmd_deselect_triangulation )
     m.add_separator
     m.add_item( cmd_smooth_quad_mesh )
     m.add_item( cmd_unsmooth_quad_mesh )
@@ -367,6 +376,7 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_region_to_loop )
         m.add_item( cmd_select_quads_from_edges )
         m.add_item( cmd_select_bounding_edges )
+        m.add_item( cmd_deselect_triangulation )
         # (i) Loop stepping menu items removed as they are too impractical to
         #     operate via menus which require multiple clicks to trigger.
         m.add_separator
@@ -470,6 +480,15 @@ module TT::Plugins::QuadFaceTools
   # @since 0.4.0
   def self.unwrap_uv_grid_tool
     Sketchup.active_model.select_tool( UV_UnwrapGridTool.new )
+  end
+  
+  
+  # @since 0.4.0
+  def self.deselect_triangulation
+    model = Sketchup.active_model
+    selection = model.selection
+    edges = selection.select { |e| QuadFace.dividing_edge?( e ) }
+    selection.remove( edges )
   end
   
   

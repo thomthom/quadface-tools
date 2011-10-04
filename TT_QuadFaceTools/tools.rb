@@ -634,6 +634,7 @@ module TT::Plugins::QuadFaceTools
       menu.add_item( PLUGIN.commands[ :region_to_loop ] )
       menu.add_item( PLUGIN.commands[ :select_quads_from_edges ] )
       menu.add_item( PLUGIN.commands[ :select_bounding_edges ] )
+      menu.add_item( PLUGIN.commands[ :deselect_triangulation ] )
       menu.add_separator
       menu.add_item( PLUGIN.commands[ :smooth_quads ] )
       menu.add_item( PLUGIN.commands[ :unsmooth_quads ] )
@@ -645,7 +646,6 @@ module TT::Plugins::QuadFaceTools
       menu.add_item( PLUGIN.commands[ :flip_edge ] )
       menu.add_item( PLUGIN.commands[ :triangulate ] )
       menu.add_item( PLUGIN.commands[ :remove_triangulation ] )
-      menu.add_separator
       menu.add_separator
       menu.add_item( PLUGIN.commands[ :uv_map ] )
       menu.add_item( PLUGIN.commands[ :uv_copy ] )
