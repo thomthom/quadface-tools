@@ -654,8 +654,8 @@ module TT::Plugins::QuadFaceTools
       menu.add_separator
       sub_menu = menu.add_submenu( 'Convert' )
       sub_menu.add_item( PLUGIN.commands[ :mesh_to_quads ] )
-      sub_menu.add_item( PLUGIN.commands[ :blender_to_quads ] )
       sub_menu.add_separator
+      sub_menu.add_item( PLUGIN.commands[ :blender_to_quads ] )
       sub_menu.add_item( PLUGIN.commands[ :quad_r1_to_r2 ] )
     end
     

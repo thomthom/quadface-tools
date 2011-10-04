@@ -357,8 +357,8 @@ module TT::Plugins::QuadFaceTools
     m.add_separator
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
-    sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
     sub_menu.add_separator
+    sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
     sub_menu.add_item( cmd_convert_quadmesh_r1_to_r2 )
     m.add_separator
     sub_menu = m.add_submenu( 'Preferences' )
@@ -400,8 +400,8 @@ module TT::Plugins::QuadFaceTools
         m.add_separator
         sub_menu = m.add_submenu( 'Convert' )
         sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
-        sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
         sub_menu.add_separator
+        sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
         sub_menu.add_item( cmd_convert_quadmesh_r1_to_r2 )
       end
     }
