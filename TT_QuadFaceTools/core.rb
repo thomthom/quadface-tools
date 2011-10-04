@@ -220,7 +220,7 @@ module TT::Plugins::QuadFaceTools
     cmd_convert_blender_quads_to_sketchup_quads = cmd
     @commands[:blender_to_quads] = cmd
     
-    cmd = UI::Command.new( 'QuadFace R1 to QuadFace R2' )  {
+    cmd = UI::Command.new( 'Sandbox Quads to QuadFace Quads' )  {
       self.convert_quadmesh_r1_to_r2
     }
     cmd.status_bar_text = 'Convert Quads from Revision 1 definition to Revision 2.'
