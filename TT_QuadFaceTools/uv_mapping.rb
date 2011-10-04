@@ -349,6 +349,9 @@ module TT::Plugins::QuadFaceTools
         @u_scale = PLUGIN.settings[ :uv_u_scale ]
         @v_scale = PLUGIN.settings[ :uv_v_scale ]
         
+        #p @u_scale 
+        #p @v_scale
+        
         calculate_axes()
         @u_handle = point_on_axis( @u_origin, @u_axis, @u_scale )
         @v_handle = point_on_axis( @v_origin, @v_axis, @v_scale )
@@ -1416,20 +1419,26 @@ module TT::Plugins::QuadFaceTools
       
       # (!) Progressbar ( Status update )
       until stack.empty?
+        #TT.debug 'Stack Shift'
         data = stack.shift
         quad = data[ :quad ]
         coordinate = data[ :coordinate ] 
-        # Refill the stack
-        if stack.empty?
-          stack = stack_negative.dup
-          stack_negative.clear
-        end
+        invalid = false
         # Contrain quad mapping if contraint is present
         unless @contraints.empty?
-          next unless quad.faces.all? { |face| @contraints[ face ] }
+          invalid = true unless quad.faces.all? { |face| @contraints[ face ] }
         end
         # Prevent parsing quads more than once.
-        next if quad.faces.any? { |face| quads[ face ] }
+        if invalid || quad.faces.any? { |face| quads[ face ] }
+          # If the face is invalid and the look skips to the next iteration the
+          # stack needs to be refilled if it's empty.
+          if stack.empty?
+            #TT.debug '> Break Refill'
+            stack = stack_negative.dup
+            stack_negative.clear
+          end
+          next
+        end
         # Map faces to quads
         for face in quad.faces
           quads[ face ] = quad
@@ -1462,6 +1471,12 @@ module TT::Plugins::QuadFaceTools
         for edge in [ u, v ]
           item = next_quad( data, edge, quads )
           stack_negative << item if item
+        end
+        # Refill the stack
+        if stack.empty?
+          #TT.debug '> Refill Last'
+          stack = stack_negative.dup
+          stack_negative.clear
         end
       end
       mapped
