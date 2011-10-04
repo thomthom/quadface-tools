@@ -132,7 +132,7 @@ module TT::Plugins::QuadFaceTools
           indexes = edge.vertices.map { |v| source_vertices.index( v ) }
           new_points = indexes.map { |i| vertices[ i ] }
           new_edge = group.entities.add_line( new_points[0], new_points[1] )
-          QuadFace.make_divider( new_edge )
+          QuadFace.set_divider_props( new_edge )
         end
         # Get the new quad
         new_quad = QuadFace.new( face )

@@ -781,7 +781,7 @@ module TT::Plugins::QuadFaceTools
       other_face = ( divider.faces - [ face ] )[0]
       next unless other_face.edges.size == 3
       next unless other_face.edges.select { |e| e.soft? }.size == 1
-      QuadFace.make_divider( divider )
+      QuadFace.set_divider_props( divider )
     end
     model.commit_operation
   end
@@ -822,7 +822,7 @@ module TT::Plugins::QuadFaceTools
         face.vertices.size == 3 &&
         edges.all? { |edge| !( edge.soft? || edge.hidden? ) }
       }
-      QuadFace.make_divider( entity )
+      QuadFace.set_divider_props( entity )
     end
   end
   
@@ -1204,7 +1204,7 @@ module TT::Plugins::QuadFaceTools
       face1 = entities.add_face( points[0], points[1], points[2] )
       face2 = entities.add_face( points[2], points[1], points[3] )
       edge = ( face1.edges & face2.edges )[0]
-      QuadFace.make_divider( edge )
+      QuadFace.set_divider_props( edge )
       QuadFace.new( face1 )
     else
       face = entities.add_face( points )
@@ -1228,7 +1228,7 @@ module TT::Plugins::QuadFaceTools
       face1 = entities.add_face( points[0], points[1], points[2] )
       face2 = entities.add_face( points[0], points[2], points[3] )
       edge = ( face1.edges & face2.edges )[0]
-      QuadFace.make_divider( edge )
+      QuadFace.set_divider_props( edge )
     else
       entities.add_face( points )
     end
@@ -1270,19 +1270,19 @@ module TT::Plugins::QuadFaceTools
       face = args[0]
       for edge in face.edges
         if QuadFace.divider_props?( edge )
-          QuadFace.make_border( edge )
+          QuadFace.set_border_props( edge )
         end
       end
       QuadFace.new( face )
     elsif args.size == 3
       # (?) Third edge argument required? Can be inferred by the two triangles.
       face1, face2, dividing_edge = args
-      QuadFace.make_divider( dividing_edge )
+      QuadFace.set_divider_props( dividing_edge )
       for face in [ face1, face2 ]
         for edge in face.edges
           next if edge == dividing_edge
           if QuadFace.divider_props?( edge )
-            QuadFace.make_border( edge )
+            QuadFace.set_border_props( edge )
           end
         end
       end

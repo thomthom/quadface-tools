@@ -329,7 +329,7 @@ module TT::Plugins::QuadFaceTools
               f3 = entities.add_face( pts[2], pts[3], pts[4] )
               f4 = entities.add_face( pts[0], pts[2], pts[4] )
               f4.edges.each { |e|
-                QuadFace.make_divider( e )
+                QuadFace.set_divider_props( e )
               }
             end # planar_points?
           end
@@ -359,7 +359,7 @@ module TT::Plugins::QuadFaceTools
               f5 = entities.add_face( pts[0], pts[2], pts[4] )
               f6 = entities.add_face( pts[4], pts[6], pts[0] )
               ( f5.edges + f6.edges ).each { |e|
-                QuadFace.make_divider( e )
+                QuadFace.set_divider_props( e )
               }
             end # planar_points?
           end
@@ -380,7 +380,7 @@ module TT::Plugins::QuadFaceTools
             f3 = entities.add_face( pt2, pt3, pt4 )
             edges = ( f1.edges & f2.edges ) + ( f1.edges & f3.edges )
             edges.each { |e|
-              QuadFace.make_divider( e )
+              QuadFace.set_divider_props( e )
             }
           else
             PLUGIN.fill_face( entities, polygon )
