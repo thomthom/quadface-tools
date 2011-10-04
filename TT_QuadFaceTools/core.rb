@@ -685,8 +685,9 @@ module TT::Plugins::QuadFaceTools
       quadface = QuadFace.new( entity )
       quadface.edges.each { |edge|
         next if edge.faces.size == 1
-        edge.hidden = true
+        edge.soft = true
         edge.smooth = true
+        edge.hidden = false
       }
     end
     model.commit_operation
@@ -780,9 +781,7 @@ module TT::Plugins::QuadFaceTools
       other_face = ( divider.faces - [ face ] )[0]
       next unless other_face.edges.size == 3
       next unless other_face.edges.select { |e| e.soft? }.size == 1
-      divider.soft = true
-      divider.smooth = true
-      divider.hidden = true
+      QuadFace.make_divider( divider )
     end
     model.commit_operation
   end
@@ -823,9 +822,7 @@ module TT::Plugins::QuadFaceTools
         face.vertices.size == 3 &&
         edges.all? { |edge| !( edge.soft? || edge.hidden? ) }
       }
-      entity.hidden = false
-      entity.soft = true
-      entity.smooth = true
+      QuadFace.make_divider( entity )
     end
   end
   
@@ -903,7 +900,6 @@ module TT::Plugins::QuadFaceTools
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
-      #next if entity.soft?
       next if QuadFace.dividing_edge?( entity )
       next unless entity.faces.size == 2
       # Check neighbouring faces if their opposite edges are selected.
@@ -953,7 +949,6 @@ module TT::Plugins::QuadFaceTools
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
-      #next if entity.soft?
       next if QuadFace.dividing_edge?( entity )
       next unless entity.faces.size == 2
       # Check next edges in loop, if they are not all selected, deselect the
@@ -1209,8 +1204,7 @@ module TT::Plugins::QuadFaceTools
       face1 = entities.add_face( points[0], points[1], points[2] )
       face2 = entities.add_face( points[2], points[1], points[3] )
       edge = ( face1.edges & face2.edges )[0]
-      edge.soft = true
-      edge.smooth = true
+      QuadFace.make_divider( edge )
       QuadFace.new( face1 )
     else
       face = entities.add_face( points )
@@ -1234,8 +1228,7 @@ module TT::Plugins::QuadFaceTools
       face1 = entities.add_face( points[0], points[1], points[2] )
       face2 = entities.add_face( points[0], points[2], points[3] )
       edge = ( face1.edges & face2.edges )[0]
-      edge.soft = true
-      edge.smooth = true
+      QuadFace.make_divider( edge )
     else
       entities.add_face( points )
     end
@@ -1276,23 +1269,20 @@ module TT::Plugins::QuadFaceTools
     if args.size == 1
       face = args[0]
       for edge in face.edges
-        if edge.soft?
-          edge.soft = false
-          edge.hidden = true
+        if QuadFace.divider_props?( edge )
+          QuadFace.make_border( edge )
         end
       end
       QuadFace.new( face )
     elsif args.size == 3
       # (?) Third edge argument required? Can be inferred by the two triangles.
       face1, face2, dividing_edge = args
-      dividing_edge.soft = true
-      dividing_edge.smooth = true
+      QuadFace.make_divider( dividing_edge )
       for face in [ face1, face2 ]
         for edge in face.edges
           next if edge == dividing_edge
-          if edge.soft?
-            edge.soft = false
-            edge.hidden = true
+          if QuadFace.divider_props?( edge )
+            QuadFace.make_border( edge )
           end
         end
       end

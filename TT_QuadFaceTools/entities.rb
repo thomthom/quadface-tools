@@ -39,15 +39,26 @@ module TT::Plugins::QuadFaceTools
       return false if vertex_count > 4
       # Triangulated QuadFace needs special treatment.
       if vertex_count == 3
-        soft_edges = face.edges.select { |e| e.soft? }
-        return false unless soft_edges.size == 1
-        dividing_edge = soft_edges[0]
+        edges = face.edges.select { |e| self.divider_props?( e ) }
+        return false unless edges.size == 1
+        dividing_edge = edges[0]
         return false unless dividing_edge.faces.size == 2
         other_face = ( dividing_edge.faces - [face] ).first
         return false unless other_face.vertices.size == 3
-        soft_edges = other_face.edges.select { |e| e.soft? }
-        return false unless soft_edges.size == 1
+        edges = other_face.edges.select { |e| self.divider_props?( e ) }
+        return false unless edges.size == 1
       end
+      true
+    end
+    
+    # @param [Sketchup::Entity] entity
+    #
+    # @return [Boolean]
+    # @since 0.4.0
+    def self.divider_props?( edge )
+      return false unless edge.soft?
+      return false unless edge.smooth?
+      return false unless edge.hidden?
       true
     end
     
@@ -61,7 +72,7 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def self.dividing_edge?( edge )
       return false unless edge.is_a?( Sketchup::Edge )
-      return false unless edge.soft?
+      return false unless self.divider_props?( edge )
       return false unless edge.faces.size == 2
       return false unless edge.faces.all? { |face| face.vertices.size == 3 }
       edge.faces.all? { |face| self.is?( face ) }
@@ -103,6 +114,28 @@ module TT::Plugins::QuadFaceTools
         return false unless face1.edges.any? { |e| face2.edges.include?( e ) }
       end
       true
+    end
+    
+    # @param [Sketchup::Edge] edge
+    #
+    # @return [Sketchup::Edge]
+    # @since 0.4.0
+    def self.set_divider_props( edge )
+      edge.soft = true
+      edge.smooth = true
+      edge.hidden = true
+      edge
+    end
+    
+    # @param [Sketchup::Edge] edge
+    #
+    # @return [Sketchup::Edge]
+    # @since 0.4.0
+    def self.set_border_props( edge )
+      if edge.soft? && edge.smooth? && edge.hidden?
+        edge.hidden = false
+      end
+      edge
     end
     
     # @param [Sketchup::Face] face
@@ -185,7 +218,7 @@ module TT::Plugins::QuadFaceTools
         result = @faces[0].edges
       else
         for face in @faces
-          result.concat( face.edges.select { |e| !e.soft? } )
+          result.concat( face.edges.select { |e| !QuadFace.divider_props?( e ) } )
         end
       end
       result
@@ -257,6 +290,7 @@ module TT::Plugins::QuadFaceTools
         div = ( face1.edges & face2.edges )[0]
         div.soft = true
         div.smooth = true
+        div.hidden = true
         # Restore materials
         if texture_on_front
           uv_set( material_front, uv_front )
@@ -401,11 +435,11 @@ module TT::Plugins::QuadFaceTools
         face = @faces[0]
         entities = face.parent.entities
         mesh = face.mesh
-        # Ensure a triangulated quad's edges isn't soft.
+        # Ensure a triangulated quad's edges doesn't have the properties of a
+        # divider. If any of them has, then uncheck the hidden property.
         face.edges.each { |edge|
-          if edge.soft?
-            edge.soft = false
-            edge.hidden = true
+          if edge.soft? && edge.smooth? && edge.hidden?
+            edge.hidden = false
           end
         }
         # Find the splitting segment.
@@ -417,6 +451,7 @@ module TT::Plugins::QuadFaceTools
         edge = entities.add_line( *split )
         edge.soft = true
         edge.smooth = true
+        edge.hidden = true
         # Update references
         @faces = edge.faces
         # Restore materials
@@ -517,9 +552,9 @@ module TT::Plugins::QuadFaceTools
           face.vertices.size == 3
         } &&
         ( edge = @faces[0].edges & @faces[1].edges ).size == 1 &&
-        edge[0].soft? &&
+        QuadFace.divider_props?( edge[0] ) &&
         edge[0].faces.size == 2 &&
-        edges.all? { |e| !e.soft? }
+        edges.all? { |e| !QuadFace.divider_props?( e ) }
       end
     end
     
@@ -531,11 +566,10 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def other_native_face( face )
       return nil unless face.vertices.size == 3
-      soft_edges = face.edges.select { |e| e.soft? }
-      return nil unless soft_edges.size == 1
-      dividing_edge = soft_edges[0]
+      edges = face.edges.select { |e| QuadFace.divider_props?( e ) }
+      return nil unless edges.size == 1
+      dividing_edge = edges[0]
       return nil unless dividing_edge.faces.size == 2
-      #( dividing_edge.faces - [face] ).first
       dividing_edge.faces.find { |f| f != face }
     end
     
@@ -553,8 +587,8 @@ module TT::Plugins::QuadFaceTools
       # soft edge - where it joins the other triangle.
       # Native quads should have none.
       if vertex_count == 3
-        soft_edges = face.edges.select { |e| e.soft? }
-        return false unless soft_edges.size == 1
+        edges = face.edges.select { |e| QuadFace.divider_props?( e ) }
+        return false unless edges.size == 1
         face2 = other_native_face( face )
       else
         true # Native Quad

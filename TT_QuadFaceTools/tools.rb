@@ -723,7 +723,7 @@ module TT::Plugins::QuadFaceTools
           end
         else
           for edge in entity.edges
-            @edges << edge unless edge.soft? # (!)
+            @edges << edge unless QuadFace.divider_props?( edge )
           end
         end
       end
