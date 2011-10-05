@@ -44,6 +44,20 @@ module TT::Plugins::QuadFaceTools
     @ex
   end
   
+  
+  ### LIB FREDO UPDATER ### ----------------------------------------------------
+  
+  def self.register_plugin_for_LibFredo6
+    {   
+      :name => PLUGIN_NAME,
+      :author => 'thomthom',
+      :version => PLUGIN_VERSION.to_s,
+      :date => '04 Oct 11',   
+      :description => @ex.description,
+      :link_info => 'https://bitbucket.org/thomthom/quadface-tools/'
+    }
+  end
+  
 end # module
 
 #-------------------------------------------------------------------------------
