@@ -199,13 +199,19 @@ module TT::Plugins::QuadFaceTools
     cmd_remove_loops = cmd
     @commands[:remove_loops] = cmd
     
-    cmd = UI::Command.new( 'Flip Edge' )  { self.flip_edge_tool }
+    cmd = UI::Command.new( 'Flip Triangulation Tool' )  { self.flip_edge_tool }
     cmd.small_icon = File.join( PATH_ICONS, 'FlipEdge_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'FlipEdge_24.png' )
-    cmd.status_bar_text = 'Flips the dividing edge in triangulated quads.'
-    cmd.tooltip = 'Flips the dividing edge in triangulated quads'
-    cmd_flip_edge = cmd
-    @commands[:flip_edge] = cmd
+    cmd.status_bar_text = 'Tool for flipping the dividing edge in triangulated quads.'
+    cmd.tooltip = 'Tool for flipping the dividing edge in triangulated quads'
+    cmd_flip_triangulation_tool = cmd
+    @commands[:flip_triangulation_tool] = cmd
+    
+    cmd = UI::Command.new( 'Flip Selected Triangulation' )  { self.flip_triangulation }
+    cmd.status_bar_text = 'Flips the dividing edge in the selected triangulated quads.'
+    cmd.tooltip = 'Flips the dividing edge in the selected triangulated quads'
+    cmd_flip_triangulation = cmd
+    @commands[:flip_triangulation] = cmd
     
     cmd = UI::Command.new( 'Triangulate' )  { self.triangulate_selection}
     cmd.small_icon = File.join( PATH_ICONS, 'Triangulate_16.png' )
@@ -347,7 +353,8 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_insert_loops )
     m.add_item( cmd_remove_loops )
     m.add_separator
-    m.add_item( cmd_flip_edge )
+    m.add_item( cmd_flip_triangulation_tool )
+    m.add_item( cmd_flip_triangulation )
     m.add_item( cmd_triangulate_selection )
     m.add_item( cmd_remove_triangulation )
     m.add_separator
@@ -390,7 +397,8 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_insert_loops )
         m.add_item( cmd_remove_loops )
         m.add_separator
-        m.add_item( cmd_flip_edge )
+        m.add_item( cmd_flip_triangulation_tool )
+        m.add_item( cmd_flip_triangulation )
         m.add_item( cmd_triangulate_selection )
         m.add_item( cmd_remove_triangulation )
         m.add_separator
@@ -428,7 +436,7 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_insert_loops )
     toolbar.add_item( cmd_remove_loops )
     toolbar.add_separator
-    toolbar.add_item( cmd_flip_edge )
+    toolbar.add_item( cmd_flip_triangulation_tool )
     toolbar.add_item( cmd_triangulate_selection )
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
     toolbar.add_separator
@@ -494,6 +502,27 @@ module TT::Plugins::QuadFaceTools
   # @since 0.4.0
   def self.unwrap_uv_grid_tool
     Sketchup.active_model.select_tool( UV_UnwrapGridTool.new )
+  end
+  
+  
+  # @since 0.5.0
+  def self.flip_triangulation
+    model = Sketchup.active_model
+    TT::Model.start_operation( 'Flip Triangulation' )
+    processed_faces = {}
+    new_faces = []
+    for entity in model.selection.to_a
+      next if processed_faces[ entity ]
+      next unless QuadFace.is?( entity )
+      quad = QuadFace.new( entity )
+      for face in quad.faces
+        processed_faces[ face ] = face
+      end
+      quad.flip_edge
+      new_faces.concat( quad.faces )
+    end
+    model.commit_operation
+    model.selection.add( new_faces )
   end
   
   

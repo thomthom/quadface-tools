@@ -643,7 +643,8 @@ module TT::Plugins::QuadFaceTools
       menu.add_item( PLUGIN.commands[ :insert_loops ] )
       menu.add_item( PLUGIN.commands[ :remove_loops ] )
       menu.add_separator
-      menu.add_item( PLUGIN.commands[ :flip_edge ] )
+      menu.add_item( PLUGIN.commands[ :flip_triangulation_tool ] )
+      menu.add_item( PLUGIN.commands[ :flip_triangulation ] )
       menu.add_item( PLUGIN.commands[ :triangulate ] )
       menu.add_item( PLUGIN.commands[ :remove_triangulation ] )
       menu.add_separator
