@@ -14,6 +14,7 @@ module TT::Plugins::QuadFaceTools
     def initialize
       @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
       @group = nil
+      @ip_mouse = Sketchup::InputPoint.new
     end
     
     # @since 0.4.0
@@ -46,9 +47,9 @@ module TT::Plugins::QuadFaceTools
     # @since 0.4.0
     def onMouseMove( flags, x, y, view )
       if @group
-        ip = view.inputpoint( x, y )
+        @ip_mouse.pick( view, x, y )
         origin = @group.transformation.origin
-        vector = origin.vector_to( ip.position )
+        vector = origin.vector_to( @ip_mouse.position )
         if vector.valid?
           tr = Geom::Transformation.new( vector )
           @group.transform!( tr )
@@ -56,13 +57,20 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
+    # @since 0.4.0
     def onCancel( reason, view )
       if @group
         @group = nil
+        @ip_mouse.clear
         view.model.abort_operation
         @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
         view.model.tools.push_tool( @uv_grid )
       end
+    end
+    
+    # @since 0.5.0
+    def draw( view )
+      @ip_mouse.draw( view ) if @ip_mouse.display?
     end
     
     # @param [Array<Hash>] grid
