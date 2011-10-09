@@ -341,16 +341,17 @@ module TT::Plugins::QuadFaceTools
     # @since 0.4.0
     def activate
       #puts 'UVMapTool'
+      @draw_uv_grid = PLUGIN.settings[ :uv_draw_uv_grid ]
+      @continuous = PLUGIN.settings[ :uv_continuous ]
+      @scale_proportional = PLUGIN.settings[ :uv_scale_proportional ]
+      @u_scale = PLUGIN.settings[ :uv_u_scale ]
+      @v_scale = PLUGIN.settings[ :uv_v_scale ]
+      
+      #p @u_scale 
+      #p @v_scale
+        
       if @uv_grid.mapping
         #puts '> Mapping...'
-        @draw_uv_grid = PLUGIN.settings[ :uv_draw_uv_grid ]
-        @continuous = PLUGIN.settings[ :uv_continuous ]
-        @scale_proportional = PLUGIN.settings[ :uv_scale_proportional ]
-        @u_scale = PLUGIN.settings[ :uv_u_scale ]
-        @v_scale = PLUGIN.settings[ :uv_v_scale ]
-        
-        #p @u_scale 
-        #p @v_scale
         
         calculate_axes()
         @u_handle = point_on_axis( @u_origin, @u_axis, @u_scale )
@@ -379,8 +380,12 @@ module TT::Plugins::QuadFaceTools
       PLUGIN.settings[ :uv_continuous ] = @continuous
       PLUGIN.settings[ :uv_scale_proportional ] = @scale_proportional
       PLUGIN.settings[ :uv_scale_absolute ] = @u_scale.is_a?( Length )
-      PLUGIN.settings[ :uv_u_scale ] = @u_scale
-      PLUGIN.settings[ :uv_v_scale ] = @v_scale
+      if @u_scale && @v_scale # (!) HOTFIX - uncaught error sets the scale to nil.
+        PLUGIN.settings[ :uv_u_scale ] = @u_scale
+        PLUGIN.settings[ :uv_v_scale ] = @v_scale
+      else
+        puts 'QuadFace Tool - Warning! Tried to save scale with nil values.'
+      end
       
       view.invalidate
     end

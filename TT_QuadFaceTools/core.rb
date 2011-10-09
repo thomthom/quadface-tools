@@ -28,12 +28,28 @@ module TT::Plugins::QuadFaceTools
   @settings.set_default( :uv_continuous, true )
   @settings.set_default( :uv_scale_proportional, false )
   @settings.set_default( :uv_scale_absolute, false )
-  if @settings[ :uv_scale_absolute ]
-    @settings.set_default( :uv_u_scale, 500.mm )
-    @settings.set_default( :uv_v_scale, 500.mm )
-  else
+  begin
+    if @settings[ :uv_scale_absolute ]
+      @settings.set_default( :uv_u_scale, 500.mm )
+      @settings.set_default( :uv_v_scale, 500.mm )
+    else
+      @settings.set_default( :uv_u_scale, 1.0 )
+      @settings.set_default( :uv_v_scale, 1.0 )
+    end
+  rescue
+    # (!) HOTFIX
+    # There has been reports of loading errors which is related to loading
+    # these settings. The Settings manager loads nil values and tries to cast
+    # them into Lengths.
+    #
+    # Possibly it's due to errors in the UV mapping tool which doesn't error
+    # check and stores nil values. Until that is tracked down this little
+    # hotfix resets the UV scale settings so the tool doesn't stop working.
+    @settings[ :uv_u_scale ] = 1.0
+    @settings[ :uv_v_scale ] = 1.0
     @settings.set_default( :uv_u_scale, 1.0 )
     @settings.set_default( :uv_v_scale, 1.0 )
+    TT.debug( 'QuadFace Tools - Error loading UV scale.' )
   end
   
   def self.settings; @settings; end
