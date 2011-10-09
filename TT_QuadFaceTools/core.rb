@@ -465,7 +465,18 @@ module TT::Plugins::QuadFaceTools
   
   # @since 0.4.0
   def self.uv_map_tool
-    Sketchup.active_model.select_tool( UV_MapTool.new )
+    model = Sketchup.active_model
+    material = model.materials.current
+    if material.nil? || material.texture.nil?
+      UI.messagebox( 'No textured material selected.' )
+      return false
+    end
+    unless TT::Material.in_model?( material, model )
+      UI.messagebox( 'Selected material is not in the model. Apply it to something in the model first.' )
+      return false
+    end
+    model.select_tool( UV_MapTool.new )
+    true
   end
   
   
