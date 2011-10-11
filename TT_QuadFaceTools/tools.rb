@@ -46,7 +46,8 @@ module TT::Plugins::QuadFaceTools
       ph = view.pick_helper
       ph.do_pick( x, y )
       face = ph.picked_face
-      if QuadFace.is?( face )
+      in_context = face && face.parent.entities == view.model.active_entities
+      if in_context && QuadFace.is?( face )
         if @quadface
           unless @quadface.faces.include?( face )
             @quadface = QuadFace.new( face )
@@ -160,18 +161,19 @@ module TT::Plugins::QuadFaceTools
       if mouse_button_left
         ph = view.pick_helper
         ph.do_pick( x, y )
-        if ( edge = ph.picked_edge ) && !QuadFace.dividing_edge?( edge )
-          if key_shift # Shift + Ctrl & Shift
-            if selection.include?( edge )
-              selection.remove( edge )
-              onSelectionChange( selection ) # (!) Manual trigger. SU bugged.
-              view.invalidate
-            end
-          elsif key_ctrl
-            unless selection.include?( edge )
-              selection.add( edge )
-              view.invalidate
-            end
+        return false unless edge = ph.picked_edge
+        return false if QuadFace.dividing_edge?( edge )
+        return false unless edge.parent.entities == view.model.active_entities
+        if key_shift # Shift + Ctrl & Shift
+          if selection.include?( edge )
+            selection.remove( edge )
+            onSelectionChange( selection ) # (!) Manual trigger. SU bugged.
+            view.invalidate
+          end
+        elsif key_ctrl
+          unless selection.include?( edge )
+            selection.add( edge )
+            view.invalidate
           end
         end
       end

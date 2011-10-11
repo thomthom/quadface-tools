@@ -1116,7 +1116,7 @@ module TT::Plugins::QuadFaceTools
       @mouse_origin = nil
       
       if state_pick_origin?
-        if edge = @ip_mouse.edge
+        if edge = @ip_mouse.edge and in_current_context?( edge )
           if QuadFace.entity_in_quad?( edge )
             pts = edge.vertices.map { |v| v.position }
             unless QuadFace.dividing_edge?( edge )
@@ -1129,11 +1129,11 @@ module TT::Plugins::QuadFaceTools
             origin = ( d1 < d2 ) ? edge.start : edge.end
             @mouse_origin = origin
           end
-        elsif vertex = @ip_mouse.vertex
+        elsif vertex = @ip_mouse.vertex and in_current_context?( vertex )
           if QuadFace.entity_in_quad?( vertex )
             @mouse_origin = vertex
           end
-        elsif face = @ip_mouse.face
+        elsif face = @ip_mouse.face and in_current_context?( face )
           if QuadFace.is?( face )
             quad = QuadFace.new( face )
             # Find Origin
@@ -1152,7 +1152,7 @@ module TT::Plugins::QuadFaceTools
         end
       elsif state_pick_u? || state_pick_v?
         edge = @ip_mouse.edge
-        if edge && QuadFace.entity_in_quad?( edge )
+        if edge and in_current_context?( edge ) && QuadFace.entity_in_quad?( edge )
           pts = edge.vertices.map { |v| v.position }
           unless QuadFace.dividing_edge?( edge )
             @mouse_edge = edge 
@@ -1213,6 +1213,12 @@ module TT::Plugins::QuadFaceTools
       end
       
     end
+    
+    # @since 0.5.0
+    def in_current_context?( entity )
+      entity.parent.entities == Sketchup.active_model.active_entities
+    end
+    
     
     # @since 0.4.0
     def update_ui
