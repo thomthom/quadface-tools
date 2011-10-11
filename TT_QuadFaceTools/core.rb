@@ -331,6 +331,14 @@ module TT::Plugins::QuadFaceTools
     cmd_toggle_context_menu = cmd
     @commands[:context_menu] = cmd
     
+    cmd = UI::Command.new( 'About QuadFace Tools…' )  {
+      self.show_about_window
+    }
+    cmd.status_bar_text = 'Display plugin information and related links.'
+    cmd.tooltip = 'Display plugin information and related links.'
+    cmd_about = cmd
+    @commands[:about] = cmd
+    
     
     # Menus
     m = TT.menu( 'Tools' ).add_submenu( 'QuadFace Tools' )
@@ -373,6 +381,8 @@ module TT::Plugins::QuadFaceTools
     m.add_separator
     sub_menu = m.add_submenu( 'Preferences' )
     sub_menu.add_item( cmd_toggle_context_menu )
+    m.add_separator
+    m.add_item( cmd_about )
     
     # Context menu
     UI.add_context_menu_handler { |context_menu|
@@ -502,6 +512,47 @@ module TT::Plugins::QuadFaceTools
   # @since 0.4.0
   def self.unwrap_uv_grid_tool
     Sketchup.active_model.select_tool( UV_UnwrapGridTool.new )
+  end
+  
+  
+  # @since 0.5.0
+  def self.show_about_window
+    # (!) Add links to download page, SCF and donation page when TT_Lib2
+    #     supports richer controls.
+    props = {
+      :title => 'About QuadFace Tools',
+      :width => 280,
+      :height => 120,
+      :resizable => false
+    }
+    window = TT::GUI::Window.new( props )
+    window.theme = TT::GUI::Window::THEME_GRAPHITE
+    
+    lblAbout1 = TT::GUI::Label.new( "#{PLUGIN_NAME} (#{PLUGIN_VERSION})" )
+    lblAbout1.top = 5
+    lblAbout1.left = 5
+    window.add_control( lblAbout1 )
+    
+    lblAbout2 = TT::GUI::Label.new( "#{self.extension.description}" )
+    lblAbout2.top = 25
+    lblAbout2.left = 5
+    window.add_control( lblAbout2 )
+    
+    lblAbout3 = TT::GUI::Label.new( "#{self.extension.copyright}" )
+    lblAbout3.bottom = 5
+    lblAbout3.left = 5
+    window.add_control( lblAbout3 )
+    
+    btnClose = TT::GUI::Button.new( 'Close' ) { |control|
+      control.window.close
+    }
+    btnClose.size( 75, 23 )
+    btnClose.right = 5
+    btnClose.bottom = 5
+    window.add_control( btnClose )
+    
+    window.show_window
+    window
   end
   
   
