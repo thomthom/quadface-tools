@@ -1044,9 +1044,12 @@ module TT::Plugins::QuadFaceTools
       @mapping = nil
       
       @contraints = {}
-      for e in contraints
-        next unless e.is_a?( Sketchup::Face )
-        @contraints[ e ] = e
+      for face in contraints
+        next unless face.is_a?( Sketchup::Face )
+        @contraints[ face ] = face
+        for edge in face.edges
+          @contraints[ edge ] = edge
+        end
       end
     end
     
@@ -1239,6 +1242,9 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.5.0
     def in_current_context?( entity )
+      unless @contraints.empty?
+        return false unless @contraints[ entity ]
+      end
       entity.parent.entities == Sketchup.active_model.active_entities
     end
     
