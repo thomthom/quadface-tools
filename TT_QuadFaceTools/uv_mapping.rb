@@ -20,7 +20,12 @@ module TT::Plugins::QuadFaceTools
     # @since 0.4.0
     def activate
       if @uv_grid.mapping
-        unwrap_grid( @uv_grid )
+        if @uv_grid.get_mapping_grid( @uv_grid.mapping )
+          unwrap_grid( @uv_grid )
+        else
+          UI.messagebox( 'Could not map mesh to a 2D grid.' )
+          Sketchup.active_model.select_tool( nil )
+        end
       else
         Sketchup.active_model.tools.push_tool( @uv_grid )
       end
@@ -198,7 +203,11 @@ module TT::Plugins::QuadFaceTools
     # @since 0.4.0
     def activate
       if @uv_grid.mapping
-        copy_uv( @uv_grid )
+        if @uv_grid.get_mapping_grid( @uv_grid.mapping )
+          copy_uv( @uv_grid )
+        else
+          UI.messagebox( 'Could not map mesh to a 2D grid.' )
+        end
         Sketchup.active_model.select_tool( nil )
       else
         Sketchup.active_model.tools.push_tool( @uv_grid )
@@ -254,7 +263,11 @@ module TT::Plugins::QuadFaceTools
     # @since 0.4.0
     def activate
       if @uv_grid.mapping
-        paste_uv( @uv_grid )
+        if @uv_grid.get_mapping_grid( @uv_grid.mapping )
+          paste_uv( @uv_grid )
+        else
+          UI.messagebox( 'Could not map mesh to a 2D grid.' )
+        end
         Sketchup.active_model.select_tool( nil )
       else
         Sketchup.active_model.tools.push_tool( @uv_grid )
@@ -360,6 +373,14 @@ module TT::Plugins::QuadFaceTools
         
       if @uv_grid.mapping
         #puts '> Mapping...'
+        
+        # Validate the picked 2D grid.
+        if @uv_grid.get_mapping_grid( @uv_grid.mapping )
+          @grid_valid = true
+        else
+          @grid_valid = false
+          UI.messagebox( 'Could not map mesh to a 2D grid. Mapping will not be continuous.' )
+        end
         
         calculate_axes()
         @u_handle = point_on_axis( @u_origin, @u_axis, @u_scale )
@@ -559,15 +580,17 @@ module TT::Plugins::QuadFaceTools
       m = context_menu.add_item( 'Continuous Mapping' ) {
         @continuous = !@continuous
         # Check if mesh can be mapped continously
-        if @continuous && !@uv_grid.get_mapping_grid( @uv_grid.mapping )
-          UI.messagebox( 'This mesh cannot be mapped to a 2D grid and continuous is therefore not possible.' )
+        if @continuous && !@grid_valid 
+          UI.messagebox( 'This mesh cannot be mapped to a 2D grid and continuous mapping is therefore not possible.' )
         end
         TT::Model.start_operation( 'Toggle Continuous Mapping' )
         map_mesh()
         Sketchup.active_model.commit_operation
       }
       context_menu.set_validation_proc( m ) {
-        ( @continuous ) ? MF_CHECKED : MF_UNCHECKED
+        continuous = ( @continuous ) ? MF_CHECKED : MF_UNCHECKED
+        grid_valid = ( @grid_valid ) ? MF_ENABLED : MF_GRAYED
+        continuous | grid_valid
       }
       
       #m = context_menu.add_item( 'Skew and Distort' ) { puts '02' }
