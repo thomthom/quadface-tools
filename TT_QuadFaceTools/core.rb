@@ -8,7 +8,7 @@
 require 'sketchup.rb'
 require 'TT_Lib2/core.rb'
 
-TT::Lib.compatible?( '2.5.4', 'TT QuadFace Tools' )
+TT::Lib.compatible?( '2.6.0', 'QuadFace Tools' )
 
 #-------------------------------------------------------------------------------
 
