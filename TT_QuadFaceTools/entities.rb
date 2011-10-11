@@ -391,6 +391,7 @@ module TT::Plugins::QuadFaceTools
       return nil unless valid_native_face?( quadfaces[0] )
       QuadFace.new( quadfaces[0] )
     end
+    alias :next_quad :next_face
     
     # @return [Sketchup::Material]
     # @since 0.1.0

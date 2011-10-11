@@ -664,7 +664,7 @@ module TT::Plugins::QuadFaceTools
       next unless entity.valid?
       next unless entity.is_a?( Sketchup::Edge )
       next if QuadFace.dividing_edge?( entity )
-      loop = find_edge_loop( entity )
+      loop = self.find_edge_loop( entity )
       stack -= loop
       vertices = {}
       # Make loop edges planar between neighbour faces.
@@ -1111,10 +1111,34 @@ module TT::Plugins::QuadFaceTools
     selection = Sketchup.active_model.selection
     entities = []
     for entity in selection
-      next unless entity.is_a?( Sketchup::Edge )
-      next if QuadFace.dividing_edge?( entity )
-      next if !step && entities.include?( entity )
-      entities.concat( find_edge_loop( entity, step ) )
+      if entity.is_a?( Sketchup::Edge )
+        next if QuadFace.dividing_edge?( entity )
+        next if !step && entities.include?( entity )
+        entities.concat( self.find_edge_loop( entity, step ) )
+      elsif entity.is_a?( Sketchup::Face )
+        # Added in 0.5.0
+        next unless QuadFace.is?( entity )
+        next if !step && entities.include?( entity )
+        quad = QuadFace.new( entity )
+        # Check if any of the bordering quads also are selected.
+        # Use to determine direction. If none, traverse in all directions.
+        connected = []
+        selected = []
+        for edge in quad.edges
+          for face in edge.faces
+            next if quad.faces.include?( face )
+            next unless QuadFace.is?( face )
+            q = QuadFace.new( face )
+            connected << q
+            selected << q if selection.include?( face )
+          end
+        end
+        selected = connected if selected.empty?
+        # Select loops.
+        for q in selected
+          entities.concat( self.find_face_loop( quad, q, step ) )
+        end
+      end
     end
     # Select
     selection.add( entities )
@@ -1129,14 +1153,39 @@ module TT::Plugins::QuadFaceTools
     selected = selection.to_a
     entities = []
     for entity in selection
-      next unless entity.is_a?( Sketchup::Edge )
-      next if QuadFace.dividing_edge?( entity )
-      next unless entity.faces.size == 2
-      # Check next edges in loop, if they are not all selected, deselect the
-      # edge.
-      edges = find_edge_loop( entity, true )
-      unless ( edges & selected ).size == edges.size
-        entities << entity
+      if entity.is_a?( Sketchup::Edge )
+        next if QuadFace.dividing_edge?( entity )
+        next unless entity.faces.size == 2
+        # Check next edges in loop, if they are not all selected, deselect the
+        # edge.
+        edges = self.find_edge_loop( entity, true )
+        unless ( edges & selected ).size == edges.size
+          entities << entity
+        end
+      elsif entity.is_a?( Sketchup::Face )
+        # Added in 0.5.0
+        next unless QuadFace.is?( entity )
+        quad = QuadFace.new( entity )
+        selected = []
+        for edge in quad.edges
+          for face in edge.faces
+            next if quad.faces.include?( face )
+            next unless QuadFace.is?( face )
+            q = QuadFace.new( face )
+            selected << q if selection.include?( face )
+          end
+        end
+        # Deselect edge quads.
+        for q in selected
+          edge1 = quad.common_edge( q )
+          edge2 = quad.opposite_edge( edge1 )
+          next_quad = quad.next_quad( edge2 )
+          if next_quad
+            next if next_quad.faces.any? { |f| selection.include?( f ) }
+          end
+          entities.concat( quad.faces )
+          break
+        end
       end
     end
     # Select
@@ -1247,6 +1296,38 @@ module TT::Plugins::QuadFaceTools
       end
     end
     selected_edges
+  end
+  
+  
+  # @since 0.5.0
+  def self.find_face_loop( quad1, quad2, step = false )
+    # Find initial entities.
+    edge1 = quad1.common_edge( quad2 )
+    edge2 = quad1.opposite_edge( edge1 )
+    edge3 = quad2.opposite_edge( edge1 )
+    # Prepare the stack.
+    stack = []
+    stack << [ quad1, edge2 ]
+    stack << [ quad2, edge3 ]
+    loop = quad1.faces + quad2.faces
+    # Keep track of the faces processed.
+    processed = {}
+    quad1.faces.each { |f| processed[ f ] = f }
+    quad2.faces.each { |f| processed[ f ] = f }
+    # Find next quads.
+    until stack.empty?
+      quad, edge = stack.shift
+      next_quad = quad.next_face( edge )
+      next unless next_quad
+      next if next_quad.faces.any? { |face| processed[ face ] }
+      loop.concat( next_quad.faces )
+      next_quad.faces.each { |f| processed[ f ] = f }
+      unless step
+        next_edge = next_quad.opposite_edge( edge )
+        stack << [ next_quad, next_edge ]
+      end
+    end
+    loop
   end
   
   
