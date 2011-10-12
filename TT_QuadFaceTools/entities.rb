@@ -23,34 +23,6 @@ module TT::Plugins::QuadFaceTools
   # @since 0.1.0
   class QuadFace
     
-    # Evaluates if the entity is a face that forms part of a QuadFace.
-    #
-    # @see {QuadFace}
-    #
-    # @param [Sketchup::Entity] entity
-    #
-    # @return [Boolean]
-    # @since 0.1.0
-    def self.is?( face )
-      return false unless face.is_a?( Sketchup::Face )
-      return false unless face.valid?
-      vertex_count = face.vertices.size
-      return false if vertex_count < 3
-      return false if vertex_count > 4
-      # Triangulated QuadFace needs special treatment.
-      if vertex_count == 3
-        edges = face.edges.select { |e| self.divider_props?( e ) }
-        return false unless edges.size == 1
-        dividing_edge = edges[0]
-        return false unless dividing_edge.faces.size == 2
-        other_face = ( dividing_edge.faces - [face] ).first
-        return false unless other_face.vertices.size == 3
-        edges = other_face.edges.select { |e| self.divider_props?( e ) }
-        return false unless edges.size == 1
-      end
-      true
-    end
-    
     # @param [Sketchup::Entity] entity
     #
     # @return [Boolean]
@@ -88,6 +60,51 @@ module TT::Plugins::QuadFaceTools
       entity.faces.any? { |face| self.is?( face ) }
     end
     
+    # @param [Array<Sketchup::Vertex>] vertices
+    #
+    # @return [QuadFace,Nil]
+    # @since 0.4.0
+    def self.from_vertices( vertices )
+      return nil unless vertices.size == 4
+      vertex = vertices.first
+      face = vertex.faces.find { |f|
+        f.vertices.all? { |v| vertices.include?( v ) }
+      }
+      return nil unless face
+      return nil unless self.is?( face )
+      quad = self.new( face )
+      return nil unless quad.vertices.all? { |v| vertices.include?( v ) }
+      quad
+    end
+    
+    # Evaluates if the entity is a face that forms part of a QuadFace.
+    #
+    # @see {QuadFace}
+    #
+    # @param [Sketchup::Entity] entity
+    #
+    # @return [Boolean]
+    # @since 0.1.0
+    def self.is?( face )
+      return false unless face.is_a?( Sketchup::Face )
+      return false unless face.valid?
+      vertex_count = face.vertices.size
+      return false if vertex_count < 3
+      return false if vertex_count > 4
+      # Triangulated QuadFace needs special treatment.
+      if vertex_count == 3
+        edges = face.edges.select { |e| self.divider_props?( e ) }
+        return false unless edges.size == 1
+        dividing_edge = edges[0]
+        return false unless dividing_edge.faces.size == 2
+        other_face = ( dividing_edge.faces - [face] ).first
+        return false unless other_face.vertices.size == 3
+        edges = other_face.edges.select { |e| self.divider_props?( e ) }
+        return false unless edges.size == 1
+      end
+      true
+    end
+    
     # @param [Sketchup::Entity] entity
     #
     # @return [Boolean]
@@ -120,17 +137,6 @@ module TT::Plugins::QuadFaceTools
     #
     # @return [Sketchup::Edge]
     # @since 0.4.0
-    def self.set_divider_props( edge )
-      edge.soft = true
-      edge.smooth = true
-      edge.hidden = true
-      edge
-    end
-    
-    # @param [Sketchup::Edge] edge
-    #
-    # @return [Sketchup::Edge]
-    # @since 0.4.0
     def self.set_border_props( edge )
       if edge.soft? && edge.smooth? && edge.hidden?
         edge.hidden = false
@@ -138,21 +144,15 @@ module TT::Plugins::QuadFaceTools
       edge
     end
     
-    # @param [Array<Sketchup::Vertex>] vertices
+    # @param [Sketchup::Edge] edge
     #
-    # @return [QuadFace,Nil]
+    # @return [Sketchup::Edge]
     # @since 0.4.0
-    def self.from_vertices( vertices )
-      return nil unless vertices.size == 4
-      vertex = vertices.first
-      face = vertex.faces.find { |f|
-        f.vertices.all? { |v| vertices.include?( v ) }
-      }
-      return nil unless face
-      return nil unless self.is?( face )
-      quad = self.new( face )
-      return nil unless quad.vertices.all? { |v| vertices.include?( v ) }
-      quad
+    def self.set_divider_props( edge )
+      edge.soft = true
+      edge.smooth = true
+      edge.hidden = true
+      edge
     end
     
     # @param [Sketchup::Face] face
@@ -173,6 +173,23 @@ module TT::Plugins::QuadFaceTools
       total_area = 0.0
       @faces.each { |face| total_area += face.area }
       total_area
+    end
+    
+    # @return [Sketchup::Material]
+    # @since 0.3.0
+    def back_material
+      @faces[0].back_material
+    end
+    
+    # @param [Sketchup::Material] new_material
+    #
+    # @return [Sketchup::Material]
+    # @since 0.3.0
+    def back_material=( new_material )
+      for face in @faces
+        face.back_material = new_material
+      end
+      face.back_material
     end
     
     # @param [QuadFace] quadface
@@ -212,6 +229,31 @@ module TT::Plugins::QuadFaceTools
         end
       end
       connected
+    end
+    
+    # @return [Boolean]
+    # @since 0.1.0
+    def detriangulate!
+      if @faces.size == 2 && planar?
+        # Materials
+        material_front = material()
+        material_back = back_material()
+        texture_on_front = material_front && material_front.texture
+        texture_on_back  = material_back  && material_back.texture
+        if texture_on_front || texture_on_back
+          uv_front = uv_get()
+          uv_back = uv_get( false )
+        end
+        # Erase divider
+        divider().erase!
+        @faces = @faces.select { |face| face.valid? }
+        # Restore materials
+        uv_set( material_front, uv_front ) if texture_on_front
+        uv_set( material_front, uv_back, false ) if texture_on_back
+        true
+      else
+        false
+      end
     end
     
     # @return [Sketchup::Edge,Nil]
@@ -290,14 +332,6 @@ module TT::Plugins::QuadFaceTools
       @faces.dup
     end
     
-    # @param [Sketchup::Face] face
-    #
-    # @return [Boolean]
-    # @since 0.1.0
-    def include?( face )
-      @faces.include?( face )
-    end
-    
     # @return [Boolean]
     # @since 0.3.0
     def flip_edge
@@ -358,28 +392,29 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
+    # @param [Sketchup::Face] face
+    #
+    # @return [Boolean]
+    # @since 0.1.0
+    def include?( face )
+      @faces.include?( face )
+    end
+    
     # @return [Sketchup::Material]
     # @since 0.3.0
     def material
       @faces[0].material
     end
     
+    # @param [Sketchup::Material] new_material
+    #
     # @return [Sketchup::Material]
-    # @since 0.3.0
+    # @since 0.1.0
     def material=( new_material )
-      @faces.each { |face| face.material = new_material }
-    end
-    
-    # @return [Sketchup::Material]
-    # @since 0.3.0
-    def back_material
-      @faces[0].back_material
-    end
-    
-    # @return [Sketchup::Material]
-    # @since 0.3.0
-    def back_material=( new_material )
-      @faces.each { |face| face.back_material = new_material }
+      for face in @faces
+        face.material = new_material
+      end
+      face.material
     end
     
     # @return [String]
@@ -407,17 +442,6 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
-    # @return [QuadFace,Nil]
-    # @since 0.1.0
-    def next_face( edge )
-      return nil unless edge.faces.size == 2
-      quadfaces = edge.faces.reject! { |face| @faces.include?( face ) }
-      return nil if quadfaces.empty?
-      return nil unless valid_native_face?( quadfaces[0] )
-      QuadFace.new( quadfaces[0] )
-    end
-    alias :next_quad :next_face
-    
     # @return [Sketchup::Edge,nil]
     # @since 0.5.0
     def next_edge( edge )
@@ -428,14 +452,16 @@ module TT::Plugins::QuadFaceTools
       loop[ next_index ]
     end
     
-    # @return [Sketchup::Material]
+    # @return [QuadFace,Nil]
     # @since 0.1.0
-    def material=( material )
-      for face in @faces
-        face.material = material
-      end
-      face.material
+    def next_face( edge )
+      return nil unless edge.faces.size == 2
+      quadfaces = edge.faces.reject! { |face| @faces.include?( face ) }
+      return nil if quadfaces.empty?
+      return nil unless valid_native_face?( quadfaces[0] )
+      QuadFace.new( quadfaces[0] )
     end
+    alias :next_quad :next_face
     
     # @return [Sketchup::Edge]
     # @since 0.1.0
@@ -471,6 +497,12 @@ module TT::Plugins::QuadFaceTools
       else
         TT::Geom3d.planar_points?( vertices() )
       end
+    end
+    
+    # @return [Array<Geom::Point3d>]
+    # @since 0.4.0
+    def positions
+      vertices.map { |vertex| vertex.position }
     end
     
     # @return [Boolean]
@@ -524,31 +556,6 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
-    # @return [Boolean]
-    # @since 0.1.0
-    def detriangulate!
-      if @faces.size == 2 && planar?
-        # Materials
-        material_front = material()
-        material_back = back_material()
-        texture_on_front = material_front && material_front.texture
-        texture_on_back  = material_back  && material_back.texture
-        if texture_on_front || texture_on_back
-          uv_front = uv_get()
-          uv_back = uv_get( false )
-        end
-        # Erase divider
-        divider().erase!
-        @faces = @faces.select { |face| face.valid? }
-        # Restore materials
-        uv_set( material_front, uv_front ) if texture_on_front
-        uv_set( material_front, uv_back, false ) if texture_on_back
-        true
-      else
-        false
-      end
-    end
-    
     # @since 0.4.0
     def uv_get( front = true )
       tw = Sketchup.create_texture_writer
@@ -585,20 +592,6 @@ module TT::Plugins::QuadFaceTools
       true
     end
     
-    # @return [Array<Sketchup::Vertices>]
-    # @since 0.1.0
-    def vertices
-      # .uniq because .sort_vertices return the first vertex twice when the eges
-      # form a loop.
-      TT::Edges.sort_vertices( outer_loop() ).uniq
-    end
-    
-    # @return [Array<Geom::Point3d>]
-    # @since 0.4.0
-    def positions
-      vertices.map { |vertex| vertex.position }
-    end
-    
     # @return [Boolean]
     # @since 0.2.0
     def valid?
@@ -617,6 +610,14 @@ module TT::Plugins::QuadFaceTools
         edge[0].faces.size == 2 &&
         edges.all? { |e| !QuadFace.divider_props?( e ) }
       end
+    end
+    
+    # @return [Array<Sketchup::Vertices>]
+    # @since 0.1.0
+    def vertices
+      # .uniq because .sort_vertices return the first vertex twice when the eges
+      # form a loop.
+      TT::Edges.sort_vertices( outer_loop() ).uniq
     end
     
     private

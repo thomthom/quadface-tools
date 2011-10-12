@@ -1508,14 +1508,6 @@ module TT::Plugins::QuadFaceTools
   end
   
   
-  # @since 0.1.0
-  def self.transform
-    # (!)
-    # Transform a set of entities related to quadfaces - ensuring that native
-    # quadfaces are triangulated correctly with a soft & smooth divider edge.
-  end
-  
-  
   # @param [Sketchup::Face] triangle1
   # @param [Sketchup::Face] triangle2
   #
@@ -1566,29 +1558,6 @@ module TT::Plugins::QuadFaceTools
   
 
   ### DEBUG ### ----------------------------------------------------------------  
-  
-  
-  # @since 0.3.0
-  def self.debug_loop
-    model = Sketchup.active_model
-    sel = model.selection
-    model.start_operation( 'Debug Loop' )
-    for entity in sel
-      next unless QuadFace.is?( entity )
-      quad = QuadFace.new( entity )
-      quad.outer_loop.each_with_index { |e,i|
-        pt1 = e.start.position
-        pt2 = e.end.position
-        mid = Geom.linear_combination( 0.5, pt1, 0.5, pt2 )
-        model.active_entities.add_text( i.to_s, mid, [-2,-2,2] )
-        
-        start = ( quad.edge_reversed?( e ) ) ? pt2 : pt1
-        pt3 = Geom.linear_combination( 0.5, start, 0.5, mid )
-        model.active_entities.add_text( 'S', pt3, [-1,-1,1] )
-      }
-    end
-    model.commit_operation
-  end
   
   
   # @note Debug method to reload the plugin.
