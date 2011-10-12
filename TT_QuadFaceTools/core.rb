@@ -1063,10 +1063,28 @@ module TT::Plugins::QuadFaceTools
     selection = Sketchup.active_model.selection
     entities = []
     for entity in selection
-      next unless entity.is_a?( Sketchup::Edge )
-      next if QuadFace.dividing_edge?( entity )
-      next if !step && entities.include?( entity )
-      entities.concat( find_edge_ring( entity, step ) )
+      if entity.is_a?( Sketchup::Edge )
+        next if QuadFace.dividing_edge?( entity )
+        next if !step && entities.include?( entity )
+        entities.concat( find_edge_ring( entity, step ) )
+      elsif entity.is_a?( Sketchup::Face )
+        next unless QuadFace.is?( entity )
+        next if entities.include?( entity )
+        quad = QuadFace.new( entity )
+        selected = quad.connected_quads( selection )
+        if selected.size == 1
+          edge1 = quad.common_edge( selected[0] )
+          edge = quad.next_edge( edge1 )
+        elsif selected.size == 2
+          edge1 = quad.common_edge( selected[0] )
+          edge2 = quad.common_edge( selected[1] )
+          next unless quad.opposite_edge( edge1 ) == edge2
+          edge = quad.next_edge( edge1 )
+        else
+          next
+        end
+        entities.concat( find_face_ring( quad, edge ) )
+      end
     end
     # Select
     selection.add( entities )
@@ -1122,20 +1140,10 @@ module TT::Plugins::QuadFaceTools
         quad = QuadFace.new( entity )
         # Check if any of the bordering quads also are selected.
         # Use to determine direction. If none, traverse in all directions.
-        connected = []
-        selected = []
-        for edge in quad.edges
-          for face in edge.faces
-            next if quad.faces.include?( face )
-            next unless QuadFace.is?( face )
-            q = QuadFace.new( face )
-            connected << q
-            selected << q if selection.include?( face )
-          end
-        end
-        selected = connected if selected.empty?
+        connected = quad.connected_quads( selection )
+        connected = quad.connected_quads if connected.empty?
         # Select loops.
-        for q in selected
+        for q in connected
           entities.concat( self.find_face_loop( quad, q, step ) )
         end
       end
@@ -1166,15 +1174,7 @@ module TT::Plugins::QuadFaceTools
         # Added in 0.5.0
         next unless QuadFace.is?( entity )
         quad = QuadFace.new( entity )
-        selected = []
-        for edge in quad.edges
-          for face in edge.faces
-            next if quad.faces.include?( face )
-            next unless QuadFace.is?( face )
-            q = QuadFace.new( face )
-            selected << q if selection.include?( face )
-          end
-        end
+        selected = quad.connected_quads( selection )
         next unless selected.size == 1
         # Deselect edge quads.
         for q in selected
@@ -1265,6 +1265,15 @@ module TT::Plugins::QuadFaceTools
     end # for entity
     # Update selection
     selection.remove( new_selection )
+  end
+  
+  
+  # @since 0.5.0
+  def self.find_face_ring( quad, edge )
+    entities = []
+    quad2 = quad.next_quad( edge )
+    entities.concat( self.find_face_loop( quad, quad2 ) ) if quad2
+    entities
   end
   
   

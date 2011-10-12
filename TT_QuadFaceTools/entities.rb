@@ -189,6 +189,31 @@ module TT::Plugins::QuadFaceTools
       match[0]
     end
     
+    # Finds the quads connected to the quad's edges.
+    #
+    # @param [Array<Sketchup::Entity>] contraints
+    #
+    # @return [Array<QuadFace>]
+    # @since 0.5.0
+    def connected_quads( contraints = nil )
+      connected = []
+      for edge in edges
+        for face in edge.faces
+          next if faces.include?( face )
+          next unless QuadFace.is?( face )
+          quad = QuadFace.new( face )
+          if contraints
+            if quad.faces.all? { |f| contraints.include?( f ) }
+              connected << quad
+            end
+          else
+            connected << quad
+          end
+        end
+      end
+      connected
+    end
+    
     # @return [Sketchup::Edge,Nil]
     # @since 0.3.0
     def divider
@@ -392,6 +417,16 @@ module TT::Plugins::QuadFaceTools
       QuadFace.new( quadfaces[0] )
     end
     alias :next_quad :next_face
+    
+    # @return [Sketchup::Edge,nil]
+    # @since 0.5.0
+    def next_edge( edge )
+      loop = outer_loop()
+      index = loop.index( edge )
+      return nil unless index
+      next_index = ( index + 1 ) % 4
+      loop[ next_index ]
+    end
     
     # @return [Sketchup::Material]
     # @since 0.1.0
