@@ -1175,6 +1175,7 @@ module TT::Plugins::QuadFaceTools
             selected << q if selection.include?( face )
           end
         end
+        next unless selected.size == 1
         # Deselect edge quads.
         for q in selected
           edge1 = quad.common_edge( q )
