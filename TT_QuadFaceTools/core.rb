@@ -229,7 +229,7 @@ module TT::Plugins::QuadFaceTools
     cmd_remove_triangulation = cmd
     @commands[:remove_triangulation] = cmd
     
-    cmd = UI::Command.new( 'Connected Mesh to Quads' )  {
+    cmd = UI::Command.new( 'Triangulated Mesh to Quads' )  {
       self.convert_connected_mesh_to_quads
     }
     cmd.small_icon = File.join( PATH_ICONS, 'ConvertToQuads_16.png' )
