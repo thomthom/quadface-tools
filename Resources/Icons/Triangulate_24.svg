@@ -13,9 +13,9 @@
    height="24"
    id="svg2985"
    version="1.1"
-   inkscape:version="0.48.1 "
+   inkscape:version="0.48.2 r9819"
    sodipodi:docname="Triangulate_24.svg"
-   inkscape:export-filename="C:\Users\thm.ARC\Dropbox\Plugins\Main Home Computer Extra\QuadFace Tools\TT_QuadFaceTools\Icons\Triangulate_24.png"
+   inkscape:export-filename="C:\Users\Thomas\Documents\My Dropbox\SketchUp\Plugins\ThomThom\QuadFace Tools\TT_QuadFaceTools\Icons\Detriangulate_24.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <defs
@@ -28,17 +28,19 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="22.197802"
-     inkscape:cx="0.83712865"
+     inkscape:cx="9.8510663"
      inkscape:cy="8"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="layer4"
      showgrid="true"
      inkscape:grid-bbox="true"
      inkscape:document-units="px"
-     inkscape:window-width="1600"
-     inkscape:window-height="1138"
+     inkscape:window-width="1920"
+     inkscape:window-height="1018"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
-     inkscape:window-maximized="1">
+     inkscape:window-maximized="1"
+     showguides="true"
+     inkscape:guide-bbox="true">
     <inkscape:grid
        type="xygrid"
        id="grid3761"
@@ -60,35 +62,91 @@
     </rdf:RDF>
   </metadata>
   <g
-     id="layer1"
-     inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     transform="translate(0,8)">
+     id="layer2"
+     inkscape:label="Background"
+     sodipodi:insensitive="true">
     <rect
+       transform="translate(0,8)"
        style="fill:#dcdcdc;fill-opacity:1;stroke:none"
        id="rect3763-4"
        width="21"
        height="21"
        x="1"
        y="-6" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer4"
+     inkscape:label="Detriangulate"
+     sodipodi:insensitive="true"
+     style="display:none">
     <path
-       style="fill:none;stroke:#646464;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       style="fill:none;stroke:#f10000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0.5;display:inline"
+       d="M 1,13 11,23"
+       id="path3769-1-5"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#f10000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0.5;display:inline"
+       d="M 1,2 11,12"
+       id="path3769-1-5-5"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#f10000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0.5;display:inline"
+       d="M 12,2 22,12"
+       id="path3769-1-5-2"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#f10000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0.5;display:inline"
+       d="M 12,13 22,23"
+       id="path3769-1-5-7"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="Triangulate"
+     style="display:inline"
+     sodipodi:insensitive="true">
+    <path
+       transform="translate(0,8)"
+       style="fill:none;stroke:#1985ff;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="M 1,5 11,15"
        id="path3769"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
     <path
-       style="fill:none;stroke:#646464;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3,3;stroke-dashoffset:0.5"
+       transform="translate(0,8)"
+       style="fill:none;stroke:#1985ff;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="M 1,-6 11,4"
        id="path3769-1"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
     <path
-       style="fill:none;stroke:#646464;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3,3;stroke-dashoffset:0.5"
-       d="M 12,5 22,15"
+       transform="translate(0,8)"
+       style="fill:none;stroke:#1985ff;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 12,-6 22,4"
        id="path3769-7"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
+    <path
+       transform="translate(0,8)"
+       style="fill:none;stroke:#1985ff;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 12,5 22,15"
+       id="path3769-11"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
+  </g>
+  <g
+     id="layer1"
+     inkscape:label="Frames"
+     inkscape:groupmode="layer"
+     transform="translate(0,8)"
+     sodipodi:insensitive="true">
     <rect
        style="fill:none;stroke:#404040;stroke-width:1;stroke-opacity:1"
        id="rect3763"

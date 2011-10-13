@@ -213,7 +213,7 @@ module TT::Plugins::QuadFaceTools
     cmd_flip_triangulation = cmd
     @commands[:flip_triangulation] = cmd
     
-    cmd = UI::Command.new( 'Triangulate' )  { self.triangulate_selection}
+    cmd = UI::Command.new( 'Triangulate' )  { self.triangulate_selection }
     cmd.small_icon = File.join( PATH_ICONS, 'Triangulate_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Triangulate_24.png' )
     cmd.status_bar_text = 'Triangulate selected QuadFaces.'
@@ -221,7 +221,9 @@ module TT::Plugins::QuadFaceTools
     cmd_triangulate_selection = cmd
     @commands[:triangulate] = cmd
     
-    cmd = UI::Command.new( 'Remove Triangulation' )  { self.remove_triangulation}
+    cmd = UI::Command.new( 'Remove Triangulation' )  { self.remove_triangulation }
+    cmd.small_icon = File.join( PATH_ICONS, 'Detriangulate_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'Detriangulate_24.png' )
     cmd.status_bar_text = 'Remove triangulation from selected planar Quads.'
     cmd.tooltip = 'Remove triangulation from selected planar Quads'
     cmd_remove_triangulation = cmd
@@ -256,6 +258,8 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Smooth Quads' )  {
       self.smooth_quad_mesh
     }
+    cmd.small_icon = File.join( PATH_ICONS, 'Smooth_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'Smooth_24.png' )
     cmd.status_bar_text = 'Smooths the selected Quads\' edges.'
     cmd.tooltip = 'Smooths the selected Quads\' edges'
     cmd_smooth_quad_mesh = cmd
@@ -264,6 +268,8 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Unsmooth Quads' )  {
       self.unsmooth_quad_mesh
     }
+    cmd.small_icon = File.join( PATH_ICONS, 'Unsmooth_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'Unsmooth_24.png' )
     cmd.status_bar_text = 'Unsmooth the selected Quads\' edges.'
     cmd.tooltip = 'Unsmooth the selected Quads\' edges'
     cmd_unsmooth_quad_mesh = cmd
@@ -448,6 +454,11 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_separator
     toolbar.add_item( cmd_flip_triangulation_tool )
     toolbar.add_item( cmd_triangulate_selection )
+    toolbar.add_item( cmd_remove_triangulation )
+    toolbar.add_separator
+    toolbar.add_item( cmd_smooth_quad_mesh )
+    toolbar.add_item( cmd_unsmooth_quad_mesh )
+    toolbar.add_separator
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
     toolbar.add_separator
     toolbar.add_item( cmd_uv_map )
