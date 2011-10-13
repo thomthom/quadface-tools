@@ -967,21 +967,36 @@ module TT::Plugins::QuadFaceTools
   def self.convert_quadmesh_r1_to_r2
     model = Sketchup.active_model
     selection = model.selection
-    TT::Model.start_operation( 'Convert Revision 1 quads to Revision 2' )
-    # Only triangualted quads needs converting.
-    for face in selection
-      next unless face.is_a?( Sketchup::Face )
-      next unless face.vertices.size == 3
-      soft_edges = face.edges.select { |e| e.soft? }
+    entities = ( selection.empty? ) ? model.active_entities : selection
+    TT::Model.start_operation( 'Convert Sandbox Quads' )
+    self.convert_sandbox_to_quads( entities )
+    model.commit_operation
+  end
+  
+  
+  # @param [Enumerable<Sketchup::Entity>] entities
+  #
+  # @return [Nil]
+  # @since 0.5.0
+  def self.convert_sandbox_to_quads( entities )
+    for entity in entities
+      if TT::Instance.is?( entity )
+        definition = TT::Instance.definition( entity )
+        self.convert_sandbox_to_quads( definition.entities )
+      end
+      # Only triangualted quads needs converting.
+      next unless entity.is_a?( Sketchup::Face )
+      next unless entity.vertices.size == 3
+      soft_edges = entity.edges.select { |e| e.soft? }
       next unless soft_edges.size == 1
       divider = soft_edges[0]
       next unless divider.faces.size == 2
-      other_face = ( divider.faces - [ face ] )[0]
+      other_face = ( divider.faces - [ entity ] )[0]
       next unless other_face.edges.size == 3
       next unless other_face.edges.select { |e| e.soft? }.size == 1
       QuadFace.set_divider_props( divider )
     end
-    model.commit_operation
+    nil
   end
   
   
