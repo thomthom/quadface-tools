@@ -234,14 +234,16 @@ module TT::Plugins::QuadFaceTools
     }
     cmd.small_icon = File.join( PATH_ICONS, 'ConvertToQuads_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'ConvertToQuads_24.png' )
-    cmd.status_bar_text = 'Convert connected mesh to Quads.'
-    cmd.tooltip = 'Convert Connected Mesh to Quads'
+    cmd.status_bar_text = 'Convert triangulated mesh to Quads.'
+    cmd.tooltip = 'Convert Triangulated Mesh to Quads'
     cmd_convert_connected_mesh_to_quads = cmd
     @commands[:mesh_to_quads] = cmd
     
     cmd = UI::Command.new( 'Blender Quads to SketchUp Quads' )  {
       self.convert_blender_quads_to_sketchup_quads
     }
+    cmd.small_icon = File.join( PATH_ICONS, 'BlenderToQuads_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'BlenderToQuads_24.png' )
     cmd.status_bar_text = 'Convert Blender quads to SketchUp Quads.'
     cmd.tooltip = 'Convert Blender quads to SketchUp Quads'
     cmd_convert_blender_quads_to_sketchup_quads = cmd
@@ -250,6 +252,8 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Sandbox Quads to QuadFace Quads' )  {
       self.convert_quadmesh_r1_to_r2
     }
+    cmd.small_icon = File.join( PATH_ICONS, 'SandboxToQuads_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'SandboxToQuads_24.png' )
     cmd.status_bar_text = 'Convert Quads from Revision 1 definition to Revision 2.'
     cmd.tooltip = 'Convert Quads from Revision 1 definition to Revision 2'
     cmd_convert_quadmesh_r1_to_r2 = cmd
@@ -456,15 +460,17 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_triangulate_selection )
     toolbar.add_item( cmd_remove_triangulation )
     toolbar.add_separator
-    toolbar.add_item( cmd_smooth_quad_mesh )
-    toolbar.add_item( cmd_unsmooth_quad_mesh )
-    toolbar.add_separator
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
+    toolbar.add_item( cmd_convert_quadmesh_r1_to_r2 )
+    toolbar.add_item( cmd_convert_blender_quads_to_sketchup_quads )
     toolbar.add_separator
     toolbar.add_item( cmd_uv_map )
     toolbar.add_item( cmd_uv_copy )
     toolbar.add_item( cmd_uv_paste )
     toolbar.add_item( cmd_unwrap_uv_grid )
+    toolbar.add_separator
+    toolbar.add_item( cmd_smooth_quad_mesh )
+    toolbar.add_item( cmd_unsmooth_quad_mesh )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
