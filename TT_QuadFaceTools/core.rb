@@ -877,8 +877,24 @@ module TT::Plugins::QuadFaceTools
   # @since 0.2.0
   def self.smooth_quad_mesh
     model = Sketchup.active_model
+    selection = model.selection
+    entities = ( selection.empty? ) ? model.active_entities : selection
     TT::Model.start_operation( 'Smooth Quads' )
-    for entity in model.selection
+    self.smooth_quads( entities )
+    model.commit_operation
+  end
+  
+  
+  # @param [Enumerable<Sketchup::Entity>] entities
+  #
+  # @return [Nil]
+  # @since 0.5.0
+  def self.smooth_quads( entities )
+    for entity in entities
+      if TT::Instance.is?( entity )
+        definition = TT::Instance.definition( entity )
+        self.smooth_quads( definition.entities )
+      end
       next unless QuadFace.is?( entity )
       quadface = QuadFace.new( entity )
       quadface.edges.each { |edge|
@@ -888,7 +904,7 @@ module TT::Plugins::QuadFaceTools
         edge.hidden = false
       }
     end
-    model.commit_operation
+    nil
   end
   
   
@@ -897,8 +913,24 @@ module TT::Plugins::QuadFaceTools
   # @since 0.2.0
   def self.unsmooth_quad_mesh
     model = Sketchup.active_model
+    selection = model.selection
+    entities = ( selection.empty? ) ? model.active_entities : selection
     TT::Model.start_operation( 'Unsmooth Quads' )
-    for entity in model.selection
+    self.unsmooth_quads( entities )
+    model.commit_operation
+  end
+  
+  
+  # @param [Enumerable<Sketchup::Entity>] entities
+  #
+  # @return [Nil]
+  # @since 0.5.0
+  def self.unsmooth_quads( entities )
+    for entity in entities
+      if TT::Instance.is?( entity )
+        definition = TT::Instance.definition( entity )
+        self.unsmooth_quads( definition.entities )
+      end
       next unless QuadFace.is?( entity )
       quadface = QuadFace.new( entity )
       quadface.edges.each { |edge|
@@ -907,7 +939,7 @@ module TT::Plugins::QuadFaceTools
         edge.soft = false
       }
     end
-    model.commit_operation
+    nil
   end
   
   
