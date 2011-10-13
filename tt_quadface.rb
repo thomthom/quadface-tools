@@ -20,7 +20,7 @@ module TT::Plugins::QuadFaceTools
   PLUGIN          = TT::Plugins::QuadFaceTools
   PLUGIN_ID       = 'TT_QuadFaceTools'.freeze
   PLUGIN_NAME     = 'QuadFace Tools'.freeze
-  PLUGIN_VERSION  = '0.4.1'.freeze
+  PLUGIN_VERSION  = '0.5.0'.freeze
   PLUGIN_AUTHOR   = 'ThomThom'.freeze
   
   # Resource paths
@@ -52,7 +52,7 @@ module TT::Plugins::QuadFaceTools
       :name => PLUGIN_NAME,
       :author => PLUGIN_AUTHOR,
       :version => PLUGIN_VERSION.to_s,
-      :date => '09 Oct 11',   
+      :date => '13 Oct 11',   
       :description => @ex.description,
       :link_info => 'https://bitbucket.org/thomthom/quadface-tools/'
     }
