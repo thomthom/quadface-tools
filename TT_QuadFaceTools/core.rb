@@ -1009,7 +1009,7 @@ module TT::Plugins::QuadFaceTools
     model = Sketchup.active_model
     selection = model.selection
     entities = ( selection.empty? ) ? model.active_entities : selection
-    TT::Model.start_operation( 'Blender Quads to SketchUp Quads' )
+    TT::Model.start_operation( 'Convert Blender Quads' )
       self.convert_blender_quads( entities )
     model.commit_operation
   end
