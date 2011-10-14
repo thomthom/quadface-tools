@@ -1,0 +1,107 @@
+20.times { TT::Plugins::QuadFaceTools.selection_grow }
+[4984] self.selection_grow: 0.002
+[4984] self.selection_grow: 0.008
+[4984] self.selection_grow: 0.019
+[4984] self.selection_grow: 0.018
+[4984] self.selection_grow: 0.032
+[4984] self.selection_grow: 0.047
+[4984] self.selection_grow: 0.067
+[4984] self.selection_grow: 0.087
+[4984] self.selection_grow: 0.153
+[4984] self.selection_grow: 0.141
+[4984] self.selection_grow: 0.211
+[4984] self.selection_grow: 0.239
+[4984] self.selection_grow: 0.305
+[4984] self.selection_grow: 0.343
+[4984] self.selection_grow: 0.402
+[4984] self.selection_grow: 0.487
+[4984] self.selection_grow: 0.563
+[4984] self.selection_grow: 0.634
+[4984] self.selection_grow: 0.751
+[4984] self.selection_grow: 0.849
+
+20.times { TT::Plugins::QuadFaceTools.selection_grow2 }
+[4984] self.selection_grow2: 0.001
+[4984] self.selection_grow2: 0.002
+[4984] self.selection_grow2: 0.003
+[4984] self.selection_grow2: 0.006
+[4984] self.selection_grow2: 0.008
+[4984] self.selection_grow2: 0.007
+[4984] self.selection_grow2: 0.01
+[4984] self.selection_grow2: 0.045
+[4984] self.selection_grow2: 0.014
+[4984] self.selection_grow2: 0.017
+[4984] self.selection_grow2: 0.022
+[4984] self.selection_grow2: 0.026
+[4984] self.selection_grow2: 0.06
+[4984] self.selection_grow2: 0.036
+[4984] self.selection_grow2: 0.066
+[4984] self.selection_grow2: 0.072
+[4984] self.selection_grow2: 0.079
+[4984] self.selection_grow2: 0.115
+[4984] self.selection_grow2: 0.122
+[4984] self.selection_grow2: 0.131
+
+  # Extend the selection by one entity from the current selection set.
+  #
+  # @since 0.1.0
+  def self.selection_grow
+    t = Time.now
+    selection = Sketchup.active_model.selection
+    new_selection = []
+    for entity in selection
+      if entity.is_a?( Sketchup::Edge )
+        for vertex in entity.vertices
+          edges = vertex.edges.select { |e| !QuadFace.dividing_edge?( e ) }
+          new_selection.concat( edges )
+        end
+      elsif entity.is_a?( Sketchup::Face )
+        if QuadFace.is?( entity )
+          face = QuadFace.new( entity )
+        else
+          face = entity
+        end
+        for edge in face.edges
+          for f in edge.faces
+            if QuadFace.is?( f )
+              qf = QuadFace.new( f )
+              new_selection.concat( qf.faces )
+            else
+              new_selection << f
+            end
+          end
+        end # for edge in face.edges
+      end # if entity.is_a?
+    end # for entity
+    # Update selection
+    selection.add( new_selection )
+    TT.debug "self.selection_grow: #{Time.now - t}"
+  end
+  
+  def self.selection_grow2
+    t = Time.now
+    selection = Sketchup.active_model.selection
+    entities = EntitiesProvider.new( selection )
+    new_selection = []
+    for entity in entities
+      if entity.is_a?( Sketchup::Edge )
+        for vertex in entity.vertices
+          edges = vertex.edges.select { |e| !QuadFace.dividing_edge?( e ) }
+          new_selection.concat( edges )
+        end
+      elsif entity.respond_to?( :edges )
+        for edge in entity.edges
+          for face in edge.faces
+            e = entities.get( face )
+            if e.is_a?( QuadFace )
+              new_selection.concat( e.faces )
+            else
+              new_selection << e
+            end
+          end
+        end # for edge in face.edges
+      end # if entity.is_a?
+    end # for entity
+    selection.add( new_selection )
+    TT.debug "self.selection_grow2: #{Time.now - t}"
+  end
