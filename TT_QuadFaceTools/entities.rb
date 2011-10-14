@@ -684,22 +684,25 @@ module TT::Plugins::QuadFaceTools
   end # class VirtualQuadFace
   
   
-  # @since 0.2.0
+  # @since 0.6.0
   class EntitiesProvider
     
     include Enumerable
     
-    # @since 0.2.0
+    # @since 0.6.0
     attr_reader( :model, :parent )
     
     # @param [Enumerable] entities
     #
-    # @since 0.2.0
+    # @since 0.6.0
     def initialize( entities )
       # Model references
       @model = nil
       @parent = nil
-      unless entities.length == 0
+      if entities.empty?
+        @parent = Sketchup.active_model
+        @model = Sketchup.active_model
+      else
         entity = entities[0]
         @parent = entity.parent
         @model = entity.model
@@ -707,96 +710,209 @@ module TT::Plugins::QuadFaceTools
       # Entities
       @entities = entities.to_a
       @faces_to_quads = {}
-      @faces_and_quads = []
-      @faces = [] # All native faces in collection, including Quad's faces.
-      @quads = [] # All QuadFaces in collection
-      @edges = []
+      @types = {}
+    end
+    
+    # @since 0.6.0
+    def add( *args )
+      if args.length == 1 && args.is_a?( Enumerable )
+        entities = args[0]
+      else
+        entities = args
+      end
       for entity in entities
-        if entity.is_a?( Sketchup::Edge )
-          @edges << entity
-        elsif entity.is_a?( Sketchup::Face )
-          unless @faces_to_quads[ entity ]
-            if QuadFace.is?( entity )
-              quad = QuadFace.new( entity )
-              @faces << quad.faces[0]
-              @faces << quad.faces[1]
-              @faces_and_quads << quad
-              @faces_to_quads[ quad.faces[0] ] = quad
-              @faces_to_quads[ quad.faces[1] ] = quad
-            else
-              @faces << entity
-              @faces_and_quads << entity
-            end
+        if entity.is_a?( QuadFace )
+          @types[ e.class ] ||= []
+          if entity.faces.all? { |f| @faces_to_quads[ f ] }
+            @types[ e.class ] << @faces_to_quads[ entity.faces[0] ]
+          else
+            @types[ e.class ] << entity
+          end
+        else
+          next if entity.include?( entities )
+          @entities << entity
+          e = get( entity )
+          unless e.is_a?( QuadFace )
+            @types[ e.class ] ||= []
+            @types[ e.class ] << quad
           end
         end
       end
     end
+    alias :<< :add
     
-    # @since 0.2.0
-    def each( &block )
-      @entities.each( &block )
+    # @since 0.6.0
+    def all
+      @types.values.flatten
     end
     
+    # Processes the given set of entities give to #new and builds the cache
+    # with native entities and QuadFace entities.
+    #
+    # @since 0.6.0
+    def analyse
+      for entity in @entities
+        entity_class = entity.class
+        if @faces_to_quads[ entity ].nil? && QuadFace.is?( entity )
+          quad = QuadFace.new( entity )
+          cache_quad( quad )
+        else
+          @types[ entity_class ] ||= []
+          @types[ entity_class ] << entity
+        end
+      end
+      nil
+    end
+    
+    # Traverses the given set of entities given to #new. Discovers and cache
+    # QuadFaces on the fly.
+    #
+    # @since 0.6.0
+    def each
+      skip = {}
+      for entity in @entities
+        if entity.is_a?( Sketchup::Face )
+          next if skip[ entity ]
+          if quad = @faces_to_quads[ entity ]
+            # Existing Quad
+            for face in quad.faces
+              skip[ face ] = face
+            end
+            yield( quad )
+          elsif QuadFace.is?( entity )
+            # Unprocessed Quad
+            quad = QuadFace.new( entity )
+            cache_quad( quad )
+            for face in quad.faces
+              skip[ face ] = face
+            end
+            yield( quad )
+          else
+            # Native Face
+            yield( entity )
+          end
+        else
+          # All other entities
+          yield( entity )
+        end
+      end
+    end
+    
+    # Returns all cached faces and QuadFaces.
+    #
+    # Use #analyse prior to this when full set if required.
+    #
     # @return [Array<Sketchup::Face,QuadFace>]
-    # @since 0.2.0
+    # @since 0.6.0
     def faces
-      @faces_and_quads.to_a
+      @types[ QuadFace ] + @types[ Sketchup::Face ]
     end
     
+    # Returns all cached QuadFaces.
+    #
+    # Use #analyse prior to this when full set if required.
+    #
     # @return [Array<QuadFace>]
-    # @since 0.2.0
+    # @since 0.6.0
     def quads
-      @quads.to_a
+      @types[ QuadFace ].to_a
     end
     
+    # Returns all the native faces for the cached QuadFaces.
+    #
+    # Use #analyse prior to this when full set if required.
+    #
     # @return [Array<QuadFace>]
-    # @since 0.2.0
+    # @since 0.6.0
     def quad_faces
       @faces_to_quads.keys
     end
     
+    # Returns all cached native entities.
+    #
+    # Use #analyse prior to this when full set if required.
+    #
     # @return [Array<Sketchup::Face>]
-    # @since 0.2.0
+    # @since 0.6.0
+    def native_entities
+      @entities | quad_faces
+    end
+    
+    # Returns all native faces for the cached entities.
+    #
+    # Use #analyse prior to this when full set if required.
+    #
+    # @return [Array<Sketchup::Face>]
+    # @since 0.6.0
     def native_faces
-      @faces.to_a
+      quad_faces + @types[ Sketchup::Face ]
     end
     
+    # Returns all the edges for the cached entities.
+    #
+    # Use #analyse prior to this when full set if required.
+    #
     # @return [Array<Sketchup::Edge>]
-    # @since 0.2.0
+    # @since 0.6.0
     def edges
-      @edges.to_a
+      @types[ Sketchup::Edge ].to_a
     end
     
+    # Returns a QuadFace for any native face that is part of a quad.
+    #
     # @return [QuadFace,Sketchup::Face]
-    # @since 0.2.0
-    def get_face( face )
-      @faces_to_quads[ face ] || face
+    # @since 0.6.0
+    def get( entity )
+      if quad = @faces_to_quads[ entity ]
+        quad
+      elsif QuadFace.is?( entity )
+        quad = QuadFace.new( entity )
+        cache_quad( quad )
+        quad
+      else
+        entity
+      end
     end
     
     # @return [Array<Sketchup::Entity,QuadFace>]
-    # @since 0.2.0
+    # @since 0.6.0
     def to_a
-      @entities.to_a
+      all()
     end
     
     # @return [Integer]
-    # @since 0.2.0
+    # @since 0.6.0
     def length
-      @entities.length
+      all.length
     end
     alias :size :length
     
     # @return [Boolean]
-    # @since 0.2.0
+    # @since 0.6.0
     def empty?
-      @entities.empty?
+      all.empty?
     end
     
     # @return [String]
-    # @since 1.0.0
+    # @since 0.6.0
     def inspect
       hex_id = TT.object_id_hex( self )
       "#<#{self.class.name}:#{hex_id}>"
+    end
+    
+    private
+    
+    # @param [QuadFace] quad
+    #
+    # @return [QuadFace]
+    # @since 0.6.0
+    def cache_quad( quad )
+      @types[ QuadFace ] ||= []
+      @types[ QuadFace ] << quad
+      for face in quad.faces
+        @faces_to_quads[ face ] = quad
+      end
+      quad
     end
     
   end # class EntitiesProvider
