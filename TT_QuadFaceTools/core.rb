@@ -1263,32 +1263,27 @@ module TT::Plugins::QuadFaceTools
   # @since 0.1.0
   def self.selection_grow
     selection = Sketchup.active_model.selection
+    entities = EntitiesProvider.new( selection )
     new_selection = []
-    for entity in selection
+    for entity in entities
       if entity.is_a?( Sketchup::Edge )
         for vertex in entity.vertices
           edges = vertex.edges.select { |e| !QuadFace.dividing_edge?( e ) }
           new_selection.concat( edges )
         end
-      elsif entity.is_a?( Sketchup::Face )
-        if QuadFace.is?( entity )
-          face = QuadFace.new( entity )
-        else
-          face = entity
-        end
-        for edge in face.edges
-          for f in edge.faces
-            if QuadFace.is?( f )
-              qf = QuadFace.new( f )
-              new_selection.concat( qf.faces )
+      elsif entity.respond_to?( :edges )
+        for edge in entity.edges
+          for face in edge.faces
+            e = entities.get( face )
+            if e.is_a?( QuadFace )
+              new_selection.concat( e.faces )
             else
-              new_selection << f
+              new_selection << e
             end
           end
         end # for edge in face.edges
       end # if entity.is_a?
     end # for entity
-    # Update selection
     selection.add( new_selection )
   end
   
