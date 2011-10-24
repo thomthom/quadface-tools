@@ -798,6 +798,22 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
+    # Returns all the edges for the cached entities.
+    #
+    # Use #analyse prior to this when full set if required.
+    #
+    # @return [Array<Sketchup::Edge>]
+    # @since 0.6.0
+    def edges
+      @types[ Sketchup::Edge ].to_a
+    end
+    
+    # @return [Boolean]
+    # @since 0.6.0
+    def empty?
+      all.empty?
+    end
+    
     # Returns all cached faces and QuadFaces.
     #
     # Use #analyse prior to this when full set if required.
@@ -806,6 +822,56 @@ module TT::Plugins::QuadFaceTools
     # @since 0.6.0
     def faces
       @types[ QuadFace ] + @types[ Sketchup::Face ]
+    end
+    
+    # Returns a QuadFace for any native face that is part of a quad.
+    #
+    # @return [QuadFace,Sketchup::Face]
+    # @since 0.6.0
+    def get( entity )
+      if quad = @faces_to_quads[ entity ]
+        quad
+      elsif QuadFace.is?( entity )
+        quad = QuadFace.new( entity )
+        cache_quad( quad )
+        quad
+      else
+        entity
+      end
+    end
+    
+    # @return [String]
+    # @since 0.6.0
+    def inspect
+      hex_id = TT.object_id_hex( self )
+      "#<#{self.class.name}:#{hex_id}>"
+    end
+    
+    # @return [Integer]
+    # @since 0.6.0
+    def length
+      all.length
+    end
+    alias :size :length
+    
+    # Returns all cached native entities.
+    #
+    # Use #analyse prior to this when full set if required.
+    #
+    # @return [Array<Sketchup::Face>]
+    # @since 0.6.0
+    def native_entities
+      @entities | quad_faces
+    end
+    
+    # Returns all native faces for the cached entities.
+    #
+    # Use #analyse prior to this when full set if required.
+    #
+    # @return [Array<Sketchup::Face>]
+    # @since 0.6.0
+    def native_faces
+      quad_faces + @types[ Sketchup::Face ]
     end
     
     # Returns all cached QuadFaces.
@@ -828,76 +894,10 @@ module TT::Plugins::QuadFaceTools
       @faces_to_quads.keys
     end
     
-    # Returns all cached native entities.
-    #
-    # Use #analyse prior to this when full set if required.
-    #
-    # @return [Array<Sketchup::Face>]
-    # @since 0.6.0
-    def native_entities
-      @entities | quad_faces
-    end
-    
-    # Returns all native faces for the cached entities.
-    #
-    # Use #analyse prior to this when full set if required.
-    #
-    # @return [Array<Sketchup::Face>]
-    # @since 0.6.0
-    def native_faces
-      quad_faces + @types[ Sketchup::Face ]
-    end
-    
-    # Returns all the edges for the cached entities.
-    #
-    # Use #analyse prior to this when full set if required.
-    #
-    # @return [Array<Sketchup::Edge>]
-    # @since 0.6.0
-    def edges
-      @types[ Sketchup::Edge ].to_a
-    end
-    
-    # Returns a QuadFace for any native face that is part of a quad.
-    #
-    # @return [QuadFace,Sketchup::Face]
-    # @since 0.6.0
-    def get( entity )
-      if quad = @faces_to_quads[ entity ]
-        quad
-      elsif QuadFace.is?( entity )
-        quad = QuadFace.new( entity )
-        cache_quad( quad )
-        quad
-      else
-        entity
-      end
-    end
-    
     # @return [Array<Sketchup::Entity,QuadFace>]
     # @since 0.6.0
     def to_a
       all()
-    end
-    
-    # @return [Integer]
-    # @since 0.6.0
-    def length
-      all.length
-    end
-    alias :size :length
-    
-    # @return [Boolean]
-    # @since 0.6.0
-    def empty?
-      all.empty?
-    end
-    
-    # @return [String]
-    # @since 0.6.0
-    def inspect
-      hex_id = TT.object_id_hex( self )
-      "#<#{self.class.name}:#{hex_id}>"
     end
     
     private
