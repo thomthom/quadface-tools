@@ -890,17 +890,19 @@ module TT::Plugins::QuadFaceTools
   # @return [Nil]
   # @since 0.5.0
   def self.smooth_quads( entities )
+    t = Time.now
+    entities = EntitiesProvider.new( entities )
     for entity in entities
       if TT::Instance.is?( entity )
         definition = TT::Instance.definition( entity )
         self.smooth_quads( definition.entities )
-      end
-      next unless QuadFace.is?( entity )
-      quadface = QuadFace.new( entity )
-      for edge in quadface.edges
-        QuadFace.smooth_edge( edge )
+      elsif entity.is_a?( QuadFace )
+        for edge in entity.edges
+          QuadFace.smooth_edge( edge )
+        end
       end
     end
+    TT.debug "self.smooth_quads: #{Time.now - t}"
     nil
   end
   
@@ -923,17 +925,19 @@ module TT::Plugins::QuadFaceTools
   # @return [Nil]
   # @since 0.5.0
   def self.unsmooth_quads( entities )
+    t = Time.now
+    entities = EntitiesProvider.new( entities )
     for entity in entities
       if TT::Instance.is?( entity )
         definition = TT::Instance.definition( entity )
         self.unsmooth_quads( definition.entities )
-      end
-      next unless QuadFace.is?( entity )
-      quadface = QuadFace.new( entity )
-      for edge in quadface.edges
-        QuadFace.unsmooth_edge( edge )
+      elsif entity.is_a?( QuadFace )
+        for edge in entity.edges
+          QuadFace.unsmooth_edge( edge )
+        end
       end
     end
+    TT.debug "self.unsmooth_quads: #{Time.now - t}"
     nil
   end
   
