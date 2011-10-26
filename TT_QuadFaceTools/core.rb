@@ -1262,6 +1262,7 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.1.0
   def self.selection_grow
+    t = Time.now
     selection = Sketchup.active_model.selection
     entities = EntitiesProvider.new( selection )
     new_selection = []
@@ -1285,6 +1286,7 @@ module TT::Plugins::QuadFaceTools
       end # if entity.is_a?
     end # for entity
     selection.add( new_selection )
+    TT.debug "self.selection_grow: #{Time.now - t}"
   end
   
   
@@ -1292,30 +1294,26 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.1.0
   def self.selection_shrink
+    t = Time.now
     selection = Sketchup.active_model.selection
+    entities = EntitiesProvider.new( selection )
     new_selection = []
-    for entity in selection
+    for entity in entities
       if entity.is_a?( Sketchup::Edge )
         unless entity.vertices.all? { |vertex|
           edges = vertex.edges.select { |e| !QuadFace.dividing_edge?( e ) }
-          edges.all? { |edge| selection.include?( edge ) }
+          edges.all? { |edge| entities.include?( edge ) }
         }
           new_selection << entity
         end
-      elsif entity.is_a?( Sketchup::Face )
+      elsif entity.is_a?( Sketchup::Face ) || entity.is_a?( QuadFace )
         unless entity.edges.all? { |edge|
           edge.faces.all? { |face|
-            if QuadFace.is?( face )
-              qf = QuadFace.new( face )
-              qf.faces.any? { |f| selection.include?( f ) }
-            else
-              selection.include?( face )
-            end
+            entities.include?( face )
           }
         }
-          if QuadFace.is?( entity )
-            qf = QuadFace.new( entity )
-            new_selection.concat( qf.faces )
+          if entity.is_a?( QuadFace )
+            new_selection.concat( entity.faces )
           else
             new_selection << entity
           end
@@ -1324,6 +1322,7 @@ module TT::Plugins::QuadFaceTools
     end # for entity
     # Update selection
     selection.remove( new_selection )
+    TT.debug "self.selection_shrink: #{Time.now - t}"
   end
   
   
