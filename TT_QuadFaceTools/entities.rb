@@ -155,11 +155,37 @@ module TT::Plugins::QuadFaceTools
       edge
     end
     
+    # @param [Sketchup::Edge] edge
+    #
+    # @return [Sketchup::Edge]
+    # @since 0.6.0
+    def self.smooth_edge( edge )
+      if edge.faces.size > 1
+        edge.soft = true
+        edge.smooth = true
+        edge.hidden = false
+      end
+      edge
+    end
+    
+    # @param [Sketchup::Edge] edge
+    #
+    # @return [Sketchup::Edge]
+    # @since 0.6.0
+    def self.unsmooth_edge( edge )
+      edge.soft = false
+      edge.smooth = false
+      edge.hidden = false
+      edge
+    end
+    
     # @param [Sketchup::Face] face
     #
     # @since 0.1.0
     def initialize( face )
       # (!) The creating of a QuadFace is slow. Improve.
+      #     Remove validations. Assume valid input. Make valid?
+      #     verify validity of quads.
       unless face2 = valid_native_face?( face )
         raise( InvalidQuadFace, 'Invalid QuadFace' )
       end
@@ -442,6 +468,12 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
+    # @return [Sketchup::Model]
+    # @since 0.6.0
+    def model
+      @faces[0].model
+    end
+    
     # @return [Sketchup::Edge,nil]
     # @since 0.5.0
     def next_edge( edge )
@@ -487,6 +519,12 @@ module TT::Plugins::QuadFaceTools
         sorted.reverse! if sorted[0].reversed_in?( face )
         sorted
       end
+    end
+    
+    # @return [Sketchup::Entities]
+    # @since 0.6.0
+    def parent
+      @faces[0].parent
     end
     
     # @return [Boolean]
@@ -598,7 +636,8 @@ module TT::Plugins::QuadFaceTools
       if @faces.size == 1
         face = @faces[0]
         face.valid? &&
-        face.vertices.size == 4
+        face.vertices.size == 4 &&
+        edges.all? { |e| !QuadFace.divider_props?( e ) }
       else
         @faces.size == 2 &&
         @faces.all? { |face|
@@ -684,6 +723,20 @@ module TT::Plugins::QuadFaceTools
   end # class VirtualQuadFace
   
   
+  # Manages QuadFace entities in an collection of native SketchUp entities.
+  #
+  # The internal lookup table of Sketchup::Face => QuadFace is build progressivly
+  # as the entities is accessed in order to maintain performance.
+  #
+  # In some usage scenarios one will want to use #analyse to pre-build the
+  # internal lookup table. For instance, if many native faces that makes up
+  # QuadFaces is added to the EntitiesProvider and one wants to get all quads
+  # from the collection using #quads - #analyse is needed to be called first.
+  #
+  # #each on the other hand will convert the native faces to Quads as it traverses
+  # the collection. When the collection is traversed the next time this conversion
+  # is not needed - therefore it's worth reusing the EntitiesProvider if possible.
+  #
   # @since 0.6.0
   class EntitiesProvider
     
@@ -693,26 +746,100 @@ module TT::Plugins::QuadFaceTools
     attr_reader( :model, :parent )
     
     # @param [Enumerable] entities
+    # @param [Sketchup::Entities] parent
     #
     # @since 0.6.0
-    def initialize( entities )
-      # Model references
+    def initialize( entities = [], parent = nil )
+      # Model and parent references
       @model = nil
       @parent = nil
-      if entities.empty?
-        @parent = Sketchup.active_model
-        @model = Sketchup.active_model
+      if parent.nil?
+        if entities.empty?
+          @parent = Sketchup.active_model
+          @model = Sketchup.active_model
+        else
+          entity = entities[0]
+          @parent = entity.parent
+          @model = entity.model
+        end
       else
-        entity = entities[0]
-        @parent = entity.parent
-        @model = entity.model
+        @parent = parent
+        @model = parent.model
       end
-      # Entities
-      @entities = entities.to_a
-      @faces_to_quads = {}
-      @types = {}
+      # To quickly access entities by class this Hash is used.
+      @types = {} # Class => Sketchup::Entity,QuadFace
+      # Map native faces to QuadFace.
+      @faces_to_quads = {} # Sketchup::Face => QuadFace
+      # For quick access and lookup, store everything in a Hash table.
+      for entity in entities
+        cache_entity( entity )
+      end
     end
     
+    # Define proxy object that pass the call through to the parent
+    # Sketchup::Entities object.
+    [
+      :add_3d_text,
+      :add_arc,
+      :add_circle,
+      :add_cline,
+      :add_cpoint,
+      :add_curve,
+      :add_edges,
+      :add_face,
+      :add_faces_from_mesh,
+      :add_group,
+      :add_image,
+      :add_instance,
+      :add_line,
+      :add_ngon,
+      :add_text,
+      :clear!,
+      :erase_entities,
+      :fill_from_mesh,
+      :intersect_with,
+      :transform_by_vectors,
+      :transform_entities
+    ].each { |method|
+      define_method( method ) { |*args| parent.send( method, *args ) }
+    }
+  
+    # Returns the entity from the EntitiesProvider. Any Sketchup::Face
+    # entity that makes up a QuadFace will be returned as a QuadFace class.
+    #
+    # If the QuadFace exists in the EntitiesProvider collection it will be
+    # reused.
+    #
+    # Any faces that forms a QuadFace not in the collection will return as
+    # a QuadFace, but will *not* be added to the collection.
+    #
+    # This differs from #get which will add new QuadFace entities to the
+    # collection.
+    #
+    # @param [Sketchup::Entity] entity
+    #
+    # @return [Sketchup::Entity,QuadFace]
+    # @since 0.6.0
+    def []( entity )
+      if quad = @faces_to_quads[ entity ]
+        quad
+      elsif QuadFace.is?( entity )
+        quad = QuadFace.new( entity )
+        cache_entity( quad ) if @types[ Sketchup::Face ][ entity ]
+        quad
+      else
+        entity
+      end
+    end
+    
+    # @overload add( entity )
+    #   @param [Sketchup::Entity,QuadFace] entity
+    # @overload add( entity1, entity2, ... )
+    #   @param [Sketchup::Entity,QuadFace] entity1
+    #   @param [Sketchup::Entity,QuadFace] entity2
+    # @overload add( enumerable )
+    #   @param [Enumerable] enumerable
+    #
     # @since 0.6.0
     def add( *args )
       if args.length == 1 && args.is_a?( Enumerable )
@@ -721,44 +848,68 @@ module TT::Plugins::QuadFaceTools
         entities = args
       end
       for entity in entities
+        # (?) Verify parent?
         if entity.is_a?( QuadFace )
-          @types[ e.class ] ||= []
+          # Special processing for QuadFaces.
+          # If the quad's faces has already been added to the EntitiesProvider
+          # then the already stored instance will be used.
+          #
+          # (?) Detect if any quads with two triangles share faces with another
+          #     in case of invalid quads?
           if entity.faces.all? { |f| @faces_to_quads[ f ] }
-            @types[ e.class ] << @faces_to_quads[ entity.faces[0] ]
+            quad = @faces_to_quads[ entity.faces[0] ]
+            cache_entity( quad )
           else
-            @types[ e.class ] << entity
+            cache_entity( entity )
           end
         else
-          next if entity.include?( entities )
-          @entities << entity
-          e = get( entity )
-          unless e.is_a?( QuadFace )
-            @types[ e.class ] ||= []
-            @types[ e.class ] << quad
-          end
+          cache_entity( entity )
         end
-      end
+      end # for
     end
     alias :<< :add
     
+    # Add a QuadFace to the parent Sketchup::Entities collection.
+    #
+    # @overload add_quad( points )
+    #   @param [Array<Geom::Point3d>] points
+    # @overload add_quad( point1, point2, point3, point4 )
+    #   @param [Geom::Point3d] point1
+    #   @param [Geom::Point3d] point2
+    #   @param [Geom::Point3d] point3
+    #   @param [Geom::Point3d] point4
+    # @overload add_quad( edges )
+    #   @param [Array<Sketchup::Edge>] edges
+    # @overload add_quad( edge1, edge2, edge3, edge4 )
+    #   @param [Sketchup::Edge] edge1
+    #   @param [Sketchup::Edge] edge2
+    #   @param [Sketchup::Edge] edge3
+    #   @param [Sketchup::Edge] edge4
+    # @overload add_quad( curve )
+    #   @param [Sketchup::Curve] curve
+    #
+    # @since 0.6.0
+    def add_quad( *args )
+      # (!)
+    end
+    
     # @since 0.6.0
     def all
-      @types.values.flatten
+      @types.values.map { |hash| hash.keys }.flatten
     end
+    alias :to_a :all
     
     # Processes the given set of entities give to #new and builds the cache
     # with native entities and QuadFace entities.
     #
     # @since 0.6.0
     def analyse
-      for entity in @entities
-        entity_class = entity.class
+      for entity in all
         if @faces_to_quads[ entity ].nil? && QuadFace.is?( entity )
           quad = QuadFace.new( entity )
-          cache_quad( quad )
+          cache_entity( quad )
         else
-          @types[ entity_class ] ||= []
-          @types[ entity_class ] << entity
+          cache_entity( entity )
         end
       end
       nil
@@ -769,8 +920,9 @@ module TT::Plugins::QuadFaceTools
     #
     # @since 0.6.0
     def each
+      # Cache to ensure unprocessed quad's native faces doesn't return twice.
       skip = {}
-      for entity in @entities
+      for entity in all
         if entity.is_a?( Sketchup::Face )
           next if skip[ entity ]
           if quad = @faces_to_quads[ entity ]
@@ -782,17 +934,19 @@ module TT::Plugins::QuadFaceTools
           elsif QuadFace.is?( entity )
             # Unprocessed Quad
             quad = QuadFace.new( entity )
-            cache_quad( quad )
+            cache_entity( quad )
             for face in quad.faces
               skip[ face ] = face
             end
             yield( quad )
           else
             # Native Face
+            cache_entity( entity )
             yield( entity )
           end
         else
           # All other entities
+          cache_entity( entity )
           yield( entity )
         end
       end
@@ -805,7 +959,7 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<Sketchup::Edge>]
     # @since 0.6.0
     def edges
-      @types[ Sketchup::Edge ].to_a
+      @types[ Sketchup::Edge ].keys
     end
     
     # @return [Boolean]
@@ -821,22 +975,57 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<Sketchup::Face,QuadFace>]
     # @since 0.6.0
     def faces
-      @types[ QuadFace ] + @types[ Sketchup::Face ]
+      @types[ QuadFace ].keys + @types[ Sketchup::Face ].keys
     end
     
-    # Returns a QuadFace for any native face that is part of a quad.
+    # Returns the entity from the EntitiesProvider. Any Sketchup::Face
+    # entity that makes up a QuadFace will be returned as a QuadFace class.
     #
-    # @return [QuadFace,Sketchup::Face]
+    # If the QuadFace exists in the EntitiesProvider collection it will be
+    # reused.
+    #
+    # Any faces that forms a QuadFace not in the collection will return as
+    # a QuadFace and added to the collection.
+    #
+    # This differs from #[] which will not add new QuadFace entities to the
+    # collection.
+    #
+    # @param [Sketchup::Entity] entity
+    #
+    # @return [Sketchup::Entity,QuadFace]
     # @since 0.6.0
     def get( entity )
       if quad = @faces_to_quads[ entity ]
         quad
       elsif QuadFace.is?( entity )
         quad = QuadFace.new( entity )
-        cache_quad( quad )
+        cache_entity( quad )
         quad
       else
         entity
+      end
+    end
+    
+    # Returns an array of all cached entities of the given class.
+    #
+    # Use #analyse prior to this when full set if required.
+    #
+    # @param [Class] klass
+    #
+    # @return [Array<Sketchup::Entity,QuadFace>]
+    # @since 0.6.0
+    def get_by_type( klass )
+      @types[ klass ].keys
+    end
+    
+    # @return [String]
+    # @since 0.6.0
+    def include?( entity )
+      if entities = @types[ entity.class ]
+        entities.include?( entity ) ||
+        @faces_to_quads.include?( entity )
+      else
+        @faces_to_quads.include?( entity )
       end
     end
     
@@ -861,7 +1050,15 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<Sketchup::Face>]
     # @since 0.6.0
     def native_entities
-      @entities | quad_faces
+      entities = []
+      for type, type_entities in @types
+        if type == QuadFace
+          entities.concat( type_entities.map { |quad| quad.faces } )
+        else
+          entities.concat( type_entities )
+        end
+      end
+      entities
     end
     
     # Returns all native faces for the cached entities.
@@ -871,7 +1068,7 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<Sketchup::Face>]
     # @since 0.6.0
     def native_faces
-      quad_faces + @types[ Sketchup::Face ]
+      @faces_to_quads.keys + @types[ Sketchup::Face ].keys
     end
     
     # Returns all cached QuadFaces.
@@ -881,7 +1078,7 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<QuadFace>]
     # @since 0.6.0
     def quads
-      @types[ QuadFace ].to_a
+      @types[ QuadFace ].keys
     end
     
     # Returns all the native faces for the cached QuadFaces.
@@ -894,25 +1091,25 @@ module TT::Plugins::QuadFaceTools
       @faces_to_quads.keys
     end
     
-    # @return [Array<Sketchup::Entity,QuadFace>]
-    # @since 0.6.0
-    def to_a
-      all()
-    end
-    
     private
     
-    # @param [QuadFace] quad
+    # @param [Sketchup::Entity] entity
     #
-    # @return [QuadFace]
+    # @return [Sketchup::Entity]
     # @since 0.6.0
-    def cache_quad( quad )
-      @types[ QuadFace ] ||= []
-      @types[ QuadFace ] << quad
-      for face in quad.faces
-        @faces_to_quads[ face ] = quad
+    def cache_entity( entity )
+      entity_class = entity.class
+      # Add to Type cache
+      @types[ entity_class ] ||= {}
+      @types[ entity_class ][ entity ] = entity
+      # Add to Face => QuadFace mapping
+      if entity.is_a?( QuadFace )
+        for face in entity.faces
+          @faces_to_quads[ face ] = entity
+          @types[ Sketchup::Face ].delete( face )
+        end
       end
-      quad
+      entity
     end
     
   end # class EntitiesProvider
