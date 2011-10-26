@@ -897,12 +897,9 @@ module TT::Plugins::QuadFaceTools
       end
       next unless QuadFace.is?( entity )
       quadface = QuadFace.new( entity )
-      quadface.edges.each { |edge|
-        next if edge.faces.size == 1
-        edge.soft = true
-        edge.smooth = true
-        edge.hidden = false
-      }
+      for edge in quadface.edges
+        QuadFace.smooth_edge( edge )
+      end
     end
     nil
   end
@@ -933,11 +930,9 @@ module TT::Plugins::QuadFaceTools
       end
       next unless QuadFace.is?( entity )
       quadface = QuadFace.new( entity )
-      quadface.edges.each { |edge|
-        edge.hidden = false
-        edge.smooth = false
-        edge.soft = false
-      }
+      for edge in quadface.edges
+        QuadFace.unsmooth_edge( edge )
+      end
     end
     nil
   end
