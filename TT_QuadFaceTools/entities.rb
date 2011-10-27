@@ -948,7 +948,7 @@ module TT::Plugins::QuadFaceTools
     def connected_quads( entity )
       quads = []
       for face in entity.faces
-        e = get_entity( face )
+        e = get_entity( face ) # (?) Add to cache?
         quads << e if e.is_a?( QuadFace )
       end
       quads
