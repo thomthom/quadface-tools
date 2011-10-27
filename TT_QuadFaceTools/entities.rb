@@ -1017,6 +1017,93 @@ module TT::Plugins::QuadFaceTools
       @types[ QuadFace ].keys + @types[ Sketchup::Face ].keys
     end
     
+    # Selects a loop of edges. Loop can be grown in steps.
+    #
+    # Currently using the Blender method - with exception of edges with no faces. 
+    #
+    #
+    # Blender
+    #
+    # Blender 2.58a
+    # editmesh_mods.c
+    # Line 1854
+    #
+    # selects or deselects edges that:
+    # - if edges has 2 faces:
+    #   - has vertices with valence of 4
+    #   - not shares face with previous edge
+    # - if edge has 1 face:
+    #   - has vertices with valence 4
+    #   - not shares face with previous edge
+    #   - but also only 1 face
+    # - if edge no face:
+    #   - has vertices with valence 2
+    #
+    #
+    # In Maya, an edge loop has the following properties: 
+    # * The vertices that connect the edges must have a valency equal to four.
+    #   Valency refers to the number of edges connected to a particular vertex.
+    # * The criteria for connecting the sequence is that the next edge in the
+    #   sequence is the (i + 2nd) edge of the shared vertex, determined in order
+    #   from the current edge (i).
+    # * The sequence of edges (loop) can form either an open or closed path on the
+    #   polygonal mesh.
+    # * The start and end edges need not have a valency equal to four.
+    #
+    # @see http://download.autodesk.com/global/docs/maya2012/en_us/index.html?url=files/Polygon_selection_and_creation_Select_an_edge_loop.htm,topicNumber=d28e121344
+    #
+    # @todo Optimize is possible. Method is very slow!
+    #
+    # @param [Sketchup::Edge]
+    #
+    # @return [Array<Sketchup::Edge>]
+    # @since 0.6.0
+    def find_edge_loop( origin_edge, step = false )
+      raise ArgumentError, 'Invalid Edge' unless origin_edge.is_a?( Sketchup::Edge )
+      # Find initial connected faces
+      face_count = origin_edge.faces.size
+      return [] unless ( 1..2 ).include?( face_count )
+      faces = EntitiesProvider.new
+      faces << get( origin_edge.faces )
+      # Find edge loop.
+      step_limit = 0
+      loop = []
+      stack = [ origin_edge ]
+      until stack.empty?
+        edge = stack.shift
+        # Find connected edges
+        next_vertices = []
+        for v in edge.vertices
+          edges = v.edges.reject { |e| is_diagonal?( e ) }
+          next if edges.size > 4 # Stop at forks
+          next if edges.any? { |e| loop.include?( e ) }
+          next_vertices << v
+        end
+        # Add current edge to loop stack.
+        loop << edge
+        # Pick next edges
+        valid_edges = 0
+        for vertex in next_vertices
+          for e in vertex.edges
+            next if e == edge
+            next if is_diagonal?( e )
+            next if faces.any? { |f| f.edges.include?( e ) }
+            next if loop.include?( e )
+            next unless e.faces.size == face_count
+            valid_edges += 1
+            stack << e
+            faces << get( e.faces )
+          end # for e
+        end # for vertex
+        # Stop if the loop is step-grown.
+        if step
+          step_limit = valid_edges if edge == origin_edge
+          break if loop.size > step_limit
+        end
+      end # until
+      loop
+    end
+    
     # Returns the entity from the EntitiesProvider. Any Sketchup::Face
     # entity that makes up a QuadFace will be returned as a QuadFace class.
     #
@@ -1082,6 +1169,23 @@ module TT::Plugins::QuadFaceTools
       "#<#{self.class.name}:#{hex_id}>"
     end
     
+    # Returns a boolean indicating whether the edge is the diagonal of a
+    # triangulated QuadFace.
+    #
+    # @param [Sketchup::Edge] edge
+    #
+    # @return [Boolean]
+    # @since 0.6.0
+    def is_diagonal?( edge )
+      return false unless edge.is_a?( Sketchup::Edge )
+      return false unless QuadFace.divider_props?( edge )
+      return false unless edge.faces.size == 2
+      return false unless edge.faces.all? { |face| face.vertices.size == 3 }
+      face1, face2 = edge.faces
+      edges = ( face1.edges | face2.edges ) - [ edge ]
+      edges.all? { |e| !QuadFace.divider_props?( e ) }
+    end
+    
     # @return [Integer]
     # @since 0.6.0
     def length
@@ -1099,9 +1203,9 @@ module TT::Plugins::QuadFaceTools
       entities = []
       for type, type_entities in @types
         if type == QuadFace
-          entities.concat( type_entities.map { |quad| quad.faces } )
+          entities.concat( type_entities.keys.map { |quad| quad.faces } )
         else
-          entities.concat( type_entities )
+          entities.concat( type_entities.keys )
         end
       end
       entities

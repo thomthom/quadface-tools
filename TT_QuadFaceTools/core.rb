@@ -673,6 +673,7 @@ module TT::Plugins::QuadFaceTools
   def self.remove_loops
     model = Sketchup.active_model
     selection = model.selection
+    provider = EntitiesProvider.new( selection )
     # Proccess each loop
     TT::Model.start_operation( 'Remove Loops' )
     stack = selection.to_a
@@ -681,7 +682,7 @@ module TT::Plugins::QuadFaceTools
       next unless entity.valid?
       next unless entity.is_a?( Sketchup::Edge )
       next if QuadFace.dividing_edge?( entity )
-      loop = self.find_edge_loop( entity )
+      loop = provider.find_edge_loop( entity )
       stack -= loop
       vertices = {}
       # Make loop edges planar between neighbour faces.
@@ -1178,30 +1179,31 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.1.0
   def self.select_loops( step = false )
+    t = Time.now
     selection = Sketchup.active_model.selection
-    entities = []
-    for entity in selection
+    provider = EntitiesProvider.new( selection )
+    entities = EntitiesProvider.new
+    for entity in provider
       if entity.is_a?( Sketchup::Edge )
         next if QuadFace.dividing_edge?( entity )
         next if !step && entities.include?( entity )
-        entities.concat( self.find_edge_loop( entity, step ) )
-      elsif entity.is_a?( Sketchup::Face )
+        entities << provider.find_edge_loop( entity, step )
+      elsif entity.is_a?( QuadFace )
         # Added in 0.5.0
-        next unless QuadFace.is?( entity )
         next if !step && entities.include?( entity )
-        quad = QuadFace.new( entity )
         # Check if any of the bordering quads also are selected.
         # Use to determine direction. If none, traverse in all directions.
-        connected = quad.connected_quads( selection )
-        connected = quad.connected_quads if connected.empty?
+        connected = entity.connected_quads( selection )
+        connected = entity.connected_quads if connected.empty?
         # Select loops.
-        for q in connected
-          entities.concat( self.find_face_loop( quad, q, step ) )
+        for quad in connected
+          entities << self.find_face_loop( entity, quad, step )
         end
       end
     end
     # Select
-    selection.add( entities )
+    selection.add( entities.native_entities )
+    TT.debug "self.select_loops: #{Time.now - t}"
   end
   
   
@@ -1210,39 +1212,39 @@ module TT::Plugins::QuadFaceTools
   # @since 0.1.0
   def self.shrink_loops
     selection = Sketchup.active_model.selection
+    provider = EntitiesProvider.new( selection )
     selected = selection.to_a
-    entities = []
-    for entity in selection
+    entities = EntitiesProvider.new
+    for entity in provider
       if entity.is_a?( Sketchup::Edge )
         next if QuadFace.dividing_edge?( entity )
         next unless entity.faces.size == 2
         # Check next edges in loop, if they are not all selected, deselect the
         # edge.
-        edges = self.find_edge_loop( entity, true )
+        edges = provider.find_edge_loop( entity, true )
         unless ( edges & selected ).size == edges.size
           entities << entity
         end
-      elsif entity.is_a?( Sketchup::Face )
+      elsif entity.is_a?( QuadFace )
         # Added in 0.5.0
         next unless QuadFace.is?( entity )
-        quad = QuadFace.new( entity )
-        selected = quad.connected_quads( selection )
-        next unless selected.size == 1
+        selected_quads = entity.connected_quads( selection )
+        next unless selected_quads.size == 1
         # Deselect edge quads.
-        for q in selected
-          edge1 = quad.common_edge( q )
-          edge2 = quad.opposite_edge( edge1 )
-          next_quad = quad.next_quad( edge2 )
+        for quad in selected_quads
+          edge1 = entity.common_edge( quad )
+          edge2 = entity.opposite_edge( edge1 )
+          next_quad = entity.next_quad( edge2 )
           if next_quad
             next if next_quad.faces.any? { |f| selection.include?( f ) }
           end
-          entities.concat( quad.faces )
+          entities << entity.faces
           break
         end
       end
     end
     # Select
-    selection.remove( entities )
+    selection.remove( entities.native_entities )
   end
   
   
@@ -1387,110 +1389,7 @@ module TT::Plugins::QuadFaceTools
   end
   
   
-  # Selects a loop of edges. Loop can be grown in steps.
-  #
-  # Currently using the Blender method - with exception of edges with no faces. 
-  #
-  #
-  # Blender
-  #
-  # Blender 2.58a
-  # editmesh_mods.c
-  # Line 1854
-  #
-  # selects or deselects edges that:
-  # - if edges has 2 faces:
-  #   - has vertices with valence of 4
-  #   - not shares face with previous edge
-  # - if edge has 1 face:
-  #   - has vertices with valence 4
-  #   - not shares face with previous edge
-  #   - but also only 1 face
-  # - if edge no face:
-  #   - has vertices with valence 2
-  #
-  #
-  # In Maya, an edge loop has the following properties: 
-  # * The vertices that connect the edges must have a valency equal to four.
-  #   Valency refers to the number of edges connected to a particular vertex.
-  # * The criteria for connecting the sequence is that the next edge in the
-  #   sequence is the (i + 2nd) edge of the shared vertex, determined in order
-  #   from the current edge (i).
-  # * The sequence of edges (loop) can form either an open or closed path on the
-  #   polygonal mesh.
-  # * The start and end edges need not have a valency equal to four.
-  #
-  # @see http://download.autodesk.com/global/docs/maya2012/en_us/index.html?url=files/Polygon_selection_and_creation_Select_an_edge_loop.htm,topicNumber=d28e121344
-  #
-  #
-  # @param [Sketchup::Edge]
-  #
-  # @return [Array<Sketchup::Edge>]
-  # @since 0.1.0
-  def self.find_edge_loop( origin_edge, step = false )
-    raise ArgumentError, 'Invalid Edge' unless origin_edge.is_a?( Sketchup::Edge )
-    # Find initial connected faces
-    face_count = origin_edge.faces.size
-    return [] unless ( 1..2 ).include?( face_count )
-    faces = self.connected_faces( origin_edge )
-    # Find edge loop.
-    step_limit = 0
-    loop = []
-    stack = [ origin_edge ]
-    until stack.empty?
-      edge = stack.shift
-      # Find connected edges
-      next_vertices = []
-      for v in edge.vertices
-        edges = v.edges.select { |e| !QuadFace.dividing_edge?( e ) }
-        next if edges.size > 4 # Stop at forks
-        next if edges.any? { |e| loop.include?( e ) }
-        next_vertices << v
-      end
-      # Add current edge to loop stack.
-      loop << edge
-      # Pick next edges
-      valid_edges = 0
-      for vertex in next_vertices
-        for e in vertex.edges
-          next if e == edge
-          next if QuadFace.dividing_edge?( e )
-          next if faces.any? { |f| f.edges.include?( e ) }
-          next if loop.include?( e )
-          next unless e.faces.size == face_count
-          valid_edges += 1
-          stack << e
-          faces.concat( self.connected_faces( e ) )
-        end # for e
-      end # for vertex
-      # Stop if the loop is step-grown.
-      if step
-        step_limit = valid_edges if edge == origin_edge
-        break if loop.size > step_limit
-      end
-    end # until
-    loop
-  end
-  
-  
   # ----- HELPER METHOD (!) Move to EntitiesProvider ----- #
-  
-  
-  # @param [#faces] entity
-  #
-  # @return [Array<Sketchup::Face,QuadFace>]
-  # @since 0.1.0
-  def self.connected_faces( entity )
-    faces = []
-    for face in entity.faces
-      if QuadFace.is?( face )
-        faces << QuadFace.new( face )
-      else
-        faces << face
-      end
-    end
-    faces
-  end
   
   
   # @param [Sketchup::Edge]
