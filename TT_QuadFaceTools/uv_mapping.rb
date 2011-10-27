@@ -1051,6 +1051,8 @@ module TT::Plugins::QuadFaceTools
           @contraints[ edge ] = edge
         end
       end
+      
+      @provider = EntitiesProvider.new
     end
     
     # @since 0.4.0
@@ -1102,7 +1104,7 @@ module TT::Plugins::QuadFaceTools
         @u_edge = @mouse_edge if @mouse_edge
         # Valid next pick
         if @u_edge
-          quads = PLUGIN.connected_quad_faces( @u_edge )
+          quads = @provider.connected_quads( @u_edge )
           @valid_pick = quads.map { |quad|
             e = ( ( @origin.edges & quad.edges ) - [ @u_edge ] )[0]
           }.flatten
@@ -1114,7 +1116,7 @@ module TT::Plugins::QuadFaceTools
       elsif state_pick_u? && @valid_pick.include?( @mouse_edge )
         @u_edge = @mouse_edge if @mouse_edge
         # Valid next pick
-        quads = PLUGIN.connected_quad_faces( @u_edge )
+        quads = @provider.connected_quads( @u_edge )
         @valid_pick = quads.map { |quad|
           e = ( ( @origin.edges & quad.edges ) - [ @u_edge ] )[0]
         }.flatten
@@ -1448,7 +1450,7 @@ module TT::Plugins::QuadFaceTools
     # @since 0.4.0
     def compute_mapping
       # Prepare origin quad
-      u_quads = PLUGIN.connected_quad_faces( @u_edge )
+      u_quads = @provider.connected_quads( @u_edge )
       origin_quad = u_quads.find { |quad| quad.edges.include?( @v_edge ) }
       origin = {
         :quad => origin_quad,
