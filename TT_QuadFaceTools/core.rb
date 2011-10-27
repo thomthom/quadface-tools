@@ -1392,20 +1392,6 @@ module TT::Plugins::QuadFaceTools
   # ----- HELPER METHOD (!) Move to EntitiesProvider ----- #
   
   
-  # @param [Sketchup::Edge]
-  #
-  # @return [Array<QuadFace>]
-  # @since 0.1.0
-  def self.connected_quad_faces( edge )
-    # Get connected faces
-    valid_faces = edge.faces.select { |f| QuadFace.is?( f ) }
-    quads = valid_faces.map { |face| QuadFace.new( face ) }
-  end
-  class << self
-    alias :connected_quads :connected_quad_faces
-  end
-  
-  
   # Wrapper for creating faces where the points might belong to QuadFaces that
   # are not planar.
   #
@@ -1450,17 +1436,6 @@ module TT::Plugins::QuadFaceTools
       entities.add_face( points )
     end
     nil
-  end
-  
-  
-  # @param [Sketchup::Face] triangle1
-  # @param [Sketchup::Face] triangle2
-  #
-  # @return [Sketchup::Edge,Nil]
-  # @since 0.1.0
-  def self.common_edge( triangle1, triangle2 )
-    intersect = triangle1.edges & triangle2.edges
-    ( intersect.empty? ) ? nil : intersect[0]
   end
   
   
