@@ -179,26 +179,51 @@ module TT::Plugins::QuadFaceTools
       edge
     end
     
-    # @param [Sketchup::Face] face
+    # @note as of Version 0.6.0 this method does not validate the input entites.
+    #   It is assumed they are all valid in order to maintain performance.
+    #   Usually QuadFace.is? has been used to verify the entity anyway, so it
+    #   would only mean double processing. In order to verify a created quad
+    #   use #valid?.
+    #
+    # @overload new( quad_triangle )
+    #   @param [Sketchup::Face] quad_triangle
+    # @overload new( quad )
+    #   @param [Sketchup::Face] quad
+    # @overload new( triangle1, triangle2 )
+    #   @param [Sketchup::Face] triangle1
+    #   @param [Sketchup::Face] triangle2
+    # @overload new( edge_diagonal )
+    #   @param [Sketchup::Edge] edge_diagonal
     #
     # @since 0.1.0
-    def initialize( face )
-      # (!) The creating of a QuadFace is slow. Improve.
-      #     Remove validations. Assume valid input. Make valid?
-      #     verify validity of quads.
-      unless face2 = valid_native_face?( face )
-        raise( InvalidQuadFace, 'Invalid QuadFace' )
+    def initialize( *args )
+      if args.size == 1
+        entity = args[0]
+        if entity.is_a?( Sketchup::Edge )
+          # Diagonal
+          @faces = entity.faces
+        elsif entity.is_a?( Sketchup::Face )
+          if entity.vertices.size == 4
+            # Native quad.
+            @faces = [ entity ]
+          else
+            # Triangle - find the other triangle.
+            edge = entity.edges.find { |e| QuadFace.divider_props?( e ) }
+            @faces = edge.faces
+          end
+        end
+      elsif args.size == 2
+        # Two triangles
+        @faces = args
+      else
+        raise( ArgumentError, "Invalid number of arguments. ( #{args.size} out of 1..3 )" )
       end
-      @faces = [ face ]
-      @faces << face2 if face2.is_a?( Sketchup::Face )
     end
     
     # @return [Float]
     # @since 0.4.0
     def area
-      total_area = 0.0
-      @faces.each { |face| total_area += face.area }
-      total_area
+      @faces.inject( 0.0 ) { |sum, face| sum + face.area }
     end
     
     # @return [Sketchup::Material]
@@ -218,18 +243,16 @@ module TT::Plugins::QuadFaceTools
       face.back_material
     end
     
-    # @param [QuadFace] quadface
+    # @param [#edges] quadface
     #
     # @return [Sketchup::Edge,Nil]
     # @since 0.1.0
-    def common_edge( quadface )
-      unless quadface.is_a?( QuadFace )
-        raise( InvalidQuadFace, 'Invalid QuadFace' )
+    def common_edge( entity )
+      unless entity.respond_to?( :edges )
+        raise( ArgumentError, 'Not a QuadFace or Sketchup::Face' )
       end
-      other_edges = quadface.edges
-      match = edges.select { |edge| other_edges.include?( edge ) }
-      return nil unless match
-      match[0]
+      other_edges = entity.edges
+      edges.find { |edge| other_edges.include?( edge ) }
     end
     
     # Finds the quads connected to the quad's edges.
@@ -336,7 +359,7 @@ module TT::Plugins::QuadFaceTools
         result = @faces[0].edges
       else
         for face in @faces
-          result.concat( face.edges.select { |e| !QuadFace.divider_props?( e ) } )
+          result.concat( face.edges.reject { |e| QuadFace.divider_props?( e ) } )
         end
       end
       result
@@ -345,8 +368,7 @@ module TT::Plugins::QuadFaceTools
     # @since 0.3.0
     def erase!
       if triangulated?
-        edge = ( @faces[0].edges & @faces[1].edges )[0]
-        edge.erase!
+        divider().erase!
       else
         @faces[0].erase!
       end
@@ -530,11 +552,7 @@ module TT::Plugins::QuadFaceTools
     # @return [Boolean]
     # @since 0.2.0
     def planar?
-      if @faces.size == 1
-        true
-      else
-        TT::Geom3d.planar_points?( vertices() )
-      end
+      @faces.size == 1 || TT::Geom3d.planar_points?( vertices() )
     end
     
     # @return [Array<Geom::Point3d>]
@@ -816,19 +834,26 @@ module TT::Plugins::QuadFaceTools
     # This differs from #get which will add new QuadFace entities to the
     # collection.
     #
-    # @param [Sketchup::Entity] entity
+    # @overload []( entity )
+    #   @param [Sketchup::Entity] entity
+    # @overload []( entity1, entity2, ... )
+    #   @param [Sketchup::Entity] entity1
+    #   @param [Sketchup::Entity] entity2
+    # @overload []( entities )
+    #   @param [Enumerable<Sketchup::Entity>] entities
     #
     # @return [Sketchup::Entity,QuadFace]
     # @since 0.6.0
     def []( entity )
-      if quad = @faces_to_quads[ entity ]
-        quad
-      elsif QuadFace.is?( entity )
-        quad = QuadFace.new( entity )
-        cache_entity( quad ) if @types[ Sketchup::Face ][ entity ]
-        quad
+      if args.size == 1
+        entity = args[0]
+        if entity.is_a?( Enumerable )
+          entity.map { |entity| get_entity( entity ) }
+        else
+          get_entity( entity )
+        end
       else
-        entity
+        args.map { |entity| get_entity( entity ) }
       end
     end
     
@@ -842,7 +867,7 @@ module TT::Plugins::QuadFaceTools
     #
     # @since 0.6.0
     def add( *args )
-      if args.length == 1 && args.is_a?( Enumerable )
+      if args.length == 1 && args[0].is_a?( Enumerable )
         entities = args[0]
       else
         entities = args
@@ -913,6 +938,20 @@ module TT::Plugins::QuadFaceTools
         end
       end
       nil
+    end
+    
+    # Returns all QuadFace entities from entity#faces.
+    #
+    # @param [#faces] entity
+    #
+    # @since 0.6.0
+    def connected_quads( entity )
+      quads = []
+      for face in entity.faces
+        e = get_entity( face )
+        quads << e if e.is_a?( QuadFace )
+      end
+      quads
     end
     
     # Traverses the given set of entities given to #new. Discovers and cache
@@ -990,19 +1029,26 @@ module TT::Plugins::QuadFaceTools
     # This differs from #[] which will not add new QuadFace entities to the
     # collection.
     #
-    # @param [Sketchup::Entity] entity
+    # @overload []( entity )
+    #   @param [Sketchup::Entity] entity
+    # @overload []( entity1, entity2, ... )
+    #   @param [Sketchup::Entity] entity1
+    #   @param [Sketchup::Entity] entity2
+    # @overload []( entities )
+    #   @param [Enumerable<Sketchup::Entity>] entities
     #
     # @return [Sketchup::Entity,QuadFace]
     # @since 0.6.0
-    def get( entity )
-      if quad = @faces_to_quads[ entity ]
-        quad
-      elsif QuadFace.is?( entity )
-        quad = QuadFace.new( entity )
-        cache_entity( quad )
-        quad
+    def get( *args )
+      if args.size == 1
+        entity = args[0]
+        if entity.is_a?( Enumerable )
+          entity.map { |entity| get_entity( entity, true ) }
+        else
+          get_entity( entity, true )
+        end
       else
-        entity
+        args.map { |entity| get_entity( entity, true ) }
       end
     end
     
@@ -1100,6 +1146,7 @@ module TT::Plugins::QuadFaceTools
     def cache_entity( entity )
       entity_class = entity.class
       # Add to Type cache
+      @types[ Sketchup::Face ] ||= {}
       @types[ entity_class ] ||= {}
       @types[ entity_class ][ entity ] = entity
       # Add to Face => QuadFace mapping
@@ -1110,6 +1157,22 @@ module TT::Plugins::QuadFaceTools
         end
       end
       entity
+    end
+    
+    # @param [Sketchup::Entity] entity
+    #
+    # @return [Sketchup::Entity,QuadFace]
+    # @since 0.6.0
+    def get_entity( entity, add_to_cache = false )
+      if quad = @faces_to_quads[ entity ]
+        quad
+      elsif QuadFace.is?( entity )
+        quad = QuadFace.new( entity )
+        cache_entity( quad ) if add_to_cache && @types[ Sketchup::Face ][ entity ]
+        quad
+      else
+        entity
+      end
     end
     
   end # class EntitiesProvider
