@@ -1079,38 +1079,27 @@ module TT::Plugins::QuadFaceTools
   def self.region_to_loop
     model = Sketchup.active_model
     selection = model.selection
+    entities = EntitiesProvider.new( selection )
     # Collect faces in selection.
-    region = []
-    for entity in selection
-      if entity.is_a?( Sketchup::Face )
-        region << entity
+    region = EntitiesProvider.new
+    for entity in entities
+      if entity.is_a?( Sketchup::Face ) || entity.is_a?( QuadFace )
+        region << entities.get( entity )
       elsif entity.is_a?( Sketchup::Edge )
-        region << self.connected_faces( entity )
+        region << entities.get( entity.faces )
       end
     end
-    region.flatten!
-    region.uniq!
-    faces = region.map { |face|
-      if face.is_a?( QuadFace )
-        face.faces
-      else
-        face
-      end
-    }
-    faces.flatten!
-    faces.uniq!
     # Find edges bordering the faces.
     edges = []
     for face in region
       for edge in face.edges
         if edge.faces.size == 1
           edges << edge
-        elsif !edge.faces.all? { |f| faces.include?( f ) }
+        elsif !edge.faces.all? { |f| region.include?( f ) }
           edges << edge
         end
       end
     end
-    edges.uniq!
     # Select loops.
     selection.clear
     selection.add( edges )
