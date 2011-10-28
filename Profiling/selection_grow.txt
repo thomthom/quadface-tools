@@ -507,3 +507,11 @@ Removed @entities hash
 [3144] self.selection_grow: 0.28
 [3144] self.selection_grow: 0.358
 [3144] self.selection_grow: 0.416
+
+QuadFace.new without validation:
+
+[4464] self.selection_grow: 0.499
+[4464] self.selection_grow: 0.452
+[4464] self.selection_grow: 0.38
+[4464] self.selection_grow: 0.387
+[4464] self.selection_grow: 0.35
