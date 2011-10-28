@@ -294,7 +294,7 @@ module TT::Plugins::QuadFaceTools
             i = ( x * set_size ) + y
             j = i + 1
             pts = lines[i] + lines[j].reverse
-            PLUGIN.fill_face( entities, pts )
+            fill_face( entities, pts )
           }
         }
         
@@ -306,7 +306,7 @@ module TT::Plugins::QuadFaceTools
             line1 = lines[set_size-1]
             line2 = lines[-1]
             pts = line1 + line2
-            PLUGIN.fill_face( entities, pts )
+            fill_face( entities, pts )
           end
         # Faces ( 3 edges )
         elsif set_count == 3
@@ -383,13 +383,36 @@ module TT::Plugins::QuadFaceTools
               QuadFace.set_divider_props( e )
             }
           else
-            PLUGIN.fill_face( entities, polygon )
+            fill_face( entities, polygon )
           end
         end
         
         progress.next
       end
       new_edges
+    end
+    
+    private
+    
+    # Acts like #add_face, but doesn't have the overhead of returning QuadFaces.
+    #
+    # @see #add_face
+    #
+    # @param [Sketchup::Entities] entities 
+    # @param [Array<Geom::Point3d>] points
+    #
+    # @return [Nil]
+    # @since 0.3.0
+    def fill_face( entities, points )
+      if points.size == 4 && !TT::Geom3d.planar_points?( points )
+        face1 = entities.add_face( points[0], points[1], points[2] )
+        face2 = entities.add_face( points[0], points[2], points[3] )
+        edge = ( face1.edges & face2.edges )[0]
+        QuadFace.set_divider_props( edge )
+      else
+        entities.add_face( points )
+      end
+      nil
     end
     
   end # class EdgeConnect

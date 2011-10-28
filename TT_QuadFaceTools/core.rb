@@ -577,16 +577,11 @@ module TT::Plugins::QuadFaceTools
   def self.flip_triangulation
     t = Time.now
     model = Sketchup.active_model
+    selection = EntitiesProvider.new( model.selection )
     TT::Model.start_operation( 'Flip Triangulation' )
-    processed_faces = {}
     new_faces = []
-    for entity in model.selection.to_a
-      next if processed_faces[ entity ]
-      next unless QuadFace.is?( entity )
-      quad = QuadFace.new( entity )
-      for face in quad.faces
-        processed_faces[ face ] = face
-      end
+    for quad in selection
+      next unless quad.is_a?( QuadFace )
       quad.flip_edge
       new_faces.concat( quad.faces )
     end
@@ -609,21 +604,17 @@ module TT::Plugins::QuadFaceTools
   def self.select_bounding_edges
     t = Time.now
     model = Sketchup.active_model
-    selection = model.selection
-    edges = []
-    # Find quads with two or more edges selected
+    selection = EntitiesProvider.new( model.selection )
+    new_selection = []
     for face in selection
-      next unless face.is_a?( Sketchup::Face )
-      if QuadFace.is?( face )
-        quad = QuadFace.new( face )
-        edges.concat( quad.edges + quad.faces )
-      else
-        edges.concat( face.edges )
+      if face.is_a?( QuadFace )
+        new_selection.concat( face.edges + face.faces )
+      elsif face.is_a?( Sketchup::Face )
+        new_selection.concat( face.edges )
       end
     end
-    edges.uniq!
     # Select
-    selection.add( edges )
+    model.selection.add( new_selection )
     TT.debug "self.select_bounding_edges: #{Time.now - t}"
   end
   
@@ -633,21 +624,19 @@ module TT::Plugins::QuadFaceTools
     t = Time.now
     model = Sketchup.active_model
     selection = model.selection
-    faces = {}
+    entities = EntitiesProvider.new( selection )
+    new_selection = EntitiesProvider.new
     # Find quads with two or more edges selected
-    for entity in selection
-      next unless entity.is_a?( Sketchup::Edge )
-      for face in entity.faces
-        next if faces[ face ]
-        next unless QuadFace.is?( face )
-        quad = QuadFace.new( face )
-        for f in quad.faces
-          faces[ f ] = f
+    for entity in entities.edges
+      next if QuadFace.dividing_edge?( entity )
+      for quad in entities.connected_quads( entity )
+        if quad.edges.select { |e| entities.include?( e ) }.size > 1
+          new_selection << quad
         end
       end
     end
     # Select
-    selection.add( faces.keys )
+    selection.add( new_selection.native_entities )
     TT.debug "self.select_quads_from_edges: #{Time.now - t}"
   end
   
@@ -656,27 +645,28 @@ module TT::Plugins::QuadFaceTools
   def self.insert_loops
     t = Time.now
     model = Sketchup.active_model
-    selection = model.selection
-    entities = []
+    selection = EntitiesProvider.new( model.selection )
+    entities = EntitiesProvider.new
     # Find Edge Rings in Selection
-    for entity in selection
-      next unless entity.is_a?( Sketchup::Edge )
+    for entity in selection.edges
       next if QuadFace.dividing_edge?( entity )
       next if entities.include?( entity )
-      entities.concat( find_edge_ring( entity ) )
+      entities << selection.find_edge_ring( entity )
     end
     # Edge Connect
     TT::Model.start_operation( 'Insert Loops' )
-    edge_connect = EdgeConnect.new( entities )
+    edge_connect = EdgeConnect.new( entities.to_a )
     edges = edge_connect.connect!
     model.commit_operation
     # Select
-    selection.clear
-    selection.add( edges )
+    model.selection.clear
+    model.selection.add( edges )
     TT.debug "self.insert_loops: #{Time.now - t}"
   end
   
   
+  # @todo Make full use of EntitiesProvider
+  #
   # @since 0.3.0
   def self.remove_loops
     t = Time.now
@@ -808,7 +798,7 @@ module TT::Plugins::QuadFaceTools
       # Rebuild triangulated and non-planar quads.
       mapped_quads = []
       for points in new_quads
-        quad = self.add_face( active_entities, points )
+        quad = provider.add_quad( points )
         # Restore UV mapping
         for data in uv_mapping
           next unless data[ :points ] == points
@@ -851,17 +841,16 @@ module TT::Plugins::QuadFaceTools
   def self.triangulate_selection
     t = Time.now
     model = Sketchup.active_model
-    selection = model.selection
+    selection = EntitiesProvider.new( model.selection )
     new_selection = []
     TT::Model.start_operation( 'Triangulate QuadFaces' )
-    for entity in selection.to_a
-      next unless QuadFace.is?( entity )
-      quadface = QuadFace.new( entity )
+    for quadface in selection
+      next unless quadface.is_a?( QuadFace )
       quadface.triangulate!
       new_selection.concat( quadface.faces )
     end
     model.commit_operation
-    selection.add( new_selection )
+    model.selection.add( new_selection )
     TT.debug "self.triangulate_selection: #{Time.now - t}"
   end
   
@@ -870,17 +859,19 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.2.0
   def self.remove_triangulation
-    # (!) Bugged!
     t = Time.now
     model = Sketchup.active_model
+    selection = EntitiesProvider.new( model.selection )
+    new_selection = []
     TT::Model.start_operation( 'Remove Triangulation' )
-    for entity in model.selection.to_a
-      next unless QuadFace.is?( entity )
-      quadface = QuadFace.new( entity )
+    for quadface in selection
+      next unless quadface.is_a?( QuadFace )
       next unless quadface.planar?
       quadface.detriangulate!
+      new_selection.concat( quadface.faces )
     end
     model.commit_operation
+    model.selection.add( new_selection )
     TT.debug "self.remove_triangulation: #{Time.now - t}"
   rescue
     model.abort_operation
@@ -892,12 +883,14 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.2.0
   def self.smooth_quad_mesh
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
     entities = ( selection.empty? ) ? model.active_entities : selection
     TT::Model.start_operation( 'Smooth Quads' )
     self.smooth_quads( entities )
     model.commit_operation
+    TT.debug "self.smooth_quad_mesh: #{Time.now - t}"
   end
   
   
@@ -906,7 +899,6 @@ module TT::Plugins::QuadFaceTools
   # @return [Nil]
   # @since 0.5.0
   def self.smooth_quads( entities )
-    t = Time.now
     entities = EntitiesProvider.new( entities )
     for entity in entities
       if TT::Instance.is?( entity )
@@ -918,7 +910,6 @@ module TT::Plugins::QuadFaceTools
         end
       end
     end
-    TT.debug "self.smooth_quads: #{Time.now - t}"
     nil
   end
   
@@ -927,12 +918,14 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.2.0
   def self.unsmooth_quad_mesh
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
     entities = ( selection.empty? ) ? model.active_entities : selection
     TT::Model.start_operation( 'Unsmooth Quads' )
     self.unsmooth_quads( entities )
     model.commit_operation
+    TT.debug "self.unsmooth_quad_mesh: #{Time.now - t}"
   end
   
   
@@ -941,7 +934,6 @@ module TT::Plugins::QuadFaceTools
   # @return [Nil]
   # @since 0.5.0
   def self.unsmooth_quads( entities )
-    t = Time.now
     entities = EntitiesProvider.new( entities )
     for entity in entities
       if TT::Instance.is?( entity )
@@ -953,7 +945,6 @@ module TT::Plugins::QuadFaceTools
         end
       end
     end
-    TT.debug "self.unsmooth_quads: #{Time.now - t}"
     nil
   end
   
@@ -964,10 +955,12 @@ module TT::Plugins::QuadFaceTools
   def self.make_planar
     t = Time.now
     model = Sketchup.active_model
-    selection = model.selection
+    selection = EntitiesProvider.new( model.selection )
+    provider = EntitiesProvider.new
     vertices = []
-    for face in model.selection
-      vertices << face.vertices if face.is_a?( Sketchup::Face )
+    for face in selection.faces
+      vertices << face.vertices
+      provider << provider.get( face ) # (?) Improve EntitiesProvider?
     end
     vertices.flatten!
     vertices.uniq!
@@ -975,10 +968,8 @@ module TT::Plugins::QuadFaceTools
     TT::Model.start_operation( 'Make Planar' )
     # Triangulate connected quads to ensure they are not broken.
     for vertex in vertices
-      for face in vertex.faces
-        next if selection.include?( face )
-        next unless QuadFace.is?( face )
-        quad = QuadFace.new( face )
+      for quad in provider.connected_quads( vertex )
+        next if selection.include?( quad )
         next if quad.triangulated?
         quad.triangulate!
       end
@@ -996,6 +987,7 @@ module TT::Plugins::QuadFaceTools
     end
     model.active_entities.transform_by_vectors( entities, vectors )
     model.commit_operation
+    model.selection.add( provider.native_entities )
     TT.debug "self.make_planar: #{Time.now - t}"
   rescue
     model.abort_operation
@@ -1286,34 +1278,33 @@ module TT::Plugins::QuadFaceTools
   # @since 0.1.0
   def self.select_rings( step = false )
     t = Time.now
-    selection = Sketchup.active_model.selection
-    entities = []
+    model = Sketchup.active_model
+    selection = EntitiesProvider.new( model.selection )
+    new_selection = EntitiesProvider.new
     for entity in selection
       if entity.is_a?( Sketchup::Edge )
         next if QuadFace.dividing_edge?( entity )
-        next if !step && entities.include?( entity )
-        entities.concat( find_edge_ring( entity, step ) )
-      elsif entity.is_a?( Sketchup::Face )
-        next unless QuadFace.is?( entity )
-        next if entities.include?( entity )
-        quad = QuadFace.new( entity )
-        selected = quad.connected_quads( selection )
+        next if !step && new_selection.include?( entity )
+        new_selection << selection.find_edge_ring( entity, step )
+      elsif entity.is_a?( QuadFace )
+        next if new_selection.include?( entity )
+        selected = entity.connected_quads( selection )
         if selected.size == 1
-          edge1 = quad.common_edge( selected[0] )
-          edge = quad.next_edge( edge1 )
+          edge1 = entity.common_edge( selected[0] )
+          edge = entity.next_edge( edge1 )
         elsif selected.size == 2
-          edge1 = quad.common_edge( selected[0] )
-          edge2 = quad.common_edge( selected[1] )
-          next unless quad.opposite_edge( edge1 ) == edge2
-          edge = quad.next_edge( edge1 )
+          edge1 = entity.common_edge( selected[0] )
+          edge2 = entity.common_edge( selected[1] )
+          next unless entity.opposite_edge( edge1 ) == edge2
+          edge = entity.next_edge( edge1 )
         else
           next
         end
-        entities.concat( find_face_ring( quad, edge ) )
+        new_selection << selection.find_face_ring( entity, edge )
       end
     end
     # Select
-    selection.add( entities )
+    model.selection.add( new_selection.native_entities )
     TT.debug "self.select_rings: #{Time.now - t}"
   end
   
@@ -1373,7 +1364,7 @@ module TT::Plugins::QuadFaceTools
         connected = entity.connected_quads if connected.empty?
         # Select loops.
         for quad in connected
-          entities << self.find_face_loop( entity, quad, step )
+          entities << provider.find_face_loop( entity, quad, step )
         end
       end
     end
@@ -1491,167 +1482,6 @@ module TT::Plugins::QuadFaceTools
     # Update selection
     selection.remove( new_selection )
     TT.debug "self.selection_shrink: #{Time.now - t}"
-  end
-  
-  
-  # ----- HELPER METHOD (!) Move to EntitiesProvider ----- #
-  
-  
-  # @since 0.5.0
-  def self.find_face_ring( quad, edge )
-    entities = []
-    quad2 = quad.next_quad( edge )
-    entities.concat( self.find_face_loop( quad, quad2 ) ) if quad2
-    entities
-  end
-  
-  
-  # @param [Sketchup::Edge]
-  #
-  # @return [Array<Sketchup::Edge>]
-  # @since 0.1.0
-  def self.find_edge_ring( origin_edge, step = false )
-    raise ArgumentError, 'Invalid Edge' unless origin_edge.is_a?( Sketchup::Edge )
-    # Find initial connected QuadFaces
-    return [] unless ( 1..2 ).include?( origin_edge.faces.size )
-    valid_faces = origin_edge.faces.select { |f| QuadFace.is?( f ) }
-    quads = valid_faces.map { |face| QuadFace.new( face ) }
-    # Find ring loop
-    selected_faces = []
-    selected_edges = [ origin_edge ]
-    for quad in quads
-      current_quad = quad
-      current_edge = current_quad.opposite_edge( origin_edge )
-      until current_edge.nil?
-        selected_faces << current_quad
-        selected_edges << current_edge
-        break if step
-        # Look for more connected.
-        current_quad = current_quad.next_face( current_edge )
-        break unless current_quad # if nil
-        current_edge = current_quad.opposite_edge( current_edge )
-        # Stop if the entities has already been processed.
-        break if selected_edges.include?( current_edge )
-      end
-    end
-    selected_edges
-  end
-  
-  
-  # @since 0.5.0
-  def self.find_face_loop( quad1, quad2, step = false )
-    # Find initial entities.
-    edge1 = quad1.common_edge( quad2 )
-    edge2 = quad1.opposite_edge( edge1 )
-    edge3 = quad2.opposite_edge( edge1 )
-    # Prepare the stack.
-    stack = []
-    stack << [ quad1, edge2 ]
-    stack << [ quad2, edge3 ]
-    loop = quad1.faces + quad2.faces
-    # Keep track of the faces processed.
-    processed = {}
-    quad1.faces.each { |f| processed[ f ] = f }
-    quad2.faces.each { |f| processed[ f ] = f }
-    # Find next quads.
-    until stack.empty?
-      quad, edge = stack.shift
-      next_quad = quad.next_face( edge )
-      next unless next_quad
-      next if next_quad.faces.any? { |face| processed[ face ] }
-      loop.concat( next_quad.faces )
-      next_quad.faces.each { |f| processed[ f ] = f }
-      unless step
-        next_edge = next_quad.opposite_edge( edge )
-        stack << [ next_quad, next_edge ]
-      end
-    end
-    loop
-  end
-  
-  
-  # Wrapper for creating faces where the points might belong to QuadFaces that
-  # are not planar.
-  #
-  # A QuadFace is returned for all faces with four vertices.
-  #
-  # @param [Sketchup::Entities] entities 
-  # @param [Array<Geom::Point3d>] points
-  #
-  # @return [QuadFace,Sketchup::Face]
-  # @since 0.3.0
-  def self.add_face( entities, points )
-    if points.size == 4 && !TT::Geom3d.planar_points?( points )
-      face1 = entities.add_face( points[0], points[1], points[2] )
-      face2 = entities.add_face( points[0], points[2], points[3] )
-      edge = ( face1.edges & face2.edges )[0]
-      QuadFace.set_divider_props( edge )
-      QuadFace.new( face1 )
-    else
-      face = entities.add_face( points )
-      face = QuadFace.new( face ) if points.size == 4
-      face
-    end
-  end
-  
-  
-  # Acts like #add_face, but doesn't have the overhead of returning QuadFaces.
-  #
-  # @see #add_face
-  #
-  # @param [Sketchup::Entities] entities 
-  # @param [Array<Geom::Point3d>] points
-  #
-  # @return [Nil]
-  # @since 0.3.0
-  def self.fill_face( entities, points )
-    if points.size == 4 && !TT::Geom3d.planar_points?( points )
-      face1 = entities.add_face( points[0], points[1], points[2] )
-      face2 = entities.add_face( points[0], points[2], points[3] )
-      edge = ( face1.edges & face2.edges )[0]
-      QuadFace.set_divider_props( edge )
-    else
-      entities.add_face( points )
-    end
-    nil
-  end
-  
-  
-  # @overload convert_to_quad( native_quad )
-  #   @param [Sketchup::Face] native_quad
-  #
-  # @overload convert_to_quad( triangle1, triangle2, edge )
-  #   @param [Sketchup::Face] triangle1
-  #   @param [Sketchup::Face] triangle2
-  #   @param [Sketchup::Edge] edge Edge separating the two triangles.
-  #
-  # @return [QuadFace]
-  # @since 0.1.0
-  def self.convert_to_quad( *args )
-    if args.size == 1
-      face = args[0]
-      for edge in face.edges
-        if QuadFace.divider_props?( edge )
-          QuadFace.set_border_props( edge )
-        end
-      end
-      QuadFace.new( face )
-    elsif args.size == 3
-      # (?) Third edge argument required? Can be inferred by the two triangles.
-      face1, face2, dividing_edge = args
-      QuadFace.set_divider_props( dividing_edge )
-      for face in [ face1, face2 ]
-        for edge in face.edges
-          next if edge == dividing_edge
-          if QuadFace.divider_props?( edge )
-            QuadFace.set_border_props( edge )
-          end
-        end
-      end
-      QuadFace.new( face1 )
-    else
-      raise ArgumentError, 'Incorrect number of arguments.'
-    end
   end
   
 
