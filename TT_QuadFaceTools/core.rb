@@ -665,8 +665,6 @@ module TT::Plugins::QuadFaceTools
   end
   
   
-  # @todo Make full use of EntitiesProvider
-  #
   # @since 0.3.0
   def self.remove_loops
     t = Time.now
@@ -686,8 +684,8 @@ module TT::Plugins::QuadFaceTools
       vertices = {}
       # Make loop edges planar between neighbour faces.
       for edge in loop
-        next unless edge.faces.all? { |face| QuadFace.is?( face ) }
-        quads = edge.faces.map { |face| QuadFace.new( face ) }
+        quads = provider.get( edge.faces )
+        next unless quads.all? { |quad| quad.is_a?( QuadFace ) }
         quad_edges = quads.map { |quad| quad.edges }.flatten.uniq
         for vertex in edge.vertices
           next if vertices[ vertex ]
@@ -715,8 +713,8 @@ module TT::Plugins::QuadFaceTools
       new_quads = []
       uv_mapping = []
       for edge in loop
-        next unless edge.faces.all? { |face| QuadFace.is?( face ) }
-        quads = edge.faces.map { |face| QuadFace.new( face ) }
+        quads = provider.get( edge.faces )
+        next unless quads.all? { |quad| quad.is_a?( QuadFace ) }
         # Find the vertices of the merged face.
         q1, q2 = quads
         e1 = q1.opposite_edge( edge )
