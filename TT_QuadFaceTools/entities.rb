@@ -30,7 +30,7 @@ module TT::Plugins::QuadFaceTools
     def self.divider_props?( edge )
       return false unless edge.soft?
       return false unless edge.smooth?
-      return false unless edge.hidden?
+      return false if edge.casts_shadows?
       true
     end
     
@@ -138,8 +138,8 @@ module TT::Plugins::QuadFaceTools
     # @return [Sketchup::Edge]
     # @since 0.4.0
     def self.set_border_props( edge )
-      if edge.soft? && edge.smooth? && edge.hidden?
-        edge.hidden = false
+      if self.divider_props?( edge )
+        edge.casts_shadows = true
       end
       edge
     end
@@ -151,7 +151,7 @@ module TT::Plugins::QuadFaceTools
     def self.set_divider_props( edge )
       edge.soft = true
       edge.smooth = true
-      edge.hidden = true
+      edge.casts_shadows = false
       edge
     end
     
@@ -772,7 +772,7 @@ module TT::Plugins::QuadFaceTools
       @model = nil
       @parent = nil
       if parent.nil?
-        if entities.empty?
+        if entities.length == 0
           @parent = Sketchup.active_model
           @model = Sketchup.active_model
         else

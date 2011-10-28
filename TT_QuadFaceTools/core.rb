@@ -250,14 +250,22 @@ module TT::Plugins::QuadFaceTools
     @commands[:blender_to_quads] = cmd
     
     cmd = UI::Command.new( 'Sandbox Quads to QuadFace Quads' )  {
-      self.convert_quadmesh_r1_to_r2
+      self.convert_legacy_quadmesh_to_latest
     }
     cmd.small_icon = File.join( PATH_ICONS, 'SandboxToQuads_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SandboxToQuads_24.png' )
-    cmd.status_bar_text = 'Convert Quads from Revision 1 definition to Revision 2.'
-    cmd.tooltip = 'Convert Quads from Revision 1 definition to Revision 2'
-    cmd_convert_quadmesh_r1_to_r2 = cmd
-    @commands[:quad_r1_to_r2] = cmd
+    cmd.status_bar_text = 'Sandbox Quads to QuadFace Quads.'
+    cmd.tooltip = 'Sandbox Quads to QuadFace Quads'
+    cmd_convert_quad_r1 = cmd
+    @commands[:convert_quad_r1] = cmd
+    
+    cmd = UI::Command.new( 'Upgrade 0.4 - 0.5 Quads' )  {
+      self.convert_quadmesh_r2_to_latest
+    }
+    cmd.status_bar_text = 'Upgrades Quads from QuadFace version 0.4 - 0.5.'
+    cmd.tooltip = 'Upgrades Quads from QuadFace version 0.4 - 0.5'
+    cmd_convert_quad_r2 = cmd
+    @commands[:convert_quad_r2] = cmd
     
     cmd = UI::Command.new( 'Smooth Quads' )  {
       self.smooth_quad_mesh
@@ -387,7 +395,9 @@ module TT::Plugins::QuadFaceTools
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
     sub_menu.add_separator
     sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
-    sub_menu.add_item( cmd_convert_quadmesh_r1_to_r2 )
+    sub_menu.add_item( cmd_convert_quad_r1 )
+    sub_menu.add_separator
+    sub_menu.add_item( cmd_convert_quad_r2 )
     m.add_separator
     sub_menu = m.add_submenu( 'Preferences' )
     sub_menu.add_item( cmd_toggle_context_menu )
@@ -433,7 +443,9 @@ module TT::Plugins::QuadFaceTools
         sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
         sub_menu.add_separator
         sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
-        sub_menu.add_item( cmd_convert_quadmesh_r1_to_r2 )
+        sub_menu.add_item( cmd_convert_quad_r1 )
+        sub_menu.add_separator
+        sub_menu.add_item( cmd_convert_quad_r2 )
       end
     }
     
@@ -461,7 +473,7 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_remove_triangulation )
     toolbar.add_separator
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
-    toolbar.add_item( cmd_convert_quadmesh_r1_to_r2 )
+    toolbar.add_item( cmd_convert_quad_r1 )
     toolbar.add_item( cmd_convert_blender_quads_to_sketchup_quads )
     toolbar.add_separator
     toolbar.add_item( cmd_uv_map )
@@ -575,6 +587,7 @@ module TT::Plugins::QuadFaceTools
   
   # @since 0.5.0
   def self.flip_triangulation
+    t = Time.now
     model = Sketchup.active_model
     TT::Model.start_operation( 'Flip Triangulation' )
     processed_faces = {}
@@ -591,6 +604,7 @@ module TT::Plugins::QuadFaceTools
     end
     model.commit_operation
     model.selection.add( new_faces )
+    TT.debug "self.flip_triangulation: #{Time.now - t}"
   end
   
   
@@ -605,6 +619,7 @@ module TT::Plugins::QuadFaceTools
   
   # @since 0.4.0
   def self.select_bounding_edges
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
     edges = []
@@ -621,11 +636,13 @@ module TT::Plugins::QuadFaceTools
     edges.uniq!
     # Select
     selection.add( edges )
+    TT.debug "self.select_bounding_edges: #{Time.now - t}"
   end
   
   
   # @since 0.4.0
   def self.select_quads_from_edges
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
     faces = {}
@@ -643,11 +660,13 @@ module TT::Plugins::QuadFaceTools
     end
     # Select
     selection.add( faces.keys )
+    TT.debug "self.select_quads_from_edges: #{Time.now - t}"
   end
   
   
   # @since 0.3.0
   def self.insert_loops
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
     entities = []
@@ -666,11 +685,13 @@ module TT::Plugins::QuadFaceTools
     # Select
     selection.clear
     selection.add( edges )
+    TT.debug "self.insert_loops: #{Time.now - t}"
   end
   
   
   # @since 0.3.0
   def self.remove_loops
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
     provider = EntitiesProvider.new( selection )
@@ -830,6 +851,7 @@ module TT::Plugins::QuadFaceTools
       end
     end
     model.commit_operation
+    TT.debug "self.remove_loops: #{Time.now - t}"
   end
   
   
@@ -839,6 +861,7 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.1.0
   def self.triangulate_selection
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
     new_selection = []
@@ -851,6 +874,7 @@ module TT::Plugins::QuadFaceTools
     end
     model.commit_operation
     selection.add( new_selection )
+    TT.debug "self.triangulate_selection: #{Time.now - t}"
   end
   
   
@@ -858,6 +882,7 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.2.0
   def self.remove_triangulation
+    t = Time.now
     model = Sketchup.active_model
     TT::Model.start_operation( 'Remove Triangulation' )
     for entity in model.selection.to_a
@@ -867,6 +892,7 @@ module TT::Plugins::QuadFaceTools
       quadface.detriangulate!
     end
     model.commit_operation
+    TT.debug "self.remove_triangulation: #{Time.now - t}"
   rescue
     model.abort_operation
     raise
@@ -947,6 +973,7 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.2.0
   def self.make_planar
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
     vertices = []
@@ -980,6 +1007,7 @@ module TT::Plugins::QuadFaceTools
     end
     model.active_entities.transform_by_vectors( entities, vectors )
     model.commit_operation
+    TT.debug "self.make_planar: #{Time.now - t}"
   rescue
     model.abort_operation
     raise
@@ -995,14 +1023,157 @@ module TT::Plugins::QuadFaceTools
   # * Two triangles with smooth + soft + hidden divider. Border edges can have
   #   any of the properties as long as they don't use them all at the same time.
   #
-  # @since 0.4.0
-  def self.convert_quadmesh_r1_to_r2
+  # In QuadFace 0.6 the definition was updated to:
+  # * Native quad
+  # * Two triangles with diogonal poperties:
+  #     smooth = true
+  #     soft =  true
+  #     cast shadows = false.
+  #   Border edges can have any of the properties as long as they don't use them
+  #   all at the same time.
+  #   This change was made because the Hidden property is modified per Scene
+  #   and will ruin the definition of a Quad when you have a model with scenes.
+  #   The benefit is that now the native smooth tools can be used without
+  #   breaking the QuadFace and outline styles renders fine without caps in the
+  #   outline profile which the Hidden property caused.
+  #
+  # @since 0.6.0
+  def self.convert_legacy_quadmesh_to_latest
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
     entities = ( selection.empty? ) ? model.active_entities : selection
     TT::Model.start_operation( 'Convert Sandbox Quads' )
-    self.convert_sandbox_to_quads( entities )
+    self.convert_legacy_to_latest( entities )
     model.commit_operation
+    TT.debug "self.convert_legacy_quadmesh_to_latest: #{Time.now - t}"
+  end
+  
+  
+  # @param [Enumerable<Sketchup::Entity>] entities
+  #
+  # @return [Nil]
+  # @since 0.6.0
+  def self.convert_legacy_to_latest( entities )
+    for entity in entities
+      if TT::Instance.is?( entity )
+        definition = TT::Instance.definition( entity )
+        self.convert_legacy_to_latest( definition.entities )
+      end
+      # Only triangualted quads needs converting.
+      next unless entity.is_a?( Sketchup::Face )
+      next unless entity.vertices.size == 3
+      # In converting both R1 and R2 the R2 definition is tested first because
+      # the divider property is more restrictive.
+      convert_r1 = false
+      # R2 Quads ( 0.4 - 0.5 )
+      diagonals = entity.edges.select { |e| e.soft? && e.smooth? && e.hidden? }
+      if diagonals.size != 1
+        # R1 Quads ( 0.1 - 0.3 ) & Sandbox Quads
+        diagonals = entity.edges.select { |e| e.soft? && e.smooth? }
+        convert_r1 = true
+      end
+      # There should only be one edge with diogonal properties in the triangle.
+      next unless diagonals.size == 1
+      diagonal = diagonals[0]
+      # The diogonal should be connected to only two triangles.
+      next unless diagonal.faces.size == 2
+      other_face = ( diagonal.faces - [ entity ] )[0]
+      next unless other_face.edges.size == 3
+      # The other triangle must be verified to only have one edge with diogonal
+      # properties.
+      if convert_r1
+        diagonals = entity.edges.select { |e| e.soft? && e.smooth? }
+      else
+        diagonals = entity.edges.select { |e| e.soft? && e.smooth? && e.hidden? }
+      end
+      next unless diagonals.size == 1
+      # The edge has been verified and can be upgraded.
+      diagonal.hidden = false # Clean up the old R2 property.
+      QuadFace.set_divider_props( diagonal )
+    end
+    nil
+  end
+  
+  
+    # In QuadFace 0.3 and older a quad was defined as:
+  # * Native quad
+  # * Two triangles with a soft dividing edge and non-soft edges.
+  #
+  # In QuadFace 0.4 the definition was updated to:
+  # * Native quad
+  # * Two triangles with smooth + soft + hidden divider. Border edges can have
+  #   any of the properties as long as they don't use them all at the same time.
+  #
+  # In QuadFace 0.6 the definition was updated to:
+  # * Native quad
+  # * Two triangles with diogonal poperties:
+  #     smooth = true
+  #     soft =  true
+  #     cast shadows = false.
+  #   Border edges can have any of the properties as long as they don't use them
+  #   all at the same time.
+  #   This change was made because the Hidden property is modified per Scene
+  #   and will ruin the definition of a Quad when you have a model with scenes.
+  #
+  # @since 0.6.0
+  def self.convert_quadmesh_r2_to_latest
+    t = Time.now
+    model = Sketchup.active_model
+    selection = model.selection
+    entities = ( selection.empty? ) ? model.active_entities : selection
+    TT::Model.start_operation( 'Upgrade 0.4 - 0.5 Quads' )
+    self.convert_r2_to_latest( entities )
+    model.commit_operation
+    TT.debug "self.convert_r2_to_latest: #{Time.now - t}"
+  end
+  
+  
+  # @param [Enumerable<Sketchup::Entity>] entities
+  #
+  # @return [Nil]
+  # @since 0.6.0
+  def self.convert_r2_to_latest( entities )
+    for entity in entities
+      if TT::Instance.is?( entity )
+        definition = TT::Instance.definition( entity )
+        self.convert_r2_to_latest( definition.entities )
+      end
+      # Only triangualted quads needs converting.
+      next unless entity.is_a?( Sketchup::Face )
+      next unless entity.vertices.size == 3
+      soft_edges = entity.edges.select { |e| e.soft? && e.smooth? && e.hidden? }
+      next unless soft_edges.size == 1
+      divider = soft_edges[0]
+      next unless divider.faces.size == 2
+      other_face = ( divider.faces - [ entity ] )[0]
+      next unless other_face.edges.size == 3
+      next unless other_face.edges.select { |e| e.soft? && e.smooth? && e.hidden? }.size == 1
+      QuadFace.set_divider_props( divider )
+    end
+    nil
+  end
+  
+  
+  # In QuadFace 0.3 and older a quad was defined as:
+  # * Native quad
+  # * Two triangles with a soft dividing edge and non-soft edges.
+  #
+  # In QuadFace 0.4 the definition was updated to:
+  # * Native quad
+  # * Two triangles with smooth + soft + hidden divider. Border edges can have
+  #   any of the properties as long as they don't use them all at the same time.
+  #
+  # @since 0.4.0
+  def self.convert_quadmesh_r1_to_latest
+    t = Time.now
+    model = Sketchup.active_model
+    selection = model.selection
+    entities = ( selection.empty? ) ? model.active_entities : selection
+    TT::Model.start_operation( 'Convert Sandbox Quads' )
+    self.convert_r1_to_latest( entities )
+    model.commit_operation
+    TT.debug "self.convert_quadmesh_r1_to_latest: #{Time.now - t}"
   end
   
   
@@ -1010,22 +1181,22 @@ module TT::Plugins::QuadFaceTools
   #
   # @return [Nil]
   # @since 0.5.0
-  def self.convert_sandbox_to_quads( entities )
+  def self.convert_r1_to_latest( entities )
     for entity in entities
       if TT::Instance.is?( entity )
         definition = TT::Instance.definition( entity )
-        self.convert_sandbox_to_quads( definition.entities )
+        self.convert_r1_to_latest( definition.entities )
       end
       # Only triangualted quads needs converting.
       next unless entity.is_a?( Sketchup::Face )
       next unless entity.vertices.size == 3
-      soft_edges = entity.edges.select { |e| e.soft? }
+      soft_edges = entity.edges.select { |e| e.soft? && e.smooth? }
       next unless soft_edges.size == 1
       divider = soft_edges[0]
       next unless divider.faces.size == 2
       other_face = ( divider.faces - [ entity ] )[0]
       next unless other_face.edges.size == 3
-      next unless other_face.edges.select { |e| e.soft? }.size == 1
+      next unless other_face.edges.select { |e| e.soft? && e.smooth? }.size == 1
       QuadFace.set_divider_props( divider )
     end
     nil
@@ -1038,17 +1209,19 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.2.0
   def self.convert_blender_quads_to_sketchup_quads
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
     entities = ( selection.empty? ) ? model.active_entities : selection
     TT::Model.start_operation( 'Convert Blender Quads' )
       self.convert_blender_quads( entities )
     model.commit_operation
+    TT.debug "self.convert_blender_quads_to_sketchup_quads: #{Time.now - t}"
   end
   
   
-  # Converts two sets of triangles sharing by a hidden edge with hard edges into
-  # QuadFace compatible quads.
+  # Recursivly converts two sets of triangles sharing a hidden edge with visible
+  # edges into QuadFace compatible quads.
   #
   # @param [Enumerable<Sketchup::Entity>] entities
   #
@@ -1078,6 +1251,7 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.2.0
   def self.region_to_loop
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
     entities = EntitiesProvider.new( selection )
@@ -1104,6 +1278,7 @@ module TT::Plugins::QuadFaceTools
     # Select loops.
     selection.clear
     selection.add( edges )
+    TT.debug "self.region_to_loop: #{Time.now - t}"
   end
   
   
@@ -1113,6 +1288,7 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.1.0
   def self.select_rings( step = false )
+    t = Time.now
     selection = Sketchup.active_model.selection
     entities = []
     for entity in selection
@@ -1141,6 +1317,7 @@ module TT::Plugins::QuadFaceTools
     end
     # Select
     selection.add( entities )
+    TT.debug "self.select_rings: #{Time.now - t}"
   end
   
   
@@ -1148,6 +1325,7 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.1.0
   def self.shrink_rings
+    t = Time.now
     selection = Sketchup.active_model.selection
     entities = []
     for entity in selection
@@ -1170,6 +1348,7 @@ module TT::Plugins::QuadFaceTools
     end
     # Select
     selection.remove( entities )
+    TT.debug "self.shrink_rings: #{Time.now - t}"
   end
   
   
@@ -1211,6 +1390,7 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.1.0
   def self.shrink_loops
+    t = Time.now
     selection = Sketchup.active_model.selection
     provider = EntitiesProvider.new( selection )
     selected = selection.to_a
@@ -1245,6 +1425,7 @@ module TT::Plugins::QuadFaceTools
     end
     # Select
     selection.remove( entities.native_entities )
+    TT.debug "self.shrink_loops: #{Time.now - t}"
   end
   
   
@@ -1314,6 +1495,9 @@ module TT::Plugins::QuadFaceTools
     selection.remove( new_selection )
     TT.debug "self.selection_shrink: #{Time.now - t}"
   end
+  
+  
+  # ----- HELPER METHOD (!) Move to EntitiesProvider ----- #
   
   
   # @since 0.5.0
@@ -1387,9 +1571,6 @@ module TT::Plugins::QuadFaceTools
     end
     loop
   end
-  
-  
-  # ----- HELPER METHOD (!) Move to EntitiesProvider ----- #
   
   
   # Wrapper for creating faces where the points might belong to QuadFaces that
