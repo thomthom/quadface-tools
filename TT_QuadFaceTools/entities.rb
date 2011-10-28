@@ -420,9 +420,7 @@ module TT::Plugins::QuadFaceTools
         face2 = entities.add_face( pt1, pt4, pt3 )
         @faces = [ face1, face2 ]
         div = ( face1.edges & face2.edges )[0]
-        div.soft = true
-        div.smooth = true
-        div.hidden = true
+        QuadFace.set_divider_props( div )
         # Restore materials
         if texture_on_front
           uv_set( material_front, uv_front )
@@ -587,9 +585,7 @@ module TT::Plugins::QuadFaceTools
         # Ensure a triangulated quad's edges doesn't have the properties of a
         # divider. If any of them has, then uncheck the hidden property.
         face.edges.each { |edge|
-          if edge.soft? && edge.smooth? && edge.hidden?
-            edge.hidden = false
-          end
+          QuadFace.set_border_props( edge )
         }
         # Find the splitting segment.
         polygon1 = mesh.polygon_at( 1 ).map{ |i| i.abs }
@@ -598,9 +594,7 @@ module TT::Plugins::QuadFaceTools
         # Add edge at split
         split.map! { |index| mesh.point_at( index ) }
         edge = entities.add_line( *split )
-        edge.soft = true
-        edge.smooth = true
-        edge.hidden = true
+        QuadFace.set_divider_props( edge )
         # Update references
         @faces = edge.faces
         # Restore materials

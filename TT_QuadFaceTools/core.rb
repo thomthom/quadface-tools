@@ -256,16 +256,8 @@ module TT::Plugins::QuadFaceTools
     cmd.large_icon = File.join( PATH_ICONS, 'SandboxToQuads_24.png' )
     cmd.status_bar_text = 'Sandbox Quads to QuadFace Quads.'
     cmd.tooltip = 'Sandbox Quads to QuadFace Quads'
-    cmd_convert_quad_r1 = cmd
-    @commands[:convert_quad_r1] = cmd
-    
-    cmd = UI::Command.new( 'Upgrade 0.4 - 0.5 Quads' )  {
-      self.convert_quadmesh_r2_to_latest
-    }
-    cmd.status_bar_text = 'Upgrades Quads from QuadFace version 0.4 - 0.5.'
-    cmd.tooltip = 'Upgrades Quads from QuadFace version 0.4 - 0.5'
-    cmd_convert_quad_r2 = cmd
-    @commands[:convert_quad_r2] = cmd
+    cmd_convert_legacy_quads = cmd
+    @commands[:convert_legacy_quads] = cmd
     
     cmd = UI::Command.new( 'Smooth Quads' )  {
       self.smooth_quad_mesh
@@ -395,9 +387,7 @@ module TT::Plugins::QuadFaceTools
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
     sub_menu.add_separator
     sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
-    sub_menu.add_item( cmd_convert_quad_r1 )
-    sub_menu.add_separator
-    sub_menu.add_item( cmd_convert_quad_r2 )
+    sub_menu.add_item( cmd_convert_legacy_quads )
     m.add_separator
     sub_menu = m.add_submenu( 'Preferences' )
     sub_menu.add_item( cmd_toggle_context_menu )
@@ -443,9 +433,7 @@ module TT::Plugins::QuadFaceTools
         sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
         sub_menu.add_separator
         sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
-        sub_menu.add_item( cmd_convert_quad_r1 )
-        sub_menu.add_separator
-        sub_menu.add_item( cmd_convert_quad_r2 )
+        sub_menu.add_item( cmd_convert_legacy_quads )
       end
     }
     
@@ -473,7 +461,7 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_remove_triangulation )
     toolbar.add_separator
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
-    toolbar.add_item( cmd_convert_quad_r1 )
+    toolbar.add_item( cmd_convert_legacy_quads )
     toolbar.add_item( cmd_convert_blender_quads_to_sketchup_quads )
     toolbar.add_separator
     toolbar.add_item( cmd_uv_map )
@@ -882,6 +870,7 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.2.0
   def self.remove_triangulation
+    # (!) Bugged!
     t = Time.now
     model = Sketchup.active_model
     TT::Model.start_operation( 'Remove Triangulation' )
@@ -1096,7 +1085,9 @@ module TT::Plugins::QuadFaceTools
   end
   
   
-    # In QuadFace 0.3 and older a quad was defined as:
+  # @deprecated Use #convert_legacy_quadmesh_to_latest instead.
+  #
+  # In QuadFace 0.3 and older a quad was defined as:
   # * Native quad
   # * Two triangles with a soft dividing edge and non-soft edges.
   #
@@ -1129,6 +1120,8 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # @deprecated Use #convert_legacy_to_latest instead.
+  #
   # @param [Enumerable<Sketchup::Entity>] entities
   #
   # @return [Nil]
@@ -1155,6 +1148,8 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # @deprecated Use #convert_legacy_quadmesh_to_latest instead.
+  #
   # In QuadFace 0.3 and older a quad was defined as:
   # * Native quad
   # * Two triangles with a soft dividing edge and non-soft edges.
@@ -1177,6 +1172,8 @@ module TT::Plugins::QuadFaceTools
   end
   
   
+  # @deprecated Use #convert_legacy_to_latest instead.
+  #
   # @param [Enumerable<Sketchup::Entity>] entities
   #
   # @return [Nil]

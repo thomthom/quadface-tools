@@ -14,6 +14,7 @@ module TT::Plugins::QuadFaceTools
   # @return [<Array<QuadFace>]
   # @since 0.1.0
   def self.convert_connected_mesh_to_quads
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
     faces = selection.select { |e| e.is_a?( Sketchup::Face ) }
@@ -107,6 +108,7 @@ module TT::Plugins::QuadFaceTools
   #rescue
     #model.abort_operation
     #raise
+    TT.debug "self.convert_connected_mesh_to_quads: #{Time.now - t}"
   end
   
   # @param [QuadFace] quadface_origin
