@@ -956,6 +956,7 @@ module TT::Plugins::QuadFaceTools
       @types.values.map { |hash| hash.keys }.flatten
     end
     alias :to_a :all
+    alias :to_ary :to_a
     
     # Processes the given set of entities give to #new and builds the cache
     # with native entities and QuadFace entities.
