@@ -1312,7 +1312,8 @@ module TT::Plugins::QuadFaceTools
   # @since 0.1.0
   def self.shrink_rings
     t = Time.now
-    selection = Sketchup.active_model.selection
+    model = Sketchup.active_model
+    selection = EntitiesProvider.new( model.selection )
     entities = []
     for entity in selection
       next unless entity.is_a?( Sketchup::Edge )
@@ -1320,10 +1321,11 @@ module TT::Plugins::QuadFaceTools
       next unless entity.faces.size == 2
       # Check neighbouring faces if their opposite edges are selected.
       # Deselect any edge where not all opposite edges are selected.
-      unless entity.faces.all? { |face|
-        if QuadFace.is?( face )
-          quad = QuadFace.new( face )
-          edge = quad.opposite_edge( entity )
+      faces = selection[ entity.faces ]
+      #unless entity.faces.all? { |face|
+      unless faces.all? { |face|
+        if face.is_a?( QuadFace )
+          edge = face.opposite_edge( entity )
           selection.include?( edge )
         else
           false
@@ -1333,7 +1335,7 @@ module TT::Plugins::QuadFaceTools
       end
     end
     # Select
-    selection.remove( entities )
+    model.selection.remove( entities )
     TT.debug "self.shrink_rings: #{Time.now - t}"
   end
   
