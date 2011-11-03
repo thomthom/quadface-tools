@@ -536,14 +536,28 @@ module TT::Plugins::QuadFaceTools
   def self.show_about_window
     # (!) Add links to download page, SCF and donation page when TT_Lib2
     #     supports richer controls.
+    
+    # This attemps to center the window on the screen, but is not 100% correct
+    # as it assumes the SU window is maximized. There is currently no method to
+    # get the position of the SketchUp window, so if it's on a different monitor
+    # or not maximized it'll not position as expected. But should be an ok
+    # default. Could make use of Win32 API under Windows.
+    view = Sketchup.active_model.active_view
+    width = 280
+    height = 120
+    left = ( view.vpwidth / 2 ) - ( width / 2 )
+    top = ( view.vpheight / 2 ) - ( height / 2 )
     props = {
       :title => 'About QuadFace Tools',
-      :width => 280,
-      :height => 120,
+      :left => left,
+      :top => top,
+      :width => width,
+      :height => height,
       :resizable => false
     }
     window = TT::GUI::Window.new( props )
     window.theme = TT::GUI::Window::THEME_GRAPHITE
+    window.set_position( left, top )
     
     lblAbout1 = TT::GUI::Label.new( "#{PLUGIN_NAME} (#{PLUGIN_VERSION})" )
     lblAbout1.top = 5
