@@ -1143,12 +1143,14 @@ module TT::Plugins::QuadFaceTools
       face_count = origin_edge.faces.size
       return [] unless ( 1..2 ).include?( face_count )
       faces = EntitiesProvider.new
-      faces << get( origin_edge.faces )
+      faces << get( origin_edge.faces ).map { |f| f.edges }.flatten
       # Find edge loop.
       step_limit = 0
-      loop = []
+      loop = {}
       stack = [ origin_edge ]
+      i = 0
       until stack.empty?
+        i+=1
         edge = stack.shift
         # Find connected edges
         next_vertices = []
@@ -1159,19 +1161,19 @@ module TT::Plugins::QuadFaceTools
           next_vertices << v
         end
         # Add current edge to loop stack.
-        loop << edge
+        loop[ edge ] = edge
         # Pick next edges
         valid_edges = 0
         for vertex in next_vertices
           for e in vertex.edges
             next if e == edge
             next if is_diagonal?( e )
-            next if faces.any? { |f| f.edges.include?( e ) }
+            next if faces.include?( e )
             next if loop.include?( e )
             next unless e.faces.size == face_count
             valid_edges += 1
             stack << e
-            faces << get( e.faces )
+            faces << get( e.faces ).map { |f| f.edges }.flatten
           end # for e
         end # for vertex
         # Stop if the loop is step-grown.
@@ -1180,7 +1182,7 @@ module TT::Plugins::QuadFaceTools
           break if loop.size > step_limit
         end
       end # until
-      loop
+      loop.keys
     end
     
     # @param [Sketchup::Edge] origin_edge
