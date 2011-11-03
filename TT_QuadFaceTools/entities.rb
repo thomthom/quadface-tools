@@ -768,7 +768,11 @@ module TT::Plugins::QuadFaceTools
       #     quads from the EntitiesProvider.
       
       # To quickly access entities by class this Hash is used.
-      @types = {} # Class => Sketchup::Entity,QuadFace
+      @types = {
+        Sketchup::Edge => {},
+        Sketchup::Face => {},
+        QuadFace => {}
+      } # Class => Sketchup::Entity,QuadFace
       # Map native faces to QuadFace.
       @faces_to_quads = {} # Sketchup::Face => QuadFace
       # For quick access and lookup, store everything in a Hash table.
@@ -845,7 +849,7 @@ module TT::Plugins::QuadFaceTools
     #
     # @return [Sketchup::Entity,QuadFace]
     # @since 0.6.0
-    def []( entity )
+    def []( *args )
       if args.size == 1
         entity = args[0]
         if entity.is_a?( Enumerable )
@@ -923,12 +927,16 @@ module TT::Plugins::QuadFaceTools
       end
       if args.size == 1 && args.is_a?( Sketchup::Curve )
         # Curve
-        # (!)
-        # points = curve.edges.sort
+        curve = args[0]
+        points = curve.vertices.map { |v| v.position }
+        if points.size != 4
+          raise( ArgumentError, 'Too many vertices in curve. Cannot create Quad.' )
+        end
       elsif args.size == 4 && args.all? { |a| a.is_a?( Sketchup::Edge ) }
         # Edges
-        # (!)
-        # edges.sort
+        loop = TT::Edges.sort_edges( args )
+        vertices = TT::Edges.sort_vertices( loop )
+        points = vertices.map { |v| v.position }
       elsif args.size == 4 && args.all? { |a| a.is_a?( Geom::Point3d ) }
         # Points
         points = args
@@ -1069,7 +1077,6 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<Sketchup::Edge>]
     # @since 0.6.0
     def edges
-      @types[ Sketchup::Edge ] ||= {}
       @types[ Sketchup::Edge ].keys
     end
     
@@ -1086,8 +1093,6 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<Sketchup::Face,QuadFace>]
     # @since 0.6.0
     def faces
-      @types[ QuadFace ] ||= {}
-      @types[ Sketchup::Face ] ||= {}
       @types[ QuadFace ].keys + @types[ Sketchup::Face ].keys
     end
     
@@ -1382,7 +1387,6 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<QuadFace>]
     # @since 0.6.0
     def quads
-      @types[ QuadFace ] ||= {}
       @types[ QuadFace ].keys
     end
     
@@ -1405,7 +1409,6 @@ module TT::Plugins::QuadFaceTools
     def cache_entity( entity )
       entity_class = entity.class
       # Add to Type cache
-      @types[ Sketchup::Face ] ||= {}
       @types[ entity_class ] ||= {}
       @types[ entity_class ][ entity ] = entity
       # Add to Face => QuadFace mapping
@@ -1426,7 +1429,6 @@ module TT::Plugins::QuadFaceTools
       if quad = @faces_to_quads[ entity ]
         quad
       elsif QuadFace.is?( entity )
-        @types[ Sketchup::Face ] ||= {}
         quad = QuadFace.new( entity )
         cache_entity( quad ) if add_to_cache && @types[ Sketchup::Face ][ entity ]
         quad
