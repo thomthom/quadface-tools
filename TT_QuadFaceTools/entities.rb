@@ -1005,7 +1005,7 @@ module TT::Plugins::QuadFaceTools
     #   @param [Sketchup::Edge] edge Edge separating the two triangles.
     #
     # @return [QuadFace]
-    # @since 0.1.0
+    # @since 0.6.0
     def convert_to_quad( *args )
       if args.size == 1
         face = args[0]
