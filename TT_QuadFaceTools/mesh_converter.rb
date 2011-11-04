@@ -14,8 +14,10 @@ module TT::Plugins::QuadFaceTools
   # @return [<Array<QuadFace>]
   # @since 0.1.0
   def self.convert_connected_mesh_to_quads
+    t = Time.now
     model = Sketchup.active_model
     selection = model.selection
+    provider = EntitiesProvider.new
     faces = selection.select { |e| e.is_a?( Sketchup::Face ) }
     # Allow a dividing edge to be selcted.
     if faces.empty?
@@ -44,7 +46,7 @@ module TT::Plugins::QuadFaceTools
         return 1
       end
       # Convert geometry to QuadFace
-      quadface = self.convert_to_quad( face )
+      quadface = provider.convert_to_quad( face )
     else
       # Triangulated QuadFace
       unless faces.all? { |face| face.vertices.size == 3 }
@@ -58,7 +60,7 @@ module TT::Plugins::QuadFaceTools
         return 3
       end
       # Convert geometry to QuadFace
-      quadface = self.convert_to_quad( face1, face2, shared_edges[0] )
+      quadface = provider.convert_to_quad( face1, face2, shared_edges[0] )
     end
     
     tagged = []
@@ -107,6 +109,7 @@ module TT::Plugins::QuadFaceTools
   #rescue
     #model.abort_operation
     #raise
+    TT.debug "self.convert_connected_mesh_to_quads: #{Time.now - t}"
   end
   
   # @param [QuadFace] quadface_origin
@@ -117,6 +120,7 @@ module TT::Plugins::QuadFaceTools
     faces = [] # Unconfirmed
     quadfaces = [] # Confirmed
     tagged = quadface_origin.faces # Faces processed.
+    provider = EntitiesProvider.new
     
     # Find confirmed quadfaces connected each vertex. (Native or QuadFace)
     for vertex in quadface_origin.vertices
@@ -129,7 +133,7 @@ module TT::Plugins::QuadFaceTools
           #quadface.material = [192,255,192] # <debug/>
           quadfaces << quadface
         elsif face.vertices.size == 4
-          quadface = self.convert_to_quad( face )
+          quadface = provider.convert_to_quad( face )
           tagged.concat( quadface.faces )
           #quadface.material = [0,192,0] # <debug/>
           quadfaces << quadface
@@ -184,7 +188,7 @@ module TT::Plugins::QuadFaceTools
         # quads, with four vertices, there would be no need for this.
         f1, f2 = virtual_face.faces
         divider = ( f1.edges & f2.edges )[0]
-        new_quadface = self.convert_to_quad( f1, f2, divider )
+        new_quadface = provider.convert_to_quad( f1, f2, divider )
         tagged.concat( new_quadface.faces )
         # <debug>
         #new_quadface.material = [128+(10*i),0,32+(20*i)]
@@ -240,7 +244,7 @@ module TT::Plugins::QuadFaceTools
               # quads, with four vertices, there would be no need for this.
               f1, f2 = virtual_face.faces
               divider = ( f1.edges & f2.edges )[0]
-              new_quadface = self.convert_to_quad( f1, f2, divider )
+              new_quadface = provider.convert_to_quad( f1, f2, divider )
               tagged.concat( new_quadface.faces )
               # <debug>
               #new_quadface.material = [128+(10*i),32+(20*i),0]
@@ -258,7 +262,7 @@ module TT::Plugins::QuadFaceTools
           next unless other_triangle.vertices.size == 3
           next if QuadFace.is?( other_triangle )
           next if tagged.include?( other_triangle )
-          new_quadface = self.convert_to_quad( face, other_triangle, divider )
+          new_quadface = provider.convert_to_quad( face, other_triangle, divider )
           tagged.concat( new_quadface.faces )
           # <debug>
           #new_quadface.material = [0,128+(10*i),32+(20*i)]

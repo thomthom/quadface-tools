@@ -13,6 +13,7 @@ module TT::Plugins::QuadFaceTools
     # @since 0.3.0
     def initialize
       @quadface = nil
+      @provider = EntitiesProvider.new
     end
     
     # @since 0.3.0
@@ -47,16 +48,10 @@ module TT::Plugins::QuadFaceTools
       ph.do_pick( x, y )
       face = ph.picked_face
       in_context = face && face.parent.entities == view.model.active_entities
-      if in_context && QuadFace.is?( face )
-        if @quadface
-          unless @quadface.faces.include?( face )
-            @quadface = QuadFace.new( face )
-            view.invalidate
-          end
-        else
-          @quadface = QuadFace.new( face )
-          view.invalidate
-        end
+      quad = @provider.get( face )
+      if in_context && quad.is_a?( QuadFace )
+        @quadface = quad
+        view.invalidate
       else
         if @quadface
           @quadface = nil
@@ -489,6 +484,7 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def initialize
       @model_observer = ModelChangeObserver.new( self )
+      @provider = EntitiesProvider.new
       update_geometry_cache()
       # Used by onSetCursor
       @key_ctrl = false
@@ -544,20 +540,15 @@ module TT::Plugins::QuadFaceTools
     # @since 0.1.0
     def onLButtonDoubleClick( flags, x, y, view )
       picked = pick_entites( flags, x, y, view )
-      if picked.is_a?( Array )
-        quad = QuadFace.new( picked[0] )
+      if picked.is_a?( Array ) # Array of two triangles
+        quad = @provider.get( picked[0] ) # QuadFace
         picked = quad.edges
       elsif picked.is_a?( Sketchup::Edge )
-        faces = []
+        faces = EntitiesProvider.new
         picked.faces.each { |face|
-          if QuadFace.is?( face )
-            quad = QuadFace.new( face )
-            faces.concat( quad.faces )
-          else
-            faces << face
-          end
+          faces << @provider.get( face )
         }
-        picked = faces
+        picked = faces.native_entities
       end
       # Get key modifier controlling how the selection should be modified.
       # Using standard SketchUp selection modifier keys.
@@ -659,7 +650,7 @@ module TT::Plugins::QuadFaceTools
       sub_menu.add_item( PLUGIN.commands[ :mesh_to_quads ] )
       sub_menu.add_separator
       sub_menu.add_item( PLUGIN.commands[ :blender_to_quads ] )
-      sub_menu.add_item( PLUGIN.commands[ :quad_r1_to_r2 ] )
+      sub_menu.add_item( PLUGIN.commands[ :convert_legacy_quads ] )
     end
     
     # @since 0.2.0
@@ -678,8 +669,7 @@ module TT::Plugins::QuadFaceTools
       ph.do_pick( x, y )
       entity = ph.picked_face
       if entity && @faces.include?( entity )
-        quad = QuadFace.new( entity )
-        picked_quad = quad
+        picked_quad = @provider.get( entity )
       end
       # Pick Edges
       # Hidden edges are not picked if Hidden Geometry is off.

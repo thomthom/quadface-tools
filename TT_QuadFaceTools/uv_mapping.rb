@@ -15,6 +15,7 @@ module TT::Plugins::QuadFaceTools
       @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
       @group = nil
       @ip_mouse = Sketchup::InputPoint.new
+      @provider = EntitiesProvider.new
     end
     
     # @since 0.4.0
@@ -148,7 +149,7 @@ module TT::Plugins::QuadFaceTools
           QuadFace.set_divider_props( new_edge )
         end
         # Get the new quad
-        new_quad = QuadFace.new( face )
+        new_quad = @provider.get( face )
         # Transfer UV mapping
         front_material = quad.material
         back_material = quad.back_material
@@ -1051,6 +1052,8 @@ module TT::Plugins::QuadFaceTools
           @contraints[ edge ] = edge
         end
       end
+      
+      @provider = EntitiesProvider.new
     end
     
     # @since 0.4.0
@@ -1102,7 +1105,7 @@ module TT::Plugins::QuadFaceTools
         @u_edge = @mouse_edge if @mouse_edge
         # Valid next pick
         if @u_edge
-          quads = PLUGIN.connected_quad_faces( @u_edge )
+          quads = @provider.connected_quads( @u_edge )
           @valid_pick = quads.map { |quad|
             e = ( ( @origin.edges & quad.edges ) - [ @u_edge ] )[0]
           }.flatten
@@ -1114,7 +1117,7 @@ module TT::Plugins::QuadFaceTools
       elsif state_pick_u? && @valid_pick.include?( @mouse_edge )
         @u_edge = @mouse_edge if @mouse_edge
         # Valid next pick
-        quads = PLUGIN.connected_quad_faces( @u_edge )
+        quads = @provider.connected_quads( @u_edge )
         @valid_pick = quads.map { |quad|
           e = ( ( @origin.edges & quad.edges ) - [ @u_edge ] )[0]
         }.flatten
@@ -1160,8 +1163,8 @@ module TT::Plugins::QuadFaceTools
             @mouse_origin = vertex
           end
         elsif face = @ip_mouse.face and in_current_context?( face )
-          if QuadFace.is?( face )
-            quad = QuadFace.new( face )
+          quad = @provider.get( face )
+          if quad.is_a?( QuadFace )
             # Find Origin
             pt = @ip_mouse.position
             distance = nil
@@ -1448,7 +1451,7 @@ module TT::Plugins::QuadFaceTools
     # @since 0.4.0
     def compute_mapping
       # Prepare origin quad
-      u_quads = PLUGIN.connected_quad_faces( @u_edge )
+      u_quads = @provider.connected_quads( @u_edge )
       origin_quad = u_quads.find { |quad| quad.edges.include?( @v_edge ) }
       origin = {
         :quad => origin_quad,
@@ -1464,6 +1467,7 @@ module TT::Plugins::QuadFaceTools
       stack = [ origin ]
       stack_negative = []
       mapped = []
+      provider = EntitiesProvider.new
       
       # (!) Progressbar ( Status update )
       until stack.empty?
@@ -1513,11 +1517,11 @@ module TT::Plugins::QuadFaceTools
         #   This ensures that in looping surfaces the coordinates only increases
         #   from the origin.
         for edge in [ u2, v2 ]
-          item = next_quad( data, edge, quads )
+          item = next_quad( provider, data, edge, quads )
           stack << item if item
         end
         for edge in [ u, v ]
-          item = next_quad( data, edge, quads )
+          item = next_quad( provider, data, edge, quads )
           stack_negative << item if item
         end
         # Refill the stack
@@ -1538,8 +1542,8 @@ module TT::Plugins::QuadFaceTools
     #
     # @return [Hash,False]
     # @since 0.4.0
-    def next_quad( data, common_edge, processed )
-      quadface = PLUGIN.connected_quads( common_edge ).find { |quad|
+    def next_quad( provider, data, common_edge, processed )
+      quadface = provider.connected_quads( common_edge ).find { |quad|
         !quad.faces.any? { |face| processed[ face ] }
       }
       return false unless quadface

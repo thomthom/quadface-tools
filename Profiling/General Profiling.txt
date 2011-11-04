@@ -1,0 +1,101 @@
+[4100] self.select_loops: 0.19
+[4100] self.select_rings: 0.703
+[4100] self.select_rings: 0.017
+[4100] self.select_loops: 13.811
+[4100] self.selection_grow: 0.001
+[4100] self.selection_grow: 0.003
+[4100] self.selection_grow: 0.005
+[4100] self.selection_grow: 0.008
+[4100] self.selection_grow: 0.011
+[4100] self.selection_grow: 0.016
+[4100] self.selection_grow: 0.021
+[4100] self.selection_grow: 0.027
+[4100] self.selection_grow: 0.0650000000000001
+[4100] self.selection_grow: 0.071
+[4100] self.selection_shrink: 0.029
+[4100] self.selection_shrink: 0.028
+[4100] self.selection_shrink: 0.022
+[4100] self.selection_shrink: 0.017
+[4100] self.selection_shrink: 0.014
+[4100] self.selection_shrink: 0.01
+[4100] self.selection_shrink: 0.006
+[4100] self.selection_shrink: 0.004
+[4100] self.selection_shrink: 0.003
+[4100] self.selection_shrink: 0.001
+[4100] self.select_loops: 0.049
+[4100] self.insert_loops: 1.752
+[4100] self.remove_loops: 0.798
+[4100] self.flip_triangulation: 70.269
+[4100] self.remove_triangulation: 0.129
+[4100] self.remove_triangulation: 0.126
+[4100] self.smooth_quads: 0.323
+[4100] self.unsmooth_quads: 0.354
+[4100] self.convert_legacy_quadmesh_to_latest: 0.697
+[4100] self.flip_triangulation: 90.925
+[4100] self.remove_triangulation: 2.496
+[4100] self.triangulate_selection: 22.691
+[4100] self.smooth_quads: 1.111
+[4100] self.unsmooth_quads: 1.072
+[4100] self.region_to_loop: 0.183
+[4100] self.region_to_loop: 1.108
+[4100] self.select_bounding_edges: 3.283
+[4100] self.make_planar: 0.193
+[4100] self.convert_connected_mesh_to_quads: 51.883
+
+=== EntitiesProvider ===
+
+[2860] self.select_loops: 0.213
+[2860] self.select_rings: 0.631
+[2860] self.select_rings: 0.017
+[2860] self.select_loops: 13.643
+[2860] self.selection_grow: 0.001
+[2860] self.selection_grow: 0.002
+[2860] self.selection_grow: 0.005
+[2860] self.selection_grow: 0.008
+[2860] self.selection_grow: 0.011
+[2860] self.selection_grow: 0.016
+[2860] self.selection_grow: 0.021
+[2860] self.selection_grow: 0.07
+[2860] self.selection_grow: 0.059
+[2860] self.selection_grow: 0.06
+[2860] self.selection_shrink: 0.031
+[2860] self.selection_shrink: 0.026
+[2860] self.selection_shrink: 0.023
+[2860] self.selection_shrink: 0.018
+[2860] self.selection_shrink: 0.013
+[2860] self.selection_shrink: 0.009
+[2860] self.selection_shrink: 0.006
+[2860] self.selection_shrink: 0.004
+[2860] self.selection_shrink: 0.002
+[2860] self.selection_shrink: 0.001
+[2860] self.select_loops: 0.058
+[2860] self.insert_loops: 1.67
+[2860] self.remove_loops: 0.871
+[2860] self.remove_triangulation: 2.869
+[2860] self.triangulate_selection: 25.131
+[2860] self.flip_triangulation: 110.402
+[2860] self.smooth_quad_mesh: 1.088
+[2860] self.unsmooth_quad_mesh: 1.149
+[2860] self.region_to_loop: 1.156
+[2860] self.select_bounding_edges: 1.33
+[2860] self.make_planar: 0.652
+
+=== find_edge_loop - cache quad edges instead of quads ===
+
+[6900] self.select_loops: 0.088
+[6900] self.select_loops: 0.009
+[6900] self.select_loops: 0.008
+
+[6900] self.select_loops: 0.558
+[6900] self.select_loops: 0.546
+[6900] self.select_loops: 0.496
+[6900] self.select_loops: 0.554
+[6900] self.select_loops: 0.49
+
+=== Re-test of select_bounding_edges ===
+
+[6900] self.select_bounding_edges: 0.954
+[6900] self.select_bounding_edges: 0.894
+[6900] self.select_bounding_edges: 0.861
+[6900] self.select_bounding_edges: 0.815
+[6900] self.select_bounding_edges: 0.79

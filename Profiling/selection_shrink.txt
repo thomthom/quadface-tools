@@ -1,0 +1,23 @@
+TT::Plugins::QuadFaceTools.selection_shrink
+
+[4228] self.selection_shrink: 2.714
+[4228] self.selection_shrink: 2.69
+[4228] self.selection_shrink: 2.77
+[4228] self.selection_shrink: 2.731
+[4228] self.selection_shrink: 2.79
+
+Using EntitiesProvider:
+
+[3144] self.selection_shrink: 0.533
+[3144] self.selection_shrink: 0.566
+[3144] self.selection_shrink: 0.506
+[3144] self.selection_shrink: 0.562
+[3144] self.selection_shrink: 0.557
+
+QuadFace.new without validation:
+
+[4464] self.selection_shrink: 0.427
+[4464] self.selection_shrink: 0.434
+[4464] self.selection_shrink: 0.393
+[4464] self.selection_shrink: 0.441
+[4464] self.selection_shrink: 0.439
