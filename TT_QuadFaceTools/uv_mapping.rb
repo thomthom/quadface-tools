@@ -1466,6 +1466,7 @@ module TT::Plugins::QuadFaceTools
       stack = [ origin ]
       stack_negative = []
       mapped = []
+      provider = EntitiesProvider.new
       
       # (!) Progressbar ( Status update )
       until stack.empty?
@@ -1515,11 +1516,11 @@ module TT::Plugins::QuadFaceTools
         #   This ensures that in looping surfaces the coordinates only increases
         #   from the origin.
         for edge in [ u2, v2 ]
-          item = next_quad( data, edge, quads )
+          item = next_quad( provider, data, edge, quads )
           stack << item if item
         end
         for edge in [ u, v ]
-          item = next_quad( data, edge, quads )
+          item = next_quad( provider, data, edge, quads )
           stack_negative << item if item
         end
         # Refill the stack
@@ -1540,8 +1541,8 @@ module TT::Plugins::QuadFaceTools
     #
     # @return [Hash,False]
     # @since 0.4.0
-    def next_quad( data, common_edge, processed )
-      quadface = PLUGIN.connected_quads( common_edge ).find { |quad|
+    def next_quad( provider, data, common_edge, processed )
+      quadface = provider.connected_quads( common_edge ).find { |quad|
         !quad.faces.any? { |face| processed[ face ] }
       }
       return false unless quadface
