@@ -1,0 +1,24 @@
+[1976] self.smooth_quads: 2.079
+[1976] self.unsmooth_quads: 1.919
+[1976] self.smooth_quads: 2.078
+[1976] self.unsmooth_quads: 1.965
+[1976] self.smooth_quads: 2.08
+[1976] self.unsmooth_quads: 1.964
+
+Using EntitiesProvider
+
+[1976] self.smooth_quads: 1.194
+[1976] self.unsmooth_quads: 1.205
+[1976] self.smooth_quads: 1.199
+[1976] self.unsmooth_quads: 1.16
+[1976] self.smooth_quads: 1.195
+[1976] self.unsmooth_quads: 1.154
+
+QuadFace.new without validation
+
+[4464] self.smooth_quads: 1.022
+[4464] self.unsmooth_quads: 0.999
+[4464] self.smooth_quads: 0.983
+[4464] self.unsmooth_quads: 0.987
+[4464] self.smooth_quads: 0.992
+[4464] self.unsmooth_quads: 1.015

@@ -1,0 +1,18 @@
+Edges:
+
+[2188] self.select_loops: 0.24
+[2188] self.select_loops: 14.329
+
+Faces:
+
+[2188] self.select_loops: 0.018
+
+
+=== EntitiesProvider ===
+
+
+[2188] self.select_loops: 0.199
+[2188] self.select_loops: 14.24
+
+[2188] self.select_loops: 0.196
+[2188] self.select_loops: 14.072
