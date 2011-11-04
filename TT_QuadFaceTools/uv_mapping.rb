@@ -15,6 +15,7 @@ module TT::Plugins::QuadFaceTools
       @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
       @group = nil
       @ip_mouse = Sketchup::InputPoint.new
+      @provider = EntitiesProvider.new
     end
     
     # @since 0.4.0
@@ -148,7 +149,7 @@ module TT::Plugins::QuadFaceTools
           QuadFace.set_divider_props( new_edge )
         end
         # Get the new quad
-        new_quad = QuadFace.new( face )
+        new_quad = @provider.get( face )
         # Transfer UV mapping
         front_material = quad.material
         back_material = quad.back_material
@@ -1162,8 +1163,8 @@ module TT::Plugins::QuadFaceTools
             @mouse_origin = vertex
           end
         elsif face = @ip_mouse.face and in_current_context?( face )
-          if QuadFace.is?( face )
-            quad = QuadFace.new( face )
+          quad = @provider.get( face )
+          if quad.is_a?( QuadFace )
             # Find Origin
             pt = @ip_mouse.position
             distance = nil
