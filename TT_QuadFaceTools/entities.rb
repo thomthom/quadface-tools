@@ -799,6 +799,17 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
+    # @since 0.6.0
+    def initialize_copy( source )
+      # .dup and .clone calls this.
+      super
+      @faces_to_quads = @faces_to_quads.dup
+      @types = @types.dup
+      for klass, entities in @types
+        @types[ klass ] = entities.dup
+      end
+    end
+    
     # Define proxy object that pass the call through to the parent
     # Sketchup::Entities object.
     [
