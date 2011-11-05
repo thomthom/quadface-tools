@@ -1260,7 +1260,13 @@ module TT::Plugins::QuadFaceTools
         # Check if any of the bordering quads also are selected.
         # Use to determine direction. If none, traverse in all directions.
         connected = entity.connected_quads( selection )
-        connected = entity.connected_quads if connected.empty?
+        if connected.empty?
+          if step
+            entities << entity.connected_quads
+          else
+            connected = entity.connected_quads
+          end
+        end
         # Select loops.
         for quad in connected
           entities << provider.find_face_loop( entity, quad, step )
