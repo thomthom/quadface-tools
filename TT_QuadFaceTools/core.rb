@@ -1183,7 +1183,7 @@ module TT::Plugins::QuadFaceTools
         next if QuadFace.dividing_edge?( entity )
         next if !step && new_selection.include?( entity )
         new_selection << selection.find_edge_ring( entity, step )
-      elsif entity.is_a?( QuadFace )
+      elsif entity.is_a?( QuadFace ) && !step
         next if new_selection.include?( entity )
         selected = entity.connected_quads( selection )
         if selected.size == 1
