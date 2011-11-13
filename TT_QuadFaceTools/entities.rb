@@ -993,6 +993,18 @@ module TT::Plugins::QuadFaceTools
       nil
     end
     
+    # @since 0.6.0
+    def clear
+      @types = {
+        Sketchup::Edge => {},
+        Sketchup::Face => {},
+        QuadFace => {}
+      } # Class => Sketchup::Entity,QuadFace
+      # Map native faces to QuadFace.
+      @faces_to_quads = {}
+      nil
+    end
+    
     # Returns all QuadFace entities from entity#faces.
     #
     # @param [#faces] entity
