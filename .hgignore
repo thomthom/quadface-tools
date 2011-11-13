@@ -2,3 +2,5 @@ syntax: glob
 *.skb
 Archive/*
 Documentation/*
+Resources/Monkey/*
+Test Models/Temp Work Comp/*
