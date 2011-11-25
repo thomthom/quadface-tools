@@ -483,9 +483,21 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.1.0
     def initialize
+      @n_poles = []
+      @e_poles = []
+      @x_poles = []
+      
+      @n_cache = []
+      @e_cache = []
+      @x_cache = []
+      
+      @ui_2d = true
+      @ui_show_poles = PLUGIN.settings[ :ui_show_poles ]
+      
       @model_observer = ModelChangeObserver.new( self )
       @provider = EntitiesProvider.new
       update_geometry_cache()
+      
       # Used by onSetCursor
       @key_ctrl = false
       @key_shift = false
@@ -498,18 +510,25 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.1.0
     def activate
-      Sketchup.active_model.remove_observer( @model_observer )
-      Sketchup.active_model.add_observer( @model_observer )
-      Sketchup.active_model.active_view.invalidate
+      model = Sketchup.active_model
+      view = model.active_view
+      
+      find_poles( view ) if @ui_show_poles
+      
+      model.remove_observer( @model_observer )
+      model.add_observer( @model_observer )
+      model.active_view.invalidate
     end
     
     # @since 0.1.0
     def resume( view )
+      update_cache( view )
       view.invalidate
     end
     
     # @since 0.1.0
     def deactivate( view )
+      PLUGIN.settings[ :ui_show_poles ] = @ui_show_poles
       view.model.remove_observer( @model_observer )
       view.invalidate
     end
@@ -534,6 +553,32 @@ module TT::Plugins::QuadFaceTools
       else
         selection.clear
         selection.add( entities )
+      end
+    end
+    
+    # @since 0.1.0
+    def onMouseMove( flags, x, y, view )
+      if @ui_show_poles
+        ph = view.pick_helper
+        ph.init( x, y, 20 )
+        for pt in @n_poles
+          if ph.test_point( pt )
+            view.tooltip = 'N Pole'
+            return nil
+          end
+        end
+        for pt in @e_poles
+          if ph.test_point( pt )
+            view.tooltip = 'E Pole'
+            return nil
+          end
+        end
+        for pt in @x_poles
+          if ph.test_point( pt )
+            view.tooltip = 'X Pole'
+            return nil
+          end
+        end
       end
     end
     
@@ -597,6 +642,9 @@ module TT::Plugins::QuadFaceTools
         view.drawing_color = COLOR_EDGE
         view.draw_lines( @lines )
       end
+      draw_poles( view, @n_cache, [0,0,255] )
+      draw_poles( view, @e_cache, [0,128,0] )
+      draw_poles( view, @x_cache, [255,0,0] )
     end
     
     # @see http://code.google.com/apis/sketchup/docs/ourdoc/tool.html#onSetCursor
@@ -617,35 +665,51 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.2.0
     def getMenu( menu )
-      menu.add_item( PLUGIN.commands[ :select ] )
+      m = menu.add_submenu( 'Poles' )
+      i = m.add_item( 'Hightlight Poles' ) {
+        toggle_poles()
+      }
+      m.set_validation_proc( i ) {
+        ( @ui_show_poles ) ? MF_CHECKED : MF_UNCHECKED
+      }
+      m.add_separator
+      i = m.add_item( '2D UI' ) {
+        toggle_ui_2d()
+      }
+      m.set_validation_proc( i ) {
+        ( @ui_2d ) ? MF_CHECKED : MF_UNCHECKED
+      }
       menu.add_separator
-      menu.add_item( PLUGIN.commands[ :selection_grow ] )
-      menu.add_item( PLUGIN.commands[ :selection_shrink ] )
-      menu.add_separator
-      menu.add_item( PLUGIN.commands[ :select_ring ] )
-      menu.add_item( PLUGIN.commands[ :select_loop ] )
-      menu.add_item( PLUGIN.commands[ :region_to_loop ] )
-      menu.add_item( PLUGIN.commands[ :select_quads_from_edges ] )
-      menu.add_item( PLUGIN.commands[ :select_bounding_edges ] )
-      menu.add_item( PLUGIN.commands[ :deselect_triangulation ] )
-      menu.add_separator
-      menu.add_item( PLUGIN.commands[ :smooth_quads ] )
-      menu.add_item( PLUGIN.commands[ :unsmooth_quads ] )
-      menu.add_separator
-      menu.add_item( PLUGIN.commands[ :connect ] )
-      menu.add_item( PLUGIN.commands[ :insert_loops ] )
-      menu.add_item( PLUGIN.commands[ :remove_loops ] )
-      menu.add_separator
-      menu.add_item( PLUGIN.commands[ :flip_triangulation_tool ] )
-      menu.add_item( PLUGIN.commands[ :flip_triangulation ] )
-      menu.add_item( PLUGIN.commands[ :triangulate ] )
-      menu.add_item( PLUGIN.commands[ :remove_triangulation ] )
-      menu.add_separator
-      menu.add_item( PLUGIN.commands[ :uv_map ] )
-      menu.add_item( PLUGIN.commands[ :uv_copy ] )
-      menu.add_item( PLUGIN.commands[ :uv_paste ] )
-      menu.add_item( PLUGIN.commands[ :unwrap_uv_grid ] )
-      menu.add_separator
+      m = menu.add_submenu( 'Selection' )
+      m.add_item( PLUGIN.commands[ :select_ring ] )
+      m.add_item( PLUGIN.commands[ :select_loop ] )
+      m.add_separator
+      m.add_item( PLUGIN.commands[ :region_to_loop ] )
+      m.add_separator
+      m.add_item( PLUGIN.commands[ :select_quads_from_edges ] )
+      m.add_item( PLUGIN.commands[ :select_bounding_edges ] )
+      m.add_separator
+      m.add_item( PLUGIN.commands[ :deselect_triangulation ] )
+      m = menu.add_submenu( 'Smoothing' )
+      m.add_item( PLUGIN.commands[ :smooth_quads ] )
+      m.add_item( PLUGIN.commands[ :unsmooth_quads ] )
+      m = menu.add_submenu( 'Manipulate' )
+      m.add_item( PLUGIN.commands[ :connect ] )
+      m.add_separator
+      m.add_item( PLUGIN.commands[ :insert_loops ] )
+      m.add_item( PLUGIN.commands[ :remove_loops ] )
+      m = menu.add_submenu( 'Triangulation' )
+      m.add_item( PLUGIN.commands[ :flip_triangulation_tool ] )
+      m.add_item( PLUGIN.commands[ :flip_triangulation ] )
+      m.add_separator
+      m.add_item( PLUGIN.commands[ :triangulate ] )
+      m.add_item( PLUGIN.commands[ :remove_triangulation ] )
+      m = menu.add_submenu( 'UV Mapping' )
+      m.add_item( PLUGIN.commands[ :uv_map ] )
+      m.add_item( PLUGIN.commands[ :uv_copy ] )
+      m.add_item( PLUGIN.commands[ :uv_paste ] )
+      m.add_separator
+      m.add_item( PLUGIN.commands[ :unwrap_uv_grid ] )
       sub_menu = menu.add_submenu( 'Convert' )
       sub_menu.add_item( PLUGIN.commands[ :mesh_to_quads ] )
       sub_menu.add_separator
@@ -731,6 +795,118 @@ module TT::Plugins::QuadFaceTools
         @lines << pt1
         @lines << pt2
       end
+    end
+    
+    # @return [Nil]
+    # @since 0.7.0
+    def toggle_ui_2d
+      @ui_2d = !@ui_2d
+      view = Sketchup.active_model.active_view
+      update_cache( view )
+      view.invalidate
+      nil
+    end
+    
+    # @return [Nil]
+    # @since 0.7.0
+    def toggle_poles
+      @ui_show_poles = !@ui_show_poles
+      view = Sketchup.active_model.active_view
+      if @ui_show_poles
+        find_poles( view )
+      else
+        @n_poles.clear
+        @e_poles.clear
+        @x_poles.clear
+        @n_cache.clear
+        @e_cache.clear
+        @x_cache.clear
+      end
+      view.invalidate
+      nil
+    end
+    
+    # @return [Nil]
+    # @since 0.7.0
+    def find_poles( view )
+      @n_poles.clear
+      @e_poles.clear
+      @x_poles.clear
+      vertices = {}
+      for entity in Sketchup.active_model.active_entities
+        next unless entity.is_a?( Sketchup::Edge )
+        for vertex in entity.vertices
+          vertices[ vertex ] = vertex
+        end
+      end
+      vertices = vertices.keys
+      for vertex in vertices
+        inner = vertex.edges.select { |e| QuadFace.divider_props?( e ) }.size
+        faces = vertex.faces.size - inner
+        if faces == 3
+          @n_poles << vertex
+        elsif faces == 5
+          @e_poles << vertex
+        elsif faces > 5
+          @x_poles << vertex
+        end
+      end
+      update_cache( view )
+      nil
+    end
+    
+    # @return [Nil]
+    # @since 0.7.0
+    def update_cache( view )
+      @n_cache = cache_poles( view, @n_poles )
+      @e_cache = cache_poles( view, @e_poles )
+      @x_cache = cache_poles( view, @x_poles )
+      nil
+    end
+    
+    # @return [Array<Geom::Point3d>]
+    # @since 0.7.0
+    def cache_poles( view, vertices )
+      lines = []
+      if @ui_2d
+        for vertex in vertices
+          pt = view.screen_coords( vertex.position )
+          circle = TT::Geom3d.circle( pt, Z_AXIS, 10, 24 )
+          circle << circle.first
+          for i in ( 0...circle.size-1 )
+            lines << circle[ i ]
+            lines << circle[ i + 1 ]
+          end
+        end
+      else
+        normal = view.camera.direction
+        for vertex in vertices
+          pt = vertex.position
+          size = view.pixels_to_model( 10, pt )
+          circle = TT::Geom3d.circle( pt, normal, size, 24 )
+          circle << circle.first
+          for i in ( 0...circle.size-1 )
+            lines << circle[ i ]
+            lines << circle[ i + 1 ]
+          end
+        end
+      end
+      lines
+    end
+    
+    # @return [Nil]
+    # @since 0.7.0
+    def draw_poles( view, poles_cache, color )
+      return nil if poles_cache.empty?
+      view.line_stipple = ''
+      view.line_width = 2
+      view.drawing_color = color
+      if @ui_2d
+        view.draw2d( GL_LINES, poles_cache )
+      else
+        view.draw( GL_LINES, poles_cache )
+      end
+      nil
     end
     
   end # class QuadFaceInspector

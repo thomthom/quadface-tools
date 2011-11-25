@@ -20,6 +20,8 @@ module TT::Plugins::QuadFaceTools
   @settings = TT::Settings.new( PLUGIN_ID )
   # UI
   @settings.set_default( :context_menu, false )
+  # Select Tool
+  @settings.set_default( :ui_show_poles, false )
   # Connect Edge
   @settings.set_default( :connect_splits, 1 )
   @settings.set_default( :connect_pinch, 0 )
