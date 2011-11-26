@@ -201,6 +201,14 @@ module TT::Plugins::QuadFaceTools
     cmd_remove_loops = cmd
     @commands[:remove_loops] = cmd
     
+    cmd = UI::Command.new( 'Build Corners' )   { self.build_corners }
+    cmd.small_icon = File.join( PATH_ICONS, 'BuildCorners_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'BuildCorners_24.png' )
+    cmd.status_bar_text = 'Build Corners.'
+    cmd.tooltip = 'Build Corners'
+    cmd_build_corners = cmd
+    @commands[:build_corners] = cmd
+    
     cmd = UI::Command.new( 'Flip Triangulation Tool' )  { self.flip_edge_tool }
     cmd.small_icon = File.join( PATH_ICONS, 'FlipEdge_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'FlipEdge_24.png' )
@@ -373,6 +381,8 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_insert_loops )
     m.add_item( cmd_remove_loops )
     m.add_separator
+    m.add_item( cmd_build_corners )
+    m.add_separator
     m.add_item( cmd_flip_triangulation_tool )
     m.add_item( cmd_flip_triangulation )
     m.add_item( cmd_triangulate_selection )
@@ -419,6 +429,8 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_insert_loops )
         m.add_item( cmd_remove_loops )
         m.add_separator
+        m.add_item( cmd_build_corners )
+        m.add_separator
         m.add_item( cmd_flip_triangulation_tool )
         m.add_item( cmd_flip_triangulation )
         m.add_item( cmd_triangulate_selection )
@@ -436,6 +448,8 @@ module TT::Plugins::QuadFaceTools
         sub_menu.add_separator
         sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
         sub_menu.add_item( cmd_convert_legacy_quads )
+        m.add_separator
+        m.add_item( cmd_build_corners )
       end
     }
     
@@ -473,6 +487,8 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_separator
     toolbar.add_item( cmd_smooth_quad_mesh )
     toolbar.add_item( cmd_unsmooth_quad_mesh )
+    toolbar.add_separator
+    toolbar.add_item( cmd_build_corners )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -586,6 +602,88 @@ module TT::Plugins::QuadFaceTools
     
     window.show_window
     window
+  end
+  
+  
+  # @since 0.7.0
+  def self.build_corners
+    t = Time.now
+    model = Sketchup.active_model
+    entities = model.active_entities
+    provider = EntitiesProvider.new
+    TT::Model.start_operation( 'Build Corner' )
+    for edge in model.selection
+      # Find edges that separate a triangle and pentagon.
+      next unless edge.is_a?( Sketchup::Edge )
+      next unless edge.faces.size == 2
+      faces = Surface.get( edge.faces )
+      triangle = faces.find { |e| e.vertices.size == 3 }
+      pentagon = faces.find { |e| e.vertices.size == 5 }
+      next unless triangle && pentagon
+      # Copy the soft, smooth and hidden properties of the source edge to the
+      # new edges.
+      soft_prop = edge.soft?
+      smooth_prop = edge.smooth?
+      hidden_prop = edge.hidden?
+      # Find the edges 1 edge away from the source edge.
+      loop = pentagon.outer_loop
+      index = loop.index( edge )
+      i1 = ( index + 2 ) % 5
+      i2 = ( index - 2 ) % 5
+      e1 = loop[ i1 ]
+      e2 = loop[ i2 ]
+      # Find the third vertex in the triangle, the one not used by the source
+      # edge.
+      tri_pt = ( triangle.vertices - edge.vertices )[0].position
+      # Project each vertex of the source edge to the mid point of the adjacent
+      # edges. Find the average point between them and use that as the
+      # intersecting point for the new quads.
+      #
+      #   Get the positions of the source edge in the correct order.
+      next_i = ( index + 1 ) % 5
+      next_edge = loop[ next_i ]
+      vc = TT::Edges.common_vertex( edge, next_edge )
+      if vc == edge.start
+        pt1 = edge.end.position
+        pt2 = edge.start.position
+      else
+        pt1 = edge.start.position
+        pt2 = edge.end.position
+      end
+      #   Get the shared vertex of the opposite edges.
+      shared_vertex = TT::Edges.common_vertex( e1, e2 )
+      pt3 = shared_vertex.position
+      #   Get the positions of the opposite edges in the correct order.
+      e1_vertex = e1.other_vertex( shared_vertex )
+      e2_vertex = e2.other_vertex( shared_vertex )
+      pts1 = [ pt3, e1_vertex.position ]
+      pts2 = [ pt3, e2_vertex.position ]
+      #   Calculate the intersecting position.
+      m1 = TT::Geom3d.average_point( pts1 )
+      m2 = TT::Geom3d.average_point( pts2 )
+      pts = Geom.closest_points( [pt1,m1], [pt2,m2] )
+      intersect = TT::Geom3d.average_point( pts )
+      # Erase old geometry.
+      triangle.erase!
+      pentagon.erase!
+      edge.erase!
+      # Create new geometry.
+      new_edges = []
+      new_edges << entities.add_line( pt1, intersect )
+      new_edges << entities.add_line( pt2, intersect )
+      new_edges << entities.add_line( pt3, intersect )
+      new_edges.each { |e|
+        e.soft = soft_prop
+        e.smooth = smooth_prop
+        e.hidden = hidden_prop
+      }
+      provider.add_quad( pts2[1], pts2[0], intersect, pt1 )
+      provider.add_quad( pts1[1], pts1[0], intersect, pt2 )
+      provider.add_quad( tri_pt, pt1, intersect, pt2 )
+      # (!) Transfer UV mapping.
+    end
+    model.commit_operation
+    TT.debug "self.build_corner: #{Time.now - t}"
   end
   
   
