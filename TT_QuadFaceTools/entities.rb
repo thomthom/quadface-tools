@@ -735,6 +735,148 @@ module TT::Plugins::QuadFaceTools
   end # class VirtualQuadFace
   
   
+  # @since 0.7.0
+  class Surface
+    
+    # @param [Sketchup::Entity] face
+    #
+    # @return [Array<Sketchup::Entity,Surface>]
+    # @since 0.7.0
+    def self.get( entities )
+      cache = {}
+      entities.map { |e|
+        next if cache.include?( e )
+        if e.is_a?( Sketchup::Face )
+          surface = Surface.new( e )
+          for face in surface.faces
+            cache[ face ] = face
+          end
+          surface
+        else
+          e
+        end
+      }
+    end
+    
+    # @param [Sketchup::Face] face
+    #
+    # @since 0.7.0
+    def initialize( face, sketchup_surface = false )
+      @sketchup_surface = sketchup_surface
+      @faces = get_surface( face )
+    end
+    
+    # @return [Array<Sketchup::Edge>]
+    # @since 0.7.0
+    def edges
+      @faces.map { |face| border_edges( face.edges ) }.flatten.uniq
+    end
+    
+    # @since 0.7.0
+    def erase!
+      if triangulated?
+        edges = @faces.map { |face| face.edges }.flatten.uniq
+        edges.reject! { |edge| !QuadFace.divider_props?( edge ) }
+        return nil if edges.empty?
+        entities = edges[0].parent.entities
+        entities.erase_entities( edges )
+      else
+        @faces[0].erase!
+      end
+    end
+    
+    # @return [Array<Sketchup::Face>]
+    # @since 0.7.0
+    def faces
+      @faces.dup
+    end
+    
+    # @return [String]
+    # @since 0.7.0
+    def inspect
+      name = self.class.name.split('::').last
+      hex_id = TT.object_id_hex( self )
+      "#<#{name}:#{hex_id}>"
+    end
+    
+    # @return [Array<Array<Sketchup::Edge>>]
+    # @since 0.7.0
+    def loops
+      # (!)
+      #   Returns nil when there is more than one loop.
+      #   Todo: Find all loops.
+      loop = TT::Edges.sort_edges( edges )
+      ( loop ) ? [ loop ] : nil
+    end
+    
+    # @return [Array<Sketchup::Edge>]
+    # @since 0.7.0
+    def outer_loop
+      TT::Edges.sort( edges )
+    end
+    
+    # @return [Boolean]
+    # @since 0.7.0
+    def triangulated?
+      @faces.size > 1
+    end
+    
+    # @return [Array<Sketchup::Vertex>]
+    # @since 0.7.0
+    def vertices
+      edges.map { |edge| edge.vertices }.flatten.uniq
+    end
+    
+    private
+    
+    # @param [Sketchup::Edge]
+    #
+    # @return [Array<Sketchup::Edge>]
+    # @since 0.7.0
+    def border_edges( edges )
+      if @sketchup_surface
+        edges.reject { |edge| edge.soft? }
+      else
+        edges.reject { |edge| QuadFace.divider_props?( edge ) }
+      end
+    end
+    
+    # @param [Sketchup::Face]
+    #
+    # @return [Array<Sketchup::Face>]
+    # @since 0.7.0
+    def get_surface( face )
+      surface = { face => face } # Use hash for speedy lookup
+      stack = [ face ]
+      until stack.empty?
+        face = stack.shift
+        edges = inner_edges( face.edges )
+        for edge in edges
+          for face in edge.faces
+            next if surface.key?( face )
+            stack << face
+            surface[ face ] = face
+          end
+        end
+      end
+      surface.keys
+    end
+    
+    # @param [Sketchup::Edge]
+    #
+    # @return [Array<Sketchup::Edge>]
+    # @since 0.7.0
+    def inner_edges( edges )
+      if @sketchup_surface
+        edges.select { |edge| edge.soft? }
+      else
+        edges.select { |edge| QuadFace.divider_props?( edge ) }
+      end
+    end
+    
+  end # class Surface
+  
+  
   # Manages QuadFace entities in an collection of native SketchUp entities.
   #
   # The internal lookup table of Sketchup::Face => QuadFace is build progressivly
