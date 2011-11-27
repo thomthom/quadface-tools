@@ -779,9 +779,10 @@ module TT::Plugins::QuadFaceTools
         edges.reject! { |edge| !QuadFace.divider_props?( edge ) }
         return nil if edges.empty?
         entities = edges[0].parent.entities
-        entities.erase_entities( edges )
+        entities.erase_entities( edges + @faces )
       else
-        @faces[0].erase!
+        entities = @faces[0].parent.entities
+        entities.erase_entities( @faces )
       end
     end
     
@@ -809,10 +810,36 @@ module TT::Plugins::QuadFaceTools
       ( loop ) ? [ loop ] : nil
     end
     
+    # @param [Sketchup::Edge] source_edge
+    # @param [Integer] offset
+    #
+    # @return [Sketchup::Edge]
+    # @since 0.7.0
+    def next_edge( source_edge, offset = 1 )
+      sorted_edges = outer_loop
+      index = sorted_edges.index( source_edge )
+      return nil if index.nil?
+      new_index = ( index + offset ) % sorted_edges.size
+      sorted_edges[ new_index ]
+    end
+    
     # @return [Array<Sketchup::Edge>]
     # @since 0.7.0
     def outer_loop
       TT::Edges.sort( edges )
+    end
+    
+    # @param [Sketchup::Edge] source_edge
+    # @param [Integer] offset
+    #
+    # @return [Sketchup::Edge]
+    # @since 0.7.0
+    def prev_edge( source_edge, offset = 1 )
+      sorted_edges = outer_loop
+      index = sorted_edges.index( source_edge )
+      return nil if index.nil?
+      new_index = ( index - offset ) % sorted_edges.size
+      sorted_edges[ new_index ]
     end
     
     # @return [Boolean]
@@ -824,7 +851,9 @@ module TT::Plugins::QuadFaceTools
     # @return [Array<Sketchup::Vertex>]
     # @since 0.7.0
     def vertices
-      edges.map { |edge| edge.vertices }.flatten.uniq
+      v = TT::Edges.sort_vertices( outer_loop )
+      v.pop
+      v
     end
     
     private

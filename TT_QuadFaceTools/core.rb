@@ -209,6 +209,14 @@ module TT::Plugins::QuadFaceTools
     cmd_build_corners = cmd
     @commands[:build_corners] = cmd
     
+    cmd = UI::Command.new( 'Build Ends' )   { self.build_ends }
+    cmd.small_icon = File.join( PATH_ICONS, 'BuildEnds_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'BuildEnds_24.png' )
+    cmd.status_bar_text = 'Build Ends.'
+    cmd.tooltip = 'Build Ends'
+    cmd_build_ends = cmd
+    @commands[:build_ends] = cmd
+    
     cmd = UI::Command.new( 'Flip Triangulation Tool' )  { self.flip_edge_tool }
     cmd.small_icon = File.join( PATH_ICONS, 'FlipEdge_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'FlipEdge_24.png' )
@@ -382,6 +390,7 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_remove_loops )
     m.add_separator
     m.add_item( cmd_build_corners )
+    m.add_item( cmd_build_ends )
     m.add_separator
     m.add_item( cmd_flip_triangulation_tool )
     m.add_item( cmd_flip_triangulation )
@@ -430,6 +439,7 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_remove_loops )
         m.add_separator
         m.add_item( cmd_build_corners )
+        m.add_item( cmd_build_ends )
         m.add_separator
         m.add_item( cmd_flip_triangulation_tool )
         m.add_item( cmd_flip_triangulation )
@@ -489,6 +499,7 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_unsmooth_quad_mesh )
     toolbar.add_separator
     toolbar.add_item( cmd_build_corners )
+    toolbar.add_item( cmd_build_ends )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -606,6 +617,92 @@ module TT::Plugins::QuadFaceTools
   
   
   # @since 0.7.0
+  def self.build_ends
+    t = Time.now
+    model = Sketchup.active_model
+    entities = model.active_entities
+    provider = EntitiesProvider.new
+    TT::Model.start_operation( 'Build Ends' )
+    for edge in model.selection
+      # Find edges that separate a quad and a hexagon.
+      # The hexagon should really be a quad-ish shape where one of the sides
+      # is made up of three edges. The source edge must be the middle of these.
+      next unless edge.valid?
+      next unless edge.is_a?( Sketchup::Edge )
+      next unless edge.faces.size == 2
+      faces = Surface.get( edge.faces )
+      hexagon = faces.find { |f| f.vertices.size == 6 }
+      quad1 = faces.find { |f| f.vertices.size == 4 }
+      next unless hexagon && quad1
+      # The quad needs two adjacent quads that share one of the vertices of the
+      # source edge.
+      e1 = quad1.next_edge( edge )
+      e2 = quad1.prev_edge( edge )
+      faces = e1.faces + e2.faces - quad1.faces
+      faces = Surface.get( faces )
+      next unless faces.all? { |face| face.vertices.size == 4 }
+      # Recreate four quads in place of the hexagon.
+      #   Copy the soft, smooth and hidden properties of the source edge to the
+      #   new edges.
+      soft_prop = edge.soft?
+      smooth_prop = edge.smooth?
+      hidden_prop = edge.hidden?
+      #   Get the positions of the source edge in the correct order.
+      next_edge = hexagon.next_edge( edge )
+      vc = TT::Edges.common_vertex( edge, next_edge )
+      loop = hexagon.vertices
+      if vc == edge.start
+        pt1 = edge.start.position
+        pt2 = edge.end.position
+        i = loop.index( edge.start )
+      else
+        pt1 = edge.end.position
+        pt2 = edge.start.position
+        i = loop.index( edge.end )
+      end
+      #   Get the positions of the side edges
+      e1pt1 = loop[ ( i + 1 ) % 6 ].position
+      e1pt2 = loop[ ( i + 2 ) % 6 ].position
+      e2pt1 = loop[ ( i - 2 ) % 6 ].position
+      e2pt2 = loop[ ( i - 3 ) % 6 ].position
+      #   Calculate internal point
+      v1 = e1pt1.vector_to( e1pt2 )
+      v2 = e2pt1.vector_to( e2pt2 )
+      v3 = Geom.linear_combination( 0.75, v1, 0.25, v2 )
+      v4 = Geom.linear_combination( 0.25, v1, 0.75, v2 )
+      mpt1 = e1pt1.offset( v1, v1.length / 2 )
+      mpt2 = e2pt1.offset( v2, v2.length / 2 )
+      m_line = [ mpt1, mpt2 ]
+      i1pts = Geom.closest_points( m_line, [ pt1, v3 ] )
+      i2pts = Geom.closest_points( m_line, [ pt2, v4 ] )
+      ipt1 = TT::Geom3d.average_point( i1pts )
+      ipt2 = TT::Geom3d.average_point( i2pts )
+      #   Erase old geometry.
+      hexagon.erase!
+      #   Create new geometry.
+      new_edges = []
+      new_edges << entities.add_line( pt1, ipt1 )
+      new_edges << entities.add_line( pt2, ipt2 )
+      new_edges << entities.add_line( ipt1, ipt2 )
+      new_edges << entities.add_line( ipt1, e1pt2 )
+      new_edges << entities.add_line( ipt2, e2pt2 )
+      new_edges.each { |e|
+        e.soft = soft_prop
+        e.smooth = smooth_prop
+        e.hidden = hidden_prop
+      }
+      provider.add_quad( pt1, pt2, ipt2, ipt1 )
+      provider.add_quad( e1pt1, e1pt2, ipt1, pt1 )
+      provider.add_quad( e2pt1, e2pt2, ipt2, pt2 )
+      provider.add_quad( e1pt2, e2pt2, ipt2, ipt1 )
+      # (!) Transfer UV mapping.
+    end
+    model.commit_operation
+    TT.debug "self.build_ends: #{Time.now - t}"
+  end
+  
+  
+  # @since 0.7.0
   def self.build_corners
     t = Time.now
     model = Sketchup.active_model
@@ -614,6 +711,7 @@ module TT::Plugins::QuadFaceTools
     TT::Model.start_operation( 'Build Corner' )
     for edge in model.selection
       # Find edges that separate a triangle and pentagon.
+      next unless edge.valid?
       next unless edge.is_a?( Sketchup::Edge )
       next unless edge.faces.size == 2
       faces = Surface.get( edge.faces )
@@ -683,7 +781,7 @@ module TT::Plugins::QuadFaceTools
       # (!) Transfer UV mapping.
     end
     model.commit_operation
-    TT.debug "self.build_corner: #{Time.now - t}"
+    TT.debug "self.build_corners: #{Time.now - t}"
   end
   
   
