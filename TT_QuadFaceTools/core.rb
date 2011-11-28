@@ -21,6 +21,7 @@ module TT::Plugins::QuadFaceTools
   # UI
   @settings.set_default( :context_menu, false )
   # Select Tool
+  @settings.set_default( :ui_2d, true )
   @settings.set_default( :ui_show_poles, false )
   # Connect Edge
   @settings.set_default( :connect_splits, 1 )
@@ -623,13 +624,14 @@ module TT::Plugins::QuadFaceTools
     entities = model.active_entities
     provider = EntitiesProvider.new
     TT::Model.start_operation( 'Build Ends' )
-    for edge in model.selection
+    for edge in model.selection.to_a
       # Find edges that separate a quad and a hexagon.
       # The hexagon should really be a quad-ish shape where one of the sides
       # is made up of three edges. The source edge must be the middle of these.
       next unless edge.valid?
       next unless edge.is_a?( Sketchup::Edge )
       next unless edge.faces.size == 2
+      next if QuadFace.divider_props?( edge )
       faces = Surface.get( edge.faces )
       hexagon = faces.find { |f| f.vertices.size == 6 }
       quad1 = faces.find { |f| f.vertices.size == 4 }
@@ -709,14 +711,15 @@ module TT::Plugins::QuadFaceTools
     entities = model.active_entities
     provider = EntitiesProvider.new
     TT::Model.start_operation( 'Build Corner' )
-    for edge in model.selection
+    for edge in model.selection.to_a
       # Find edges that separate a triangle and pentagon.
       next unless edge.valid?
       next unless edge.is_a?( Sketchup::Edge )
       next unless edge.faces.size == 2
+      next if QuadFace.divider_props?( edge )
       faces = Surface.get( edge.faces )
-      triangle = faces.find { |e| e.vertices.size == 3 }
-      pentagon = faces.find { |e| e.vertices.size == 5 }
+      triangle = faces.find { |f| f.vertices.size == 3 }
+      pentagon = faces.find { |f| f.vertices.size == 5 }
       next unless triangle && pentagon
       # Copy the soft, smooth and hidden properties of the source edge to the
       # new edges.

@@ -491,7 +491,7 @@ module TT::Plugins::QuadFaceTools
       @e_cache = []
       @x_cache = []
       
-      @ui_2d = true
+      @ui_2d = PLUGIN.settings[ :ui_2d ]
       @ui_show_poles = PLUGIN.settings[ :ui_show_poles ]
       
       @model_observer = ModelChangeObserver.new( self )
@@ -528,6 +528,7 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.1.0
     def deactivate( view )
+      PLUGIN.settings[ :ui_2d ] = @ui_2d
       PLUGIN.settings[ :ui_show_poles ] = @ui_show_poles
       view.model.remove_observer( @model_observer )
       view.invalidate
