@@ -535,14 +535,21 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.1.0
     def onLButtonDown( flags, x, y, view )
-      picked = pick_entites( flags, x, y, view )
+      picked = pick_entities( flags, x, y, view )
       # Get key modifier controlling how the selection should be modified.
       # Using standard SketchUp selection modifier keys.
       key_ctrl = flags & COPY_MODIFIER_MASK == COPY_MODIFIER_MASK
       key_shift = flags & CONSTRAIN_MODIFIER_MASK == CONSTRAIN_MODIFIER_MASK
       # Select the entities.
       entities = []
-      entities << picked if picked
+      if picked
+        if picked.is_a?( QuadFace ) || picked.is_a?( Surface )
+          entities = picked.faces
+        else
+          entities << picked
+        end
+      end
+      #entities << picked if picked
       selection = view.model.selection
       if key_ctrl && key_shift
         selection.remove( entities )
@@ -584,10 +591,9 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.1.0
     def onLButtonDoubleClick( flags, x, y, view )
-      picked = pick_entites( flags, x, y, view )
-      if picked.is_a?( Array ) # Array of two triangles
-        quad = @provider.get( picked[0] ) # QuadFace
-        picked = quad.edges
+      picked = pick_entities( flags, x, y, view )
+      if picked.is_a?( QuadFace ) || picked.is_a?( Surface )
+        picked = picked.edges
       elsif picked.is_a?( Sketchup::Edge )
         faces = EntitiesProvider.new
         picked.faces.each { |face|
@@ -725,7 +731,7 @@ module TT::Plugins::QuadFaceTools
     private
     
     # @since 0.1.0
-    def pick_entites( flags, x, y, view )
+    def pick_entities( flags, x, y, view )
       ph = view.pick_helper
       picked_edge = nil
       picked_quad = nil
@@ -761,7 +767,10 @@ module TT::Plugins::QuadFaceTools
       if picked_edge
         picked = picked_edge
       elsif picked_quad
-        picked = picked_quad.faces
+        picked = picked_quad#.faces
+      elsif entity.is_a?( Sketchup::Face )
+        surfaces = Surface.get( [entity] )
+        picked = surfaces[0]#.faces # Add QuadFace or Surface objects to picked.
       end
       picked
     end
