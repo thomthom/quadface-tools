@@ -498,6 +498,9 @@ module TT::Plugins::QuadFaceTools
       @provider = EntitiesProvider.new
       update_geometry_cache()
       
+      @doubleclick = false
+      @timer_doubleclick = nil
+      
       # Used by onSetCursor
       @key_ctrl = false
       @key_shift = false
@@ -550,7 +553,11 @@ module TT::Plugins::QuadFaceTools
           entities << picked
         end
       end
-      #entities << picked if picked
+      # Check for trippleclick
+      if @doubleclick
+        entities = entities[0].all_connected
+      end
+      # Modify selection based on modifiers.
       selection = view.model.selection
       if key_ctrl && key_shift
         selection.remove( entities )
@@ -562,6 +569,9 @@ module TT::Plugins::QuadFaceTools
         selection.clear
         selection.add( entities )
       end
+      # Reset trippleclick flags
+      @doubleclick = false
+      UI.stop_timer( @timer_doubleclick ) if @timer_doubleclick
     end
     
     # @since 0.1.0
@@ -619,6 +629,10 @@ module TT::Plugins::QuadFaceTools
       else
         selection.add( entities )
       end
+      # For a given time after a doubleclick a trippleclick is allowed.
+      @doubleclick = true
+      UI.stop_timer( @timer_doubleclick ) if @timer_doubleclick
+      @timer_doubleclick = UI.start_timer( 0.2, false ) { @doubleclick = false }
     end
     
     # @see http://code.google.com/apis/sketchup/docs/ourdoc/tool.html#onKeyDown
