@@ -704,6 +704,9 @@ module TT::Plugins::QuadFaceTools
       m.add_separator
       m.add_item( PLUGIN.commands[ :insert_loops ] )
       m.add_item( PLUGIN.commands[ :remove_loops ] )
+      m.add_separator
+      m.add_item( PLUGIN.commands[ :build_corners ] )
+      m.add_item( PLUGIN.commands[ :build_ends ] )
       m = menu.add_submenu( 'Triangulation' )
       m.add_item( PLUGIN.commands[ :flip_triangulation_tool ] )
       m.add_item( PLUGIN.commands[ :flip_triangulation ] )
@@ -716,11 +719,11 @@ module TT::Plugins::QuadFaceTools
       m.add_item( PLUGIN.commands[ :uv_paste ] )
       m.add_separator
       m.add_item( PLUGIN.commands[ :unwrap_uv_grid ] )
-      sub_menu = menu.add_submenu( 'Convert' )
-      sub_menu.add_item( PLUGIN.commands[ :mesh_to_quads ] )
-      sub_menu.add_separator
-      sub_menu.add_item( PLUGIN.commands[ :blender_to_quads ] )
-      sub_menu.add_item( PLUGIN.commands[ :convert_legacy_quads ] )
+      m = menu.add_submenu( 'Convert' )
+      m.add_item( PLUGIN.commands[ :mesh_to_quads ] )
+      m.add_separator
+      m.add_item( PLUGIN.commands[ :blender_to_quads ] )
+      m.add_item( PLUGIN.commands[ :convert_legacy_quads ] )
     end
     
     # @since 0.2.0
