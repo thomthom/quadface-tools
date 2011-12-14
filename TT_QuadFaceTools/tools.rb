@@ -7,6 +7,213 @@
 
 module TT::Plugins::QuadFaceTools
   
+  # @since 0.7.0
+  class WireframeToQuadsTool
+  
+    # @since 0.7.0
+    def initialize
+      @junctions = {}
+      @quads = []
+      @max_angle = 45.degrees
+    end
+    
+    # @since 0.7.0
+    def enableVCB?
+      true
+    end
+    
+    # @since 0.7.0
+    def activate
+      find_quads()
+      update_ui()
+      Sketchup.active_model.active_view.invalidate
+    end
+    
+    # @since 0.7.0
+    def resume( view )
+      update_ui()
+      view.invalidate
+    end
+    
+    # @since 0.7.0
+    def deactivate( view )
+      view.invalidate
+    end
+    
+    # @since 0.7.0
+    def onUserText( text, view )
+      begin
+        max_angle = TT::Locale.string_to_float( text ).degrees
+      rescue
+        max_angle = @max_angle
+      end
+      if @max_angle != max_angle
+        @max_angle = max_angle
+        find_quads()
+      end
+      update_ui()
+      view.invalidate
+    end
+    
+    # @since 0.7.0
+    def onReturn( view )
+      generate_mesh()
+      view.model.select_tool( nil )
+    end
+    
+    # @since 0.7.0
+    def draw( view )
+      draw_quads( view )
+    end
+    
+    private
+    
+    # @since 0.7.0
+    def update_ui
+      Sketchup.status_text = 'Press Return to generate quads from wireframe. Use the VCB to adjust allowed angle between edges between junctions.'
+      Sketchup.vcb_label = 'Max Angle: '
+      Sketchup.vcb_value = TT::Locale.float_to_string( @max_angle.radians )
+    end
+    
+    # @since 0.7.0
+    def find_quads
+      model = Sketchup.active_model
+      entities = model.active_entities
+      
+      max_angle = @max_angle
+      
+      @quads.clear
+      @junctions.clear
+      
+      # Collect entities
+      vertices = []
+      edges = []
+      for edge in entities
+        next unless edge.is_a?( Sketchup::Edge )
+        #edges << edge
+        vertices << edge.vertices
+      end
+      vertices.flatten!
+      vertices.uniq!
+      
+      # Find junctions
+      for vertex in vertices
+        next unless vertex.edges.size > 1
+        if vertex.edges.size == 2
+          # next if not junction
+          e1, e2 = vertex.edges
+          v1 = e1.line[1]
+          v2 = e2.line[1]
+          next if v1.angle_between( v2 ) < max_angle
+        end
+        @junctions[ vertex ] = vertex.position
+        edges.concat( vertex.edges )
+      end
+      edges.flatten!
+      edges.uniq!
+      
+      puts 'Wireframe to Quads'
+      puts "> Vertices found: #{vertices.size}"
+      puts "> Juntions found: #{@junctions.size}"
+      
+      # Find quads
+      Sketchup.status_text = 'Thinking very hard...'
+      processed = {}
+      #stack = vertices.dup
+      stack = @junctions.keys
+      progress = TT::Progressbar.new( stack, 'Finding Quads' )
+      until stack.empty?
+        v = stack.shift
+        progress.next
+        for e1 in v.edges
+          for vertex in e1.vertices
+            v1 = other_junction_vertex( e1, vertex )
+            for e2 in vertex.edges
+              next if e2 == e1
+              v2 = other_junction_vertex( e2, vertex )
+              for e3 in v1.edges
+                next if e3 == e1
+                next if e3 == e2
+                v3 = other_junction_vertex( e3, v1 )
+                for e4 in v2.edges
+                  next if e4 == e1
+                  next if e4 == e2
+                  next if e4 == e3
+                  v4 = other_junction_vertex( e4, v2 )
+                  if v3 == v4
+                    verts = [ vertex, v1, v2, v3 ].sort { |x,y| y.object_id <=> x.object_id }
+                    next unless verts.uniq.size == 4
+                    next if processed.include?( verts )
+                    
+                    @quads << vertex.position
+                    @quads << v1.position
+                    @quads << v3.position
+                    @quads << v2.position
+                    
+                    processed[ verts ] = verts
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+      
+      puts "> Quads found: #{@quads.size / 4} (#{@quads.size}) in #{progress.elapsed_time(true)}"
+      Sketchup.status_text = "Found #{@quads.size / 4} quads in #{progress.elapsed_time(true)}."
+    end
+    
+    # @since 0.7.0
+    def generate_mesh
+      model = Sketchup.active_model
+      progress = TT::Progressbar.new( @quads.size / 4, 'Generating mesh' )
+      model.start_operation( 'Wireframe to Quads', true )
+      group = model.active_entities.add_group
+      provider = EntitiesProvider.new( group.entities, group.entities )
+      0.step( @quads.size - 4, 4 ) { |i|
+        progress.next
+        quad = @quads[ i, 4 ]
+        provider.add_quad( quad )
+      }
+      model.commit_operation
+      puts "Mesh generated in #{progress.elapsed_time(true)}"
+      Sketchup.status_text = "Mesh generated i #{progress.elapsed_time(true)}."
+    end
+    
+    # @since 0.7.0
+    def other_junction_vertex( edge, vertex, max_angle = 45.degrees )
+      last_vertex = vertex
+      last_edge = edge
+      begin
+        next_vertex = last_edge.other_vertex( last_vertex )
+        next_edge = next_vertex.edges.find { |e| e != last_edge }
+        if next_edge
+          v1 = last_edge.line[1]
+          v2 = next_edge.line[1]
+          return next_vertex if v1.angle_between( v2 ) > max_angle
+        end
+        last_vertex = next_vertex
+        last_edge = next_edge
+      end while last_vertex.edges.size == 2
+      last_vertex
+    end
+
+    # @since 0.7.0
+    def draw_quads( view )
+      unless @quads.empty?
+        view.drawing_color = [0,0,230,64]
+        view.draw( GL_QUADS, @quads )
+      end
+      unless @junctions.empty?
+        view.line_stipple = ''
+        view.line_width = 2
+        view.draw_points( @junctions.values, 8, 4, [255,0,0] )
+      end
+    end
+  
+  end # class WireframeToQuadsTool
+  
+  
   # @since 0.3.0
   class FlipEdgeTool
     
@@ -241,7 +448,7 @@ module TT::Plugins::QuadFaceTools
       true
     end
     
-    # @since 0.03.0
+    # @since 0.3.0
     def onKeyDown( key, repeat, flags, view )
       @key_ctrl  = true if key == COPY_MODIFIER_KEY
       @key_shift = true if key == CONSTRAIN_MODIFIER_KEY

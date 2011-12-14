@@ -278,6 +278,16 @@ module TT::Plugins::QuadFaceTools
     cmd_convert_legacy_quads = cmd
     @commands[:convert_legacy_quads] = cmd
     
+    cmd = UI::Command.new( 'Wireframe to Quads' )  {
+      self.wireframe_to_quad_tool
+    }
+    cmd.small_icon = File.join( PATH_ICONS, 'WireframeToQuads_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'WireframeToQuads_24.png' )
+    cmd.status_bar_text = 'Wireframe to Quads.'
+    cmd.tooltip = 'Wireframe to Quads'
+    cmd_wireframe_to_quad_tool = cmd
+    @commands[:wireframe_quads] = cmd
+    
     cmd = UI::Command.new( 'Smooth Quads' )  {
       self.smooth_quad_mesh
     }
@@ -408,6 +418,8 @@ module TT::Plugins::QuadFaceTools
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
     sub_menu.add_separator
+    sub_menu.add_item( cmd_wireframe_to_quad_tool )
+    sub_menu.add_separator
     sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
     sub_menu.add_item( cmd_convert_legacy_quads )
     m.add_separator
@@ -457,6 +469,8 @@ module TT::Plugins::QuadFaceTools
         sub_menu = m.add_submenu( 'Convert' )
         sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
         sub_menu.add_separator
+        sub_menu.add_item( cmd_wireframe_to_quad_tool )
+        sub_menu.add_separator
         sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
         sub_menu.add_item( cmd_convert_legacy_quads )
         m.add_separator
@@ -487,7 +501,12 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_triangulate_selection )
     toolbar.add_item( cmd_remove_triangulation )
     toolbar.add_separator
+    toolbar.add_item( cmd_smooth_quad_mesh )
+    toolbar.add_item( cmd_unsmooth_quad_mesh )
+    toolbar.add_separator
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
+    toolbar.add_separator
+    toolbar.add_item( cmd_wireframe_to_quad_tool )
     toolbar.add_item( cmd_convert_legacy_quads )
     toolbar.add_item( cmd_convert_blender_quads_to_sketchup_quads )
     toolbar.add_separator
@@ -496,11 +515,9 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_uv_paste )
     toolbar.add_item( cmd_unwrap_uv_grid )
     toolbar.add_separator
-    toolbar.add_item( cmd_smooth_quad_mesh )
-    toolbar.add_item( cmd_unsmooth_quad_mesh )
-    toolbar.add_separator
     toolbar.add_item( cmd_build_corners )
     toolbar.add_item( cmd_build_ends )
+    toolbar.add_separator
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -559,6 +576,12 @@ module TT::Plugins::QuadFaceTools
   # @since 0.4.0
   def self.unwrap_uv_grid_tool
     Sketchup.active_model.select_tool( UV_UnwrapGridTool.new )
+  end
+  
+  
+  # @since 0.7.0
+  def self.wireframe_to_quad_tool
+    Sketchup.active_model.select_tool( WireframeToQuadsTool.new )
   end
   
   
