@@ -78,7 +78,7 @@ module TT::Plugins::QuadFaceTools
     # @since 0.7.0
     def find_quads
       model = Sketchup.active_model
-      entities = model.active_entities
+      entities = model.active_entities # (!) Use selection
       
       max_angle = @max_angle
       
@@ -943,6 +943,8 @@ module TT::Plugins::QuadFaceTools
       m.add_item( PLUGIN.commands[ :unwrap_uv_grid ] )
       m = menu.add_submenu( 'Convert' )
       m.add_item( PLUGIN.commands[ :mesh_to_quads ] )
+      m.add_separator
+      m.add_item( PLUGIN.commands[ :wireframe_quads ] )
       m.add_separator
       m.add_item( PLUGIN.commands[ :blender_to_quads ] )
       m.add_item( PLUGIN.commands[ :convert_legacy_quads ] )
