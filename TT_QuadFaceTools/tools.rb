@@ -913,6 +913,7 @@ module TT::Plugins::QuadFaceTools
       m.add_item( PLUGIN.commands[ :select_loop ] )
       m.add_separator
       m.add_item( PLUGIN.commands[ :region_to_loop ] )
+      m.add_item( PLUGIN.commands[ :loop_to_region ] )
       m.add_separator
       m.add_item( PLUGIN.commands[ :select_quads_from_edges ] )
       m.add_item( PLUGIN.commands[ :select_bounding_edges ] )

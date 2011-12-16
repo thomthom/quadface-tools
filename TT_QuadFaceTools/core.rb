@@ -154,6 +154,12 @@ module TT::Plugins::QuadFaceTools
     cmd_region_to_loop = cmd
     @commands[:region_to_loop] = cmd
     
+    cmd = UI::Command.new( 'Selection Loop to Region' )  { self.loop_to_region }
+    cmd.status_bar_text = 'Select a region based on a selected loop of edge and a marker edge.'
+    cmd.tooltip = 'Selection Loop to Region'
+    cmd_loop_to_region = cmd
+    @commands[:loop_to_region] = cmd
+    
     cmd = UI::Command.new( 'Select Quads from Edges' )  {
       self.select_quads_from_edges
     }
@@ -388,7 +394,10 @@ module TT::Plugins::QuadFaceTools
     m.add_separator
     m.add_item( cmd_select_ring )
     m.add_item( cmd_select_loop )
+    m.add_separator
     m.add_item( cmd_region_to_loop )
+    m.add_item( cmd_loop_to_region )
+    m.add_separator
     m.add_item( cmd_select_quads_from_edges )
     m.add_item( cmd_select_bounding_edges )
     m.add_item( cmd_deselect_triangulation )
@@ -437,7 +446,10 @@ module TT::Plugins::QuadFaceTools
         m.add_separator
         m.add_item( cmd_select_ring )
         m.add_item( cmd_select_loop )
+        m.add_separator
         m.add_item( cmd_region_to_loop )
+        m.add_item( cmd_loop_to_region )
+        m.add_separator
         m.add_item( cmd_select_quads_from_edges )
         m.add_item( cmd_select_bounding_edges )
         m.add_item( cmd_deselect_triangulation )
@@ -1389,6 +1401,77 @@ module TT::Plugins::QuadFaceTools
     selection.clear
     selection.add( edges )
     TT.debug "self.region_to_loop: #{Time.now - t}"
+  end
+  
+  
+  # @since 0.7.0
+  def self.loop_to_region
+    t = Time.now
+    model = Sketchup.active_model
+    selection = model.selection
+    selected = selection.to_a
+    entities = EntitiesProvider.new( selection )
+    # Find Loop and one edge
+    # Find connected faces of either side of loop
+    # Find which collection the lone edge belongs to - select it.
+    loop_edges = []
+    marker = nil
+    # Find marker(s)
+    for edge in entities
+      next unless edge.is_a?( Sketchup::Edge )
+      connected = edge.vertices.map { |v| v.edges }.flatten.uniq - [edge]
+      sel = selected & connected
+      if sel.empty?
+        if marker
+          UI.messagebox( 'Selection must contain only one loop and one marker.' )
+          return nil
+        else
+          marker = edge
+        end
+      else
+        loop_edges << edge
+      end
+    end
+    # (!) Edges can not have more than two faces connected.
+    # Find loop
+    sorted = TT::Edges.sort( loop_edges )
+    if sorted.nil?
+      UI.messagebox( 'No loop found in selection.' )
+      return nil
+    end
+    loop = TT::Edges.sort_vertices( sorted )
+    if loop.first != loop.last
+      UI.messagebox( 'No closed loop found in selection.' )
+      return nil
+    end
+    # Find region from marker
+    #   (!) EntitiesProvider.get doesn't return the same QuadFace unless #add
+    #       has been used to add the enitites previously.
+    processed = EntitiesProvider.new
+    processed.add( marker.faces )
+    
+    stack = processed.get( marker.faces ) # Assume two faces.
+    region = EntitiesProvider.new
+    
+    until stack.empty?
+      face = stack.shift
+      
+      next if region.include?( face )
+      region.add( face )
+      # Find next candidates.
+      for e in face.edges
+        next if sorted.include?( e )
+        
+        processed.add( e.faces )
+        faces = processed.get( e.faces )
+        
+        for f in faces
+          stack << f unless region.include?( f )
+        end
+      end
+    end
+    selection.add( region.native_entities )
+    TT.debug "self.loop_to_region: #{Time.now - t}"
   end
   
   
