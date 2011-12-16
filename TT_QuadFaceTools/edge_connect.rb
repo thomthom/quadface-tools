@@ -258,7 +258,7 @@ module TT::Plugins::QuadFaceTools
       entities = @entities
       new_edges = []
       result = get_quad_splits( quads, cut_edges, splits, pinch )
-      progress = TT::Progressbar.new( result, 'Splitting QuadFaces' )
+      progress = TT::Progressbar.new( result, 'Splitting Quads' )
       for quadface, data in result
         lines = data[ :splits ]
         

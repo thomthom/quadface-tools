@@ -79,7 +79,7 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Select' )   { self.select_quadface_tool }
     cmd.small_icon = File.join( PATH_ICONS, 'Select_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Select_24.png' )
-    cmd.status_bar_text = 'Select Tool.'
+    cmd.status_bar_text = 'Selection tool to work with quads.'
     cmd.tooltip = 'Select'
     cmd_select = cmd
     @commands[:select] = cmd
@@ -87,7 +87,7 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Grow Selection' ) { self.selection_grow }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectionGrow_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SelectionGrow_24.png' )
-    cmd.status_bar_text = 'Grow Selection.'
+    cmd.status_bar_text = 'Expands the selection to the neighbouring entities.'
     cmd.tooltip = 'Grow Selection'
     cmd_selection_grow = cmd
     @commands[:selection_grow] = cmd
@@ -95,7 +95,7 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Shrink Selection' ) { self.selection_shrink }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectionShrink_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SelectionShrink_24.png' )
-    cmd.status_bar_text = 'Shrink Selection.'
+    cmd.status_bar_text = 'Removes the bordering entitites from a selection.'
     cmd.tooltip = 'Shrink Selection'
     cmd_selection_shrink = cmd
     @commands[:selection_shrink] = cmd
@@ -103,7 +103,7 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Select Ring' ) { self.select_rings }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectRing_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SelectRing_24.png' )
-    cmd.status_bar_text = 'Select Ring.'
+    cmd.status_bar_text = 'Selects rings of edges and faces based on the current selection.'
     cmd.tooltip = 'Select Ring'
     cmd_select_ring = cmd
     @commands[:select_ring] = cmd
@@ -111,7 +111,7 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Grow Ring' )  { self.select_rings( true ) }
     cmd.small_icon = File.join( PATH_ICONS, 'GrowRing_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'GrowRing_24.png' )
-    cmd.status_bar_text = 'Grow Ring.'
+    cmd.status_bar_text = 'Incrementally expands the ring selection.'
     cmd.tooltip = 'Grow Ring'
     cmd_grow_ring = cmd
     @commands[:grow_ring] = cmd
@@ -119,7 +119,7 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Shrink Ring' )  { self.shrink_rings }
     cmd.small_icon = File.join( PATH_ICONS, 'ShrinkRing_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'ShrinkRing_24.png' )
-    cmd.status_bar_text = 'Shrink Ring.'
+    cmd.status_bar_text = 'Incrementally shrinks the ring selection.'
     cmd.tooltip = 'Shrink Ring'
     cmd_shrink_ring = cmd
     @commands[:shrink_ring] = cmd
@@ -127,7 +127,7 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Select Loop' ) { self.select_loops }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectLoop_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SelectLoop_24.png' )
-    cmd.status_bar_text = 'Select Loop.'
+    cmd.status_bar_text = 'Selects loops of edges and faces based on the current selection.'
     cmd.tooltip = 'Select Loop'
     cmd_select_loop = cmd
     @commands[:select_loop] = cmd
@@ -135,7 +135,7 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Grow Loop' )  { self.select_loops( true ) }
     cmd.small_icon = File.join( PATH_ICONS, 'GrowLoop_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'GrowLoop_24.png' )
-    cmd.status_bar_text = 'Grow Loop.'
+    cmd.status_bar_text = 'Incrementally expands the loop selection.'
     cmd.tooltip = 'Grow Loop'
     cmd_grow_loop = cmd
     @commands[:grow_loop] = cmd
@@ -143,14 +143,14 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Shrink Loop' )  { self.shrink_loops }
     cmd.small_icon = File.join( PATH_ICONS, 'ShrinkLoop_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'ShrinkLoop_24.png' )
-    cmd.status_bar_text = 'Shrink Loop.'
+    cmd.status_bar_text = 'Incrementally shrinks the loop selection.'
     cmd.tooltip = 'Shrink Loop'
     cmd_shrink_loop = cmd
     @commands[:shrink_loop] = cmd
     
-    cmd = UI::Command.new( 'Select Region to Loop' )  { self.region_to_loop }
-    cmd.status_bar_text = 'Select a loop of edges around selected entities.'
-    cmd.tooltip = 'Select a loop of edges around selected entities'
+    cmd = UI::Command.new( 'Selection Region to Loop' )  { self.region_to_loop }
+    cmd.status_bar_text = 'Select a loop of edges bordering the selected entities.'
+    cmd.tooltip = 'Selection Region to Loop'
     cmd_region_to_loop = cmd
     @commands[:region_to_loop] = cmd
     
@@ -158,15 +158,15 @@ module TT::Plugins::QuadFaceTools
       self.select_quads_from_edges
     }
     cmd.status_bar_text = 'Selects quads with two or more edges selected.'
-    cmd.tooltip = 'Selects quads with two or more edges selected'
+    cmd.tooltip = 'Select Quads from Edges'
     cmd_select_quads_from_edges = cmd
     @commands[:select_quads_from_edges] = cmd
     
     cmd = UI::Command.new( 'Select Bounding Edges' )  {
       self.select_bounding_edges
     }
-    cmd.status_bar_text = 'Selects all edges that bounds a face.'
-    cmd.tooltip = 'Selects all edges that bounds a face'
+    cmd.status_bar_text = 'Selects all edges that bounds a quad or face.'
+    cmd.tooltip = 'Select Bounding Edges'
     cmd_select_bounding_edges = cmd
     @commands[:select_bounding_edges] = cmd
     
@@ -174,22 +174,22 @@ module TT::Plugins::QuadFaceTools
       self.deselect_triangulation
     }
     cmd.status_bar_text = 'Deselects all dividing edges in triangulated quads.'
-    cmd.tooltip = 'Deselects all dividing edges in triangulated quads'
+    cmd.tooltip = 'Deselect Triangulation'
     cmd_deselect_triangulation = cmd
     @commands[:deselect_triangulation] = cmd
     
     cmd = UI::Command.new( 'Connect Edges' )   { self.connect_tool }
     cmd.small_icon = File.join( PATH_ICONS, 'Connect_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Connect_24.png' )
-    cmd.status_bar_text = 'Connect Edges Tool.'
-    cmd.tooltip = 'Connect Edges'
+    cmd.status_bar_text = 'Creates new edges between adjacent pairs of selected edges.'
+    cmd.tooltip = 'Connect Edges Tool'
     cmd_connect = cmd
     @commands[:connect] = cmd
     
     cmd = UI::Command.new( 'Insert Loops' )   { self.insert_loops }
     cmd.small_icon = File.join( PATH_ICONS, 'InsertLoop_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'InsertLoop_24.png' )
-    cmd.status_bar_text = 'Insert Loops.'
+    cmd.status_bar_text = 'Insert loops from the current set of selected edges.'
     cmd.tooltip = 'Insert Loops'
     cmd_insert_loops = cmd
     @commands[:insert_loops] = cmd
@@ -197,7 +197,7 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Remove Loops' )   { self.remove_loops }
     cmd.small_icon = File.join( PATH_ICONS, 'RemoveLoop_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'RemoveLoop_24.png' )
-    cmd.status_bar_text = 'Remove Loops.'
+    cmd.status_bar_text = 'Remove the loops which the selected edges are part of.'
     cmd.tooltip = 'Remove Loops'
     cmd_remove_loops = cmd
     @commands[:remove_loops] = cmd
@@ -205,7 +205,7 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Build Corners' )   { self.build_corners }
     cmd.small_icon = File.join( PATH_ICONS, 'BuildCorners_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'BuildCorners_24.png' )
-    cmd.status_bar_text = 'Build Corners.'
+    cmd.status_bar_text = 'Builds a quad corner based on the selected edges to make an edge-loop turn. '
     cmd.tooltip = 'Build Corners'
     cmd_build_corners = cmd
     @commands[:build_corners] = cmd
@@ -213,7 +213,7 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Build Ends' )   { self.build_ends }
     cmd.small_icon = File.join( PATH_ICONS, 'BuildEnds_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'BuildEnds_24.png' )
-    cmd.status_bar_text = 'Build Ends.'
+    cmd.status_bar_text = 'Builds a quad ending to two parallel loops based on the selected edges.'
     cmd.tooltip = 'Build Ends'
     cmd_build_ends = cmd
     @commands[:build_ends] = cmd
@@ -221,30 +221,30 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Flip Triangulation Tool' )  { self.flip_edge_tool }
     cmd.small_icon = File.join( PATH_ICONS, 'FlipEdge_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'FlipEdge_24.png' )
-    cmd.status_bar_text = 'Tool for flipping the dividing edge in triangulated quads.'
-    cmd.tooltip = 'Tool for flipping the dividing edge in triangulated quads'
+    cmd.status_bar_text = 'Flips the dividing edge in the picked triangulated quads.'
+    cmd.tooltip = 'Flip Triangulation Tool'
     cmd_flip_triangulation_tool = cmd
     @commands[:flip_triangulation_tool] = cmd
     
-    cmd = UI::Command.new( 'Flip Selected Triangulation' )  { self.flip_triangulation }
+    cmd = UI::Command.new( 'Flip Triangulation' )  { self.flip_triangulation }
     cmd.status_bar_text = 'Flips the dividing edge in the selected triangulated quads.'
-    cmd.tooltip = 'Flips the dividing edge in the selected triangulated quads'
+    cmd.tooltip = 'Flip Triangulation'
     cmd_flip_triangulation = cmd
     @commands[:flip_triangulation] = cmd
     
     cmd = UI::Command.new( 'Triangulate' )  { self.triangulate_selection }
     cmd.small_icon = File.join( PATH_ICONS, 'Triangulate_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Triangulate_24.png' )
-    cmd.status_bar_text = 'Triangulate selected QuadFaces.'
-    cmd.tooltip = 'Triangulate Selected QuadFaces'
+    cmd.status_bar_text = 'Triangulates selected quads.'
+    cmd.tooltip = 'Triangulate'
     cmd_triangulate_selection = cmd
     @commands[:triangulate] = cmd
     
     cmd = UI::Command.new( 'Remove Triangulation' )  { self.remove_triangulation }
     cmd.small_icon = File.join( PATH_ICONS, 'Detriangulate_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Detriangulate_24.png' )
-    cmd.status_bar_text = 'Remove triangulation from selected planar Quads.'
-    cmd.tooltip = 'Remove triangulation from selected planar Quads'
+    cmd.status_bar_text = 'Remove triangulation from selected planar quads.'
+    cmd.tooltip = 'Remove Triangulation'
     cmd_remove_triangulation = cmd
     @commands[:remove_triangulation] = cmd
     
@@ -253,18 +253,18 @@ module TT::Plugins::QuadFaceTools
     }
     cmd.small_icon = File.join( PATH_ICONS, 'ConvertToQuads_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'ConvertToQuads_24.png' )
-    cmd.status_bar_text = 'Convert triangulated mesh to Quads.'
+    cmd.status_bar_text = 'Convert triangulated mesh to quads.'
     cmd.tooltip = 'Convert Triangulated Mesh to Quads'
     cmd_convert_connected_mesh_to_quads = cmd
     @commands[:mesh_to_quads] = cmd
     
-    cmd = UI::Command.new( 'Blender Quads to SketchUp Quads' )  {
+    cmd = UI::Command.new( 'Blender Quads to QuadFace Quads' )  {
       self.convert_blender_quads_to_sketchup_quads
     }
     cmd.small_icon = File.join( PATH_ICONS, 'BlenderToQuads_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'BlenderToQuads_24.png' )
-    cmd.status_bar_text = 'Convert Blender quads to SketchUp Quads.'
-    cmd.tooltip = 'Convert Blender quads to SketchUp Quads'
+    cmd.status_bar_text = 'Convert Blender imported quads to QuadFace quads.'
+    cmd.tooltip = 'Convert Blender Quads to QuadFace Quads'
     cmd_convert_blender_quads_to_sketchup_quads = cmd
     @commands[:blender_to_quads] = cmd
     
@@ -273,8 +273,8 @@ module TT::Plugins::QuadFaceTools
     }
     cmd.small_icon = File.join( PATH_ICONS, 'SandboxToQuads_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SandboxToQuads_24.png' )
-    cmd.status_bar_text = 'Sandbox Quads to QuadFace Quads.'
-    cmd.tooltip = 'Sandbox Quads to QuadFace Quads'
+    cmd.status_bar_text = 'Convert Sandbox Quads to QuadFace Quads.'
+    cmd.tooltip = 'Convert Sandbox Quads to QuadFace Quads'
     cmd_convert_legacy_quads = cmd
     @commands[:convert_legacy_quads] = cmd
     
@@ -283,8 +283,8 @@ module TT::Plugins::QuadFaceTools
     }
     cmd.small_icon = File.join( PATH_ICONS, 'WireframeToQuads_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'WireframeToQuads_24.png' )
-    cmd.status_bar_text = 'Wireframe to Quads.'
-    cmd.tooltip = 'Wireframe to Quads'
+    cmd.status_bar_text = 'Convert a set of edges forming a wireframe to Quads.'
+    cmd.tooltip = 'Convert Wireframe to Quads'
     cmd_wireframe_to_quad_tool = cmd
     @commands[:wireframe_quads] = cmd
     
@@ -293,8 +293,8 @@ module TT::Plugins::QuadFaceTools
     }
     cmd.small_icon = File.join( PATH_ICONS, 'Smooth_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Smooth_24.png' )
-    cmd.status_bar_text = 'Smooths the selected Quads\' edges.'
-    cmd.tooltip = 'Smooths the selected Quads\' edges'
+    cmd.status_bar_text = 'Smooths the edges of the selected quads.'
+    cmd.tooltip = 'Smooth Quads'
     cmd_smooth_quad_mesh = cmd
     @commands[:smooth_quads] = cmd
     
@@ -303,40 +303,40 @@ module TT::Plugins::QuadFaceTools
     }
     cmd.small_icon = File.join( PATH_ICONS, 'Unsmooth_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'Unsmooth_24.png' )
-    cmd.status_bar_text = 'Unsmooth the selected Quads\' edges.'
-    cmd.tooltip = 'Unsmooth the selected Quads\' edges'
+    cmd.status_bar_text = 'Unsmooths the edges of the selected quads.'
+    cmd.tooltip = 'Unsmooth Quads'
     cmd_unsmooth_quad_mesh = cmd
     @commands[:unsmooth_quads] = cmd
     
     cmd = UI::Command.new( 'Make Planar' )  {
       self.make_planar
     }
-    cmd.status_bar_text = 'Projects the selected faces to a best fit plane.'
-    cmd.tooltip = 'Projects selected faces to a best fit plane'
+    cmd.status_bar_text = 'Projects the vertices of selected faces to a best fit plane.'
+    cmd.tooltip = 'Make Planar'
     cmd_make_planar = cmd
     @commands[:make_planar] = cmd
     
-    cmd = UI::Command.new( 'UV Map' )  {
+    cmd = UI::Command.new( 'UV Mapping' )  {
       self.uv_map_tool
     }
     cmd.small_icon = File.join( PATH_ICONS, 'UV_Map_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'UV_Map_24.png' )
-    cmd.status_bar_text = 'UV Map selected Quads.'
-    cmd.tooltip = 'UV Map selected Quads'
+    cmd.status_bar_text = 'UV maps selected Quads from picked U and V axis.'
+    cmd.tooltip = 'UV Mapping Tool'
     cmd_uv_map = cmd
     @commands[:uv_map] = cmd
     
-    cmd = UI::Command.new( 'UV Copy' )  {
+    cmd = UI::Command.new( 'Copy UV Mapping' )  {
       self.uv_copy_tool
     }
     cmd.small_icon = File.join( PATH_ICONS, 'UV_Copy_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'UV_Copy_24.png' )
-    cmd.status_bar_text = 'Copy UV mapping from a quad-mesh.'
-    cmd.tooltip = 'Copy UV mapping from a quad-mesh'
+    cmd.status_bar_text = 'Copy UV mapping from selected quad-mesh.'
+    cmd.tooltip = 'Copy UV Mapping'
     cmd_uv_copy = cmd
     @commands[:uv_copy] = cmd
     
-    cmd = UI::Command.new( 'UV Paste' )  {
+    cmd = UI::Command.new( 'Paste UV Mapping' )  {
       self.uv_paste_tool
     }
     cmd.set_validation_proc  {
@@ -344,8 +344,8 @@ module TT::Plugins::QuadFaceTools
     }
     cmd.small_icon = File.join( PATH_ICONS, 'UV_Paste_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'UV_Paste_24.png' )
-    cmd.status_bar_text = 'Paste UV mapping to a quad-mesh.'
-    cmd.tooltip = 'Paste UV mapping to a quad-mesh'
+    cmd.status_bar_text = 'Paste UV mapping to selected quad-mesh.'
+    cmd.tooltip = 'Paste UV Mapping'
     cmd_uv_paste = cmd
     @commands[:uv_paste] = cmd
     
@@ -354,8 +354,8 @@ module TT::Plugins::QuadFaceTools
     }
     cmd.small_icon = File.join( PATH_ICONS, 'UV_Unwrap_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'UV_Unwrap_24.png' )
-    cmd.status_bar_text = 'Unwraps picked UV grid.'
-    cmd.tooltip = 'Unwraps picked UV grid'
+    cmd.status_bar_text = 'Unwraps picked UV mapping grid to a flat mesh.'
+    cmd.tooltip = 'Unwrap UV Grid'
     cmd_unwrap_uv_grid = cmd
     @commands[:unwrap_uv_grid] = cmd
     
@@ -733,7 +733,7 @@ module TT::Plugins::QuadFaceTools
     model = Sketchup.active_model
     entities = model.active_entities
     provider = EntitiesProvider.new
-    TT::Model.start_operation( 'Build Corner' )
+    TT::Model.start_operation( 'Build Corners' )
     for edge in model.selection.to_a
       # Find edges that separate a triangle and pentagon.
       next unless edge.valid?
@@ -1079,7 +1079,7 @@ module TT::Plugins::QuadFaceTools
     model = Sketchup.active_model
     selection = EntitiesProvider.new( model.selection )
     new_selection = []
-    TT::Model.start_operation( 'Triangulate QuadFaces' )
+    TT::Model.start_operation( 'Triangulate Quads' )
     for quadface in selection
       next unless quadface.is_a?( QuadFace )
       quadface.triangulate!
