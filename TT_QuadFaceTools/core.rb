@@ -507,16 +507,16 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_grow_loop )
     toolbar.add_item( cmd_shrink_loop )
     toolbar.add_separator
-    toolbar.add_item( cmd_connect )
-    toolbar.add_item( cmd_insert_loops )
-    toolbar.add_item( cmd_remove_loops )
-    toolbar.add_separator
     toolbar.add_item( cmd_flip_triangulation_tool )
     toolbar.add_item( cmd_triangulate_selection )
     toolbar.add_item( cmd_remove_triangulation )
     toolbar.add_separator
-    toolbar.add_item( cmd_smooth_quad_mesh )
-    toolbar.add_item( cmd_unsmooth_quad_mesh )
+    toolbar.add_item( cmd_connect )
+    toolbar.add_item( cmd_insert_loops )
+    toolbar.add_item( cmd_remove_loops )
+    toolbar.add_separator
+    toolbar.add_item( cmd_build_corners )
+    toolbar.add_item( cmd_build_ends )
     toolbar.add_separator
     toolbar.add_item( cmd_convert_connected_mesh_to_quads )
     toolbar.add_separator
@@ -529,9 +529,8 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_uv_paste )
     toolbar.add_item( cmd_unwrap_uv_grid )
     toolbar.add_separator
-    toolbar.add_item( cmd_build_corners )
-    toolbar.add_item( cmd_build_ends )
-    toolbar.add_separator
+    toolbar.add_item( cmd_smooth_quad_mesh )
+    toolbar.add_item( cmd_unsmooth_quad_mesh )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
