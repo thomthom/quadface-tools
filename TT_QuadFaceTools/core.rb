@@ -26,6 +26,8 @@ module TT::Plugins::QuadFaceTools
   # Connect Edge
   @settings.set_default( :connect_splits, 1 )
   @settings.set_default( :connect_pinch, 0 )
+  @settings.set_default( :connect_window_x, 300 )
+  @settings.set_default( :connect_window_y, 300 )
   # UV Mapping
   @settings.set_default( :uv_draw_uv_grid, false )
   @settings.set_default( :uv_continuous, true )

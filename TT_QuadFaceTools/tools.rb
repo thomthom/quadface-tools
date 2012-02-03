@@ -304,6 +304,9 @@ module TT::Plugins::QuadFaceTools
       @edge_connect = PLUGIN::EdgeConnect.new( selected_edges(), segments, pinch )
       
       init_HUD()
+      x = PLUGIN.settings[ :connect_window_x ]
+      y = PLUGIN.settings[ :connect_window_y ]
+      @window.position( x, y )
       
       # Used by onSetCursor
       @key_ctrl = false
@@ -333,23 +336,31 @@ module TT::Plugins::QuadFaceTools
     def deactivate( view )
       PLUGIN.settings[ :connect_splits ] = @edge_connect.segments
       PLUGIN.settings[ :connect_pinch ] = @edge_connect.pinch
+      PLUGIN.settings[ :connect_window_x ] = @window.left
+      PLUGIN.settings[ :connect_window_y ] = @window.top
       view.model.selection.remove_observer( @selection_observer )
       view.invalidate
     end
     
     # @since 0.3.0
     def onLButtonDown( flags, x, y, view )
-      hud_onLButtonDown( flags, x, y, view )
+      if @window.onLButtonDown( flags, x, y, view )
+        update_ui()
+        view.invalidate
+      end
     end
     
     # @since 0.3.0
     def onLButtonUp( flags, x, y, view )
-      hud_onLButtonUp( flags, x, y, view )
+      if @window.onLButtonUp( flags, x, y, view )
+        update_ui()
+        view.invalidate
+      end
     end
     
     # @since 0.3.0
     def onMouseMove( flags, x, y, view )
-      if hud_onMouseMove( flags, x, y, view )
+      if @window.onMouseMove( flags, x, y, view )
         view.invalidate
         return false
       end
@@ -412,7 +423,7 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.3.0
     def onUserText( text, view )
-      if @active_control == @txt_splits
+      if @window.active_control == @txt_splits
         # Splits
         segments = text.to_i
         if ( 1..99 ).include?( segments )
@@ -486,8 +497,10 @@ module TT::Plugins::QuadFaceTools
     # @since 0.3.0
     def update_ui
       Sketchup.status_text = 'Mouse Move + Ctrl add edges. Mouse Move + Shift removes edges. Press Return to Apply. Press ESC to Cancel.'
-      Sketchup.vcb_label = @active_control.label
-      Sketchup.vcb_value = @active_control.text
+      if control = @window.active_control
+        Sketchup.vcb_label = control.label
+        Sketchup.vcb_value = control.text
+      end
     end
     
     # @since 0.3.0
@@ -512,117 +525,60 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.3.0
     def init_HUD
-      # (!) Implement proper UI classes that takes cares of child controls.
-      #     Wrapping everything up neatly.
-      
       view = Sketchup.active_model.active_view
       
       screen_x = ( view.vpwidth / 2 ) + 0.5
       screen_y = ( view.vpheight / 2 ) + 0.5
 
-      @window = GL_Window.new( screen_x, screen_y, 76, 90 )
+      @window = GL_Container.new( screen_x, screen_y, 76, 90 )
       @window.background_color = [ 0, 0, 0, 180 ]
       @window.border_color = [ 32, 32, 32 ]
       
-      @titlebar = GL_Window.new( screen_x + 2, screen_y + 2, @window.rect.width - 4 , 8 )
+      @titlebar = GL_Titlebar.new
+      @titlebar.place( 2, 2, @window.width - 4 , 8 )
       @titlebar.background_color = [ 32, 32, 32 ]
       @titlebar.border_color = [ 32, 32, 32 ]
+      @window.add_control( @titlebar )
       
-      @txt_splits = GL_Textbox.new(
-        @window.rect.x + 30,
-        @window.rect.y + 15,
-        40,
-        19
-      )
+      @txt_splits = GL_Textbox.new
+      @txt_splits.place( 30, 15, 40, 19 )
       @txt_splits.label = 'Segments'
+      @txt_splits.tooltip = 'Segments'
       @txt_splits.background_color = [ 160, 160, 160 ]
       @txt_splits.border_color = [ 32, 32, 32 ]
       @txt_splits.text = @edge_connect.segments.to_s
-      @txt_splits.focus = true
+      @window.add_control( @txt_splits )
       
-      @txt_pinch = GL_Textbox.new(
-        @txt_splits.rect.x,
-        @txt_splits.rect.bottom + 5,
-        @txt_splits.rect.width,
-        @txt_splits.rect.height
+      @txt_pinch = GL_Textbox.new
+      @txt_pinch.place(
+        @txt_splits.left,
+        @txt_splits.bottom + 5,
+        @txt_splits.width,
+        @txt_splits.height
       )
       @txt_pinch.label = 'Pinch'
+      @txt_pinch.tooltip = 'Pinch'
       @txt_pinch.background_color = [ 160, 160, 160 ]
       @txt_pinch.border_color = [ 32, 32, 32 ]
       @txt_pinch.text = @edge_connect.pinch.to_s
+      @window.add_control( @txt_pinch )
       
-      @btnApply = GL_Button.new(
-        @window.rect.x + 5,
-        @window.rect.bottom - 25,
-        30,
-        20
-      ) {
+      @btnApply = GL_Button.new( 'Apply' ) {
         puts 'Apply!'
         do_splits()
         close_tool()
       }
-      @btnApply.label = 'Apply'
+      @btnApply.place( 5, @window.height - 25, 30, 20 )
+      @window.add_control( @btnApply )
       
-      @btnCancel = GL_Button.new(
-        @btnApply.rect.right + 5,
-        @window.rect.bottom - 25,
-        30,
-        20
-      ) {
+      @btnCancel = GL_Button.new( 'Cancel' ) {
         puts 'Cancel!'
         close_tool()
       }
-      @btnCancel.label = 'Cancel'
+      @btnCancel.place( @btnApply.right + 5, @window.height - 25, 30, 20 )
+      @window.add_control( @btnCancel )
       
-      @controls = [ @txt_splits, @txt_pinch ]
-      
-      hud_set_focus( @txt_splits )
-    end
-    
-    # @since 0.3.0
-    def hud_set_focus( control )
-      @controls.each { |c| c.focus = false }
-      @active_control = control
-      @active_control.focus = true
-    end
-    
-    # @since 0.3.0
-    def hud_onLButtonDown( flags, x, y, view )
-      for control in @controls
-        next unless control.rect.inside?( x, y )
-        hud_set_focus( control )
-        update_ui()
-        view.invalidate
-        return true
-      end
-      for control in [ @btnApply, @btnCancel ]
-        next unless control.onLButtonDown( flags, x, y, view )
-        return true
-      end
-      false
-    end
-    
-    # @since 0.3.0
-    def hud_onLButtonUp( flags, x, y, view )
-      for control in [ @btnApply, @btnCancel ]
-        next unless control.onLButtonUp( flags, x, y, view )
-        return true
-      end
-      false
-    end
-    
-    # @since 0.3.0
-    def hud_onMouseMove( flags, x, y, view )
-      for control in @controls
-        next unless control.rect.inside?( x, y )
-        view.tooltip = control.label
-        return true
-      end
-      for control in [ @btnApply, @btnCancel ]
-        next unless control.onMouseMove( flags, x, y, view )
-        return true
-      end
-      false
+      @txt_splits.set_focus
     end
     
     # @since 0.3.0
@@ -635,17 +591,13 @@ module TT::Plugins::QuadFaceTools
     def draw_HUD( view )
       update_hud()
       @window.draw( view )
-      @titlebar.draw( view )
-      @txt_splits.draw( view )
-      @txt_pinch.draw( view )
-      @btnApply.draw( view )
-      @btnCancel.draw( view )
       # Draw UI Graphics
+      # (!) Port to GL_Image when TT_Lib 2.7 is ready.
       view.line_stipple = ''
       view.line_width = 1
       # Segments
-      x = @window.rect.x + 7 + 0.5
-      y = @txt_splits.rect.y + 2
+      x = @window.rect[0].x + 7 + 0.5
+      y = @txt_splits.rect(true)[0].y + 2
       rect = [x,y,0],[x+15,y,0],[x+15,y+15,0],[x,y+15,0]
       view.drawing_color = [128,128,128]
       view.draw2d( GL_LINE_LOOP, rect )
@@ -655,23 +607,23 @@ module TT::Plugins::QuadFaceTools
       view.draw2d( GL_LINES, [x+4.5,y,0],[x+4.5,y+15,0], [x+10.5,y,0],[x+10.5,y+15,0] )
       
       # Pinch
-      x = @window.rect.x + 8 + 0.5
-      y = @txt_pinch.rect.y
+      x = @window.rect[0].x + 8 + 0.5
+      y = @txt_pinch.rect(true)[0].y
       view.drawing_color = [255,255,255]
       view.draw2d( GL_LINES, [x,y+10,0],[x+5,y+10,0], [x+10,y+10,0],[x+15,y+10,0] )
       view.draw2d( GL_TRIANGLES, [x+6,y+10,0],[x+3,y+7,0],[x+3,y+13,0] )
       view.draw2d( GL_TRIANGLES, [x+9,y+10,0],[x+12,y+7,0],[x+12,y+13,0] )
       
       # Apply
-      x = @btnApply.rect.x + 8 + 0.5
-      y = @btnApply.rect.y + 10
+      x = @btnApply.rect(true)[0].x + 8 + 0.5
+      y = @btnApply.rect(true)[0].y + 10
       view.line_width = 3
       view.drawing_color = [0,168,0]
       view.draw2d( GL_LINE_STRIP, [x,y,0],[x+5,y+5,0],[x+14,y-6,0] )
       
       # Cancel
-      x = @btnCancel.rect.x + 7 + 0.5
-      y = @btnCancel.rect.y + 4
+      x = @btnCancel.rect(true)[0].x + 7 + 0.5
+      y = @btnCancel.rect(true)[0].y + 4
       view.line_width = 3
       view.drawing_color = [192,0,0]
       view.draw2d( GL_LINES, [x,y,0],[x+14,y+11,0],[x+14,y,0],[x,y+11,0] )
