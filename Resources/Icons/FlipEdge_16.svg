@@ -81,7 +81,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="22.197802"
-     inkscape:cx="-6.3257427"
+     inkscape:cx="1.9519799"
      inkscape:cy="8"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -89,7 +89,7 @@
      inkscape:document-units="px"
      inkscape:window-width="1920"
      inkscape:window-height="1018"
-     inkscape:window-x="-8"
+     inkscape:window-x="1912"
      inkscape:window-y="-8"
      inkscape:window-maximized="1">
     <inkscape:grid
@@ -117,30 +117,30 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer">
     <rect
-       style="fill:#dcdcdc;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:#dcdcdc;fill-opacity:1;fill-rule:evenodd;stroke:none"
        id="rect2995"
-       width="15"
-       height="15"
+       width="14"
+       height="14"
        x="0.5"
-       y="0.5" />
+       y="1.5" />
     <path
-       style="fill:#5c5c5c;fill-opacity:1;stroke:#5c5c5c;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:none;stroke-miterlimit:4;stroke-dasharray:3,3;stroke-dashoffset:0.6"
-       d="M 1,15 15,1"
+       style="fill:#5c5c5c;fill-opacity:1;stroke:#787878;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:2,1;stroke-dashoffset:0.8;marker-end:none"
+       d="M 1,15 14,2"
        id="path3801"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
     <path
-       style="fill:#282828;fill-opacity:1;stroke:#1986ff;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none"
-       d="M 15,15 1,1"
+       style="fill:#282828;fill-opacity:1;stroke:#1986ff;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:none"
+       d="M 14,15 1,2"
        id="path3801-1"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
     <rect
-       style="fill:none;stroke:#282828;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:none;stroke:#505050;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect2995-7"
-       width="15"
-       height="15"
+       width="14"
+       height="14"
        x="0.5"
-       y="0.5" />
+       y="1.5" />
   </g>
 </svg>

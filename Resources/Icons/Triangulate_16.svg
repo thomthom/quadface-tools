@@ -15,7 +15,7 @@
    version="1.1"
    inkscape:version="0.48.2 r9819"
    sodipodi:docname="Triangulate_16.svg"
-   inkscape:export-filename="C:\Users\Thomas\Documents\My Dropbox\SketchUp\Plugins\ThomThom\QuadFace Tools\TT_QuadFaceTools\Icons\Detriangulate_16.png"
+   inkscape:export-filename="C:\Users\Thomas\Documents\My Dropbox\SketchUp\Plugins\ThomThom\QuadFace Tools\TT_QuadFaceTools\Icons\Triangulate_16.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <defs
@@ -28,7 +28,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="22.197802"
-     inkscape:cx="7.1865989"
+     inkscape:cx="-7.0039953"
      inkscape:cy="8"
      inkscape:current-layer="layer2"
      showgrid="true"
@@ -36,7 +36,7 @@
      inkscape:document-units="px"
      inkscape:window-width="1920"
      inkscape:window-height="1018"
-     inkscape:window-x="-8"
+     inkscape:window-x="1912"
      inkscape:window-y="-8"
      inkscape:window-maximized="1">
     <inkscape:grid
@@ -99,22 +99,22 @@
      inkscape:label="Detriangulate"
      style="display:none">
     <path
-       style="fill:none;stroke:#f00000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:2, 2;stroke-dashoffset:0.75"
+       style="fill:none;stroke:#f00000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0.75"
        d="M 1,2 7,8"
        id="path3769-1"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;stroke:#f00000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:2, 2;stroke-dashoffset:0.75;display:inline"
+       style="fill:none;stroke:#f00000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0.75;display:inline"
        d="m 1,9 6,6"
        id="path3769-1-8"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;stroke:#f00000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:2, 2;stroke-dashoffset:0.75;display:inline"
+       style="fill:none;stroke:#f00000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0.75;display:inline"
        d="m 8,9 6,6"
        id="path3769-1-82"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;stroke:#f00000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:2, 2;stroke-dashoffset:0.75;display:inline"
+       style="fill:none;stroke:#f00000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0.75;display:inline"
        d="m 8,2 6,6"
        id="path3769-1-4"
        inkscape:connector-curvature="0" />
@@ -124,19 +124,19 @@
      id="layer4"
      inkscape:label="Frames">
     <rect
-       style="fill:none;stroke:#404040;stroke-width:0.99999994;stroke-opacity:1"
+       style="fill:none;stroke:#505050;stroke-width:0.99999994000000003;stroke-opacity:1"
        id="rect3763"
        width="14"
        height="14"
        x="0.5"
        y="1.500001" />
     <path
-       style="fill:none;stroke:#404040;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       style="fill:none;stroke:#505050;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 7.5,1 0,14"
        id="path3765"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;stroke:#404040;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       style="fill:none;stroke:#505050;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 1,8.5 14,0"
        id="path3767"
        inkscape:connector-curvature="0" />

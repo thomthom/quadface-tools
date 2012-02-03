@@ -85,7 +85,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="22.197802"
-     inkscape:cx="-6.3257427"
+     inkscape:cx="3.6262372"
      inkscape:cy="8"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -112,7 +112,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -124,28 +124,28 @@
     <rect
        style="fill:#dcdcdc;fill-opacity:1;fill-rule:evenodd;stroke:none"
        id="rect2995"
-       width="23"
-       height="23"
+       width="22"
+       height="22"
        x="0.5"
-       y="-7.5" />
+       y="-6.5" />
     <path
-       style="fill:#5c5c5c;fill-opacity:1;stroke:#5c5c5c;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3,3;stroke-dashoffset:0.9;marker-end:none"
-       d="M 1,15 23,-7"
+       style="fill:#5c5c5c;fill-opacity:1;stroke:#787878;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3,1;stroke-dashoffset:0.9;marker-end:none"
+       d="M 1,15 22,-6"
        id="path3801"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
     <path
        style="fill:#282828;fill-opacity:1;stroke:#1986ff;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:none"
-       d="M 23,15 1,-7"
+       d="M 22,15 1,-6"
        id="path3801-1"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
     <rect
-       style="fill:none;stroke:#282828;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:none;stroke:#505050;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect2995-7"
-       width="23"
-       height="23"
+       width="22"
+       height="22"
        x="0.49999997"
-       y="-7.5" />
+       y="-6.5" />
   </g>
 </svg>
