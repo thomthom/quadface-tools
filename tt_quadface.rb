@@ -20,7 +20,7 @@ module TT::Plugins::QuadFaceTools
   PLUGIN          = TT::Plugins::QuadFaceTools
   PLUGIN_ID       = 'TT_QuadFaceTools'.freeze
   PLUGIN_NAME     = 'QuadFace Tools'.freeze
-  PLUGIN_VERSION  = '0.6.0'.freeze
+  PLUGIN_VERSION  = '0.7.0'.freeze
   PLUGIN_AUTHOR   = 'ThomThom'.freeze
   
   # Resource paths
@@ -35,7 +35,7 @@ module TT::Plugins::QuadFaceTools
   core = File.join( PATH, 'core.rb' )
   @ex = SketchupExtension.new( PLUGIN_NAME, core )
   @ex.version = PLUGIN_VERSION
-  @ex.copyright = 'Thomas Thomassen © 2011'
+  @ex.copyright = 'Thomas Thomassen © 2011-2012'
   @ex.creator = 'Thomas Thomassen (thomas@thomthom.net)'
   @ex.description = 'Suite of tools for manipulating quad faces.'
   Sketchup.register_extension( @ex, true )
@@ -52,7 +52,7 @@ module TT::Plugins::QuadFaceTools
       :name => PLUGIN_NAME,
       :author => PLUGIN_AUTHOR,
       :version => PLUGIN_VERSION.to_s,
-      :date => '13 Nov 11',   
+      :date => '08 Feb 11',   
       :description => @ex.description,
       :link_info => 'https://bitbucket.org/thomthom/quadface-tools/'
     }
