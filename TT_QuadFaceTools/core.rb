@@ -8,7 +8,7 @@
 require 'sketchup.rb'
 require 'TT_Lib2/core.rb'
 
-TT::Lib.compatible?( '2.6.0', 'QuadFace Tools' )
+TT::Lib.compatible?( '2.7.0', 'QuadFace Tools' )
 
 #-------------------------------------------------------------------------------
 
@@ -610,7 +610,7 @@ module TT::Plugins::QuadFaceTools
     # default. Could make use of Win32 API under Windows.
     view = Sketchup.active_model.active_view
     width = 280
-    height = 120
+    height = 180
     left = ( view.vpwidth / 2 ) - ( width / 2 )
     top = ( view.vpheight / 2 ) - ( height / 2 )
     props = {
@@ -625,20 +625,38 @@ module TT::Plugins::QuadFaceTools
     window.theme = TT::GUI::Window::THEME_GRAPHITE
     window.set_position( left, top )
     
-    lblAbout1 = TT::GUI::Label.new( "#{PLUGIN_NAME} (#{PLUGIN_VERSION})" )
-    lblAbout1.top = 5
-    lblAbout1.left = 5
-    window.add_control( lblAbout1 )
+    lblTitle = TT::GUI::Label.new( "#{PLUGIN_NAME}" )
+    lblTitle.top = 5
+    lblTitle.left = 10
+    lblTitle.font_size = '200%'
+    window.add_control( lblTitle )
     
-    lblAbout2 = TT::GUI::Label.new( "#{self.extension.description}" )
-    lblAbout2.top = 25
-    lblAbout2.left = 5
-    window.add_control( lblAbout2 )
+    lblVersion = TT::GUI::Label.new( "(#{PLUGIN_VERSION})" )
+    lblVersion.top = 17
+    lblVersion.left = 170
+    window.add_control( lblVersion )
     
-    lblAbout3 = TT::GUI::Label.new( "#{self.extension.copyright}" )
-    lblAbout3.bottom = 5
-    lblAbout3.left = 5
-    window.add_control( lblAbout3 )
+    lblDescription = TT::GUI::Label.new( "#{self.extension.description}" )
+    lblDescription.top = 50
+    lblDescription.left = 20
+    window.add_control( lblDescription )
+    
+    lblWebsite = TT::GUI::Label.new( "Visit Website" )
+    lblWebsite.url = 'https://bitbucket.org/thomthom/quadface-tools/'
+    lblWebsite.top = 80
+    lblWebsite.left = 20
+    window.add_control( lblWebsite )
+    
+    lblCookieware = TT::GUI::Label.new( 'This plugin is Cookieware - Feed the author!' )
+    lblCookieware.url = 'http://www.thomthom.net/software/sketchup/cookieware/'
+    lblCookieware.top = 100
+    lblCookieware.left = 20
+    window.add_control( lblCookieware )
+    
+    lblCopyright = TT::GUI::Label.new( "#{self.extension.copyright}" )
+    lblCopyright.bottom = 10
+    lblCopyright.left = 10
+    window.add_control( lblCopyright )
     
     btnClose = TT::GUI::Button.new( 'Close' ) { |control|
       control.window.close
