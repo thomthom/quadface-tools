@@ -20,7 +20,7 @@ module TT::Plugins::QuadFaceTools
   PLUGIN          = TT::Plugins::QuadFaceTools
   PLUGIN_ID       = 'TT_QuadFaceTools'.freeze
   PLUGIN_NAME     = 'QuadFace Tools'.freeze
-  PLUGIN_VERSION  = '0.7.0'.freeze
+  PLUGIN_VERSION  = '0.8.0'.freeze
   PLUGIN_AUTHOR   = 'ThomThom'.freeze
   
   # Resource paths
