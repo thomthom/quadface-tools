@@ -23,13 +23,16 @@ module TT::Plugins::QuadFaceTools
   PLUGIN_VERSION  = '0.8.0'.freeze
   PLUGIN_AUTHOR   = 'ThomThom'.freeze
   
+  # Version information
+  RELEASE_DATE    = '08 Feb 11'.freeze
+  
   # Resource paths
   PATH_ROOT   = File.dirname( __FILE__ ).freeze
   PATH        = File.join( PATH_ROOT, 'TT_QuadFaceTools' ).freeze
   PATH_ICONS  = File.join( PATH, 'Icons' ).freeze
   
   
-  ### EXTENSION ### --------------------------------------------------------
+  ### EXTENSION ### -----------------------------------------------------------
   
   path = File.dirname( __FILE__ )
   core = File.join( PATH, 'core.rb' )
@@ -52,7 +55,7 @@ module TT::Plugins::QuadFaceTools
       :name => PLUGIN_NAME,
       :author => PLUGIN_AUTHOR,
       :version => PLUGIN_VERSION.to_s,
-      :date => '08 Feb 11',   
+      :date => RELEASE_DATE,   
       :description => @ex.description,
       :link_info => 'https://bitbucket.org/thomthom/quadface-tools/'
     }
