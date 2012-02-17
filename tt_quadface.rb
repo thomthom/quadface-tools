@@ -32,7 +32,7 @@ module TT::Plugins::QuadFaceTools
   PATH_ICONS  = File.join( PATH, 'Icons' ).freeze
   
   
-  ### EXTENSION ### -----------------------------------------------------------
+  ### EXTENSION ### ------------------------------------------------------------
   
   path = File.dirname( __FILE__ )
   core = File.join( PATH, 'core.rb' )
