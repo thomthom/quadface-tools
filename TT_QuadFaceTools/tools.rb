@@ -322,6 +322,7 @@ module TT::Plugins::QuadFaceTools
       model = Sketchup.active_model
       model.selection.remove_observer( @selection_observer )
       model.selection.add_observer( @selection_observer )
+      @vcb_text = ''
       update_ui()
       model.active_view.invalidate
     end
@@ -408,6 +409,7 @@ module TT::Plugins::QuadFaceTools
     
     # @since 0.3.0
     def onCancel( reason, view )
+      @vcb_text = ''
       update_ui()
     end
     
@@ -422,7 +424,7 @@ module TT::Plugins::QuadFaceTools
     end
     
     # @since 0.3.0
-    def onUserText( text, view )
+    def onUserText( text, view, vcb = false )
       if @window.active_control == @txt_splits
         # Splits
         segments = text.to_i
@@ -451,6 +453,7 @@ module TT::Plugins::QuadFaceTools
       UI.beep
       raise
     ensure
+      @vcb_text = '' unless vcb
       update_ui()
     end
     
@@ -465,6 +468,32 @@ module TT::Plugins::QuadFaceTools
       @key_shift = true if key == CONSTRAIN_MODIFIER_KEY
       onSetCursor() # This blocks the VCB. (But "p onSetCursor()" does not.. ? )
       false # The VCB is not blocked as long as onSetCursor isn't the last call.
+      # @since 0.8.0
+      # (?) Remove VCB feature and only use key events?
+      #puts "key: #{key}"
+      control = @window.active_control
+      return false unless control.is_a?( GL_Textbox )
+      if key == 9 # Tab
+        if @window.active_control == @txt_splits
+          @txt_pinch.set_focus
+        else
+          @txt_splits.set_focus
+        end
+        view.invalidate
+        return false
+      elsif key == 8 # Backspace
+        @vcb_text = @vcb_text.chop
+      elsif ( 96..105 ).include?( key ) # 0-9
+        character = ( key - 48 ).chr
+        #puts "Char: #{character}"
+        @vcb_text << character
+      elsif key == 109 # - (minus)
+        @vcb_text << '-'
+      else
+        return false
+      end
+      onUserText( @vcb_text, view, true )
+      false
     end
     
     # @since 0.3.0
