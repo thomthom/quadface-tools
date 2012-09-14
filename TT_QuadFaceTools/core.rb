@@ -487,8 +487,8 @@ module TT::Plugins::QuadFaceTools
         sub_menu.add_separator
         sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
         sub_menu.add_item( cmd_convert_legacy_quads )
-        m.add_separator
-        m.add_item( cmd_build_corners )
+        #m.add_separator
+        #m.add_item( cmd_build_corners )
       end
     }
     
