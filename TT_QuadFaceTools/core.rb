@@ -366,6 +366,14 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Unwrap UV Grid'
     cmd_unwrap_uv_grid = cmd
     @commands[:unwrap_uv_grid] = cmd
+
+    cmd = UI::Command.new( 'Line' )   { self.line_tool }
+    cmd.small_icon = File.join( PATH_ICONS, 'Line_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'Line_24.png' )
+    cmd.status_bar_text = 'Draw edges from point to point.'
+    cmd.tooltip = 'Line'
+    cmd_line = cmd
+    @commands[:line_tool] = cmd
     
     cmd = UI::Command.new( 'Context Menu' )  {
       @settings[ :context_menu ] = !@settings[ :context_menu ]
@@ -426,6 +434,8 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_uv_paste )
     m.add_item( cmd_unwrap_uv_grid )
     m.add_separator
+    m.add_item( cmd_line )
+    m.add_separator
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
     sub_menu.add_separator
@@ -480,6 +490,8 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_uv_paste )
         m.add_item( cmd_unwrap_uv_grid )
         m.add_separator
+        m.add_item( cmd_line )
+        m.add_separator
         sub_menu = m.add_submenu( 'Convert' )
         sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
         sub_menu.add_separator
@@ -531,6 +543,8 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_separator
     toolbar.add_item( cmd_smooth_quad_mesh )
     toolbar.add_item( cmd_unsmooth_quad_mesh )
+    toolbar.add_separator
+    toolbar.add_item( cmd_line )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -595,6 +609,11 @@ module TT::Plugins::QuadFaceTools
   # @since 0.7.0
   def self.wireframe_to_quad_tool
     Sketchup.active_model.select_tool( WireframeToQuadsTool.new )
+  end
+
+  # @since 0.8.0
+  def self.line_tool
+    Sketchup.active_model.select_tool( LineTool.new )
   end
   
   

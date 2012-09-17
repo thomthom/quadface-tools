@@ -7,6 +7,427 @@
 
 module TT::Plugins::QuadFaceTools
   
+  # @since 0.8.0
+  class LineTool
+  
+    # @since 0.8.0
+    def initialize
+      @ip_mouse = Sketchup::InputPoint.new
+      @ip_start = Sketchup::InputPoint.new
+
+      @cursor = TT::Cursor.get_id( :pencil )
+    end
+    
+    # @since 0.8.0
+    def enableVCB?
+      true
+    end
+    
+    # @since 0.8.0
+    def activate
+      @vcb_length = nil
+      reset()
+      Sketchup.active_model.active_view.invalidate
+    end
+    
+    # @since 0.8.0
+    def resume( view )
+      update_ui()
+      view.invalidate
+    end
+    
+    # @since 0.8.0
+    def deactivate( view )
+      view.invalidate
+    end
+    
+    # @since 0.8.0
+    def onUserText( text, view )
+      #begin
+      #  max_angle = TT::Locale.string_to_float( text ).degrees
+      #rescue
+      #  max_angle = @max_angle
+      #end
+      # (!)
+      update_ui()
+      view.invalidate
+    end
+    
+    # @since 0.8.0
+    #def onReturn( view )
+      # (!)
+    #build_ends
+
+    # @since 0.8.0
+    def onCancel( reason, view )
+      # 0: the user canceled the current operation by hitting the escape key.
+      # 1: the user re-selected the same tool from the toolbar or menu.
+      # 2: the user did an undo while the tool was active.
+      reset()
+      view.invalidate
+    end
+
+    # @since 0.8.0
+    def onLButtonDown( flags, x, y, view )
+      if @ip_start.valid? && @ip_mouse.valid?
+        view.model.start_operation( 'Draw Line', true )
+        # Split existing geometry.
+        split = split_faces( @ip_start, @ip_mouse )
+        # Draw Edge.
+        cached_size = view.model.active_entities.length
+        pt1 = @ip_start.position
+        pt2 = @ip_mouse.position
+        edge = split || view.model.active_entities.add_line( pt1, pt2 )
+        reuse_edge = ( view.model.active_entities.length - cached_size ) == 0
+        # Edge will not be created if length is zero.
+        if edge
+          #new_faces = find_faces( edge )
+          new_faces = false
+          view.model.commit_operation
+          if reuse_edge || split || new_faces
+            reset()
+            view.invalidate
+            return
+          end
+        else
+          # It appear that SketchUp omits empty operations on the Undo stack,
+          # but for safety the operationis aborted.
+          view.model.abort_operation
+        end
+      end
+      if @ip_mouse.valid?
+        @ip_start.copy!( @ip_mouse )
+      end
+      unlock_axis( view )
+      view.invalidate
+    end
+    
+    # @since 0.8.0
+    def onMouseMove( flags, x, y, view )
+      if @ip_start.valid?
+        @ip_mouse.pick( view, x, y, @ip_start )
+        # VCB
+        pt1 = @ip_start.position
+        pt2 = @ip_mouse.position
+        @vcb_length = pt1.distance( pt2 ).to_s
+        update_ui()
+      else
+        @ip_mouse.pick( view, x, y )
+      end
+      view.tooltip = @ip_mouse.tooltip
+      view.invalidate
+    end
+
+    # @since 0.8.0
+    def onKeyDown( key, repeat, flags, view )
+      case key
+      when CONSTRAIN_MODIFIER_KEY
+        if @ip_start.valid? && @ip_mouse.valid?
+          view.lock_inference( @ip_start, @ip_mouse )
+        elsif @ip_mouse.valid?
+          view.lock_inference( @ip_mouse )
+        end
+      when VK_UP, VK_DOWN
+        lock_axis( view, [0,0,1] )
+      when VK_LEFT
+        lock_axis( view, [0,1,0] )
+      when VK_RIGHT
+        lock_axis( view, [1,0,0] )
+      end
+      view.invalidate
+    end
+
+    # @since 0.8.0
+    def onKeyUp( key, repeat, flags, view )
+      case key
+      when CONSTRAIN_MODIFIER_KEY
+        view.lock_inference
+        unlock_axis( view )
+      end
+      view.invalidate
+    end
+    
+    # @since 0.8.0
+    def draw( view )
+      @ip_mouse.draw( view ) if @ip_mouse.display?
+      
+      # Line Preview
+      if @ip_start.valid?
+        pt1 = @ip_start.position
+        pt2 = @ip_mouse.position
+        view.line_stipple = ''
+        view.line_width = ( view.inference_locked? && @axis_lock.nil? ) ? 3 : 1
+        view.set_color_from_line( pt1, pt2 )
+        view.draw( GL_LINES, pt1, pt2 )
+      end
+    end
+
+    # @since 0.8.0
+    def onSetCursor
+      UI.set_cursor( @cursor )
+    end
+    
+    private
+
+    # @param [Sketchup::View] view
+    #
+    # @since 0.8.0
+    def reset( view = Sketchup.active_model.active_view )
+      # Inference
+      view.lock_inference
+      unlock_axis( view )
+      # Inputpoints
+      @ip_start.clear
+      if @ip_mouse.valid?
+        # This mimicks what the native tool appear to do.
+        @ip_mouse = Sketchup::InputPoint.new( @ip_mouse.position )
+      end
+      view.tooltip = ''
+      # UI
+      update_ui()
+    end
+    
+    # @since 0.8.0
+    def update_ui
+      if @ip_start.valid?
+        Sketchup.status_text = 'Select end point or enter value.'
+      else
+        Sketchup.status_text = 'Select start point.'
+      end
+      Sketchup.vcb_label = 'Length'
+      Sketchup.vcb_value = @vcb_length
+    end
+
+    # @param [Sketchup::View] view
+    # @param [Geom::Vector3d] vector
+    #
+    # @since 0.8.0
+    def lock_axis( view, vector )
+      # Unlock
+      if vector == @axis_lock
+        unlock_axis( view )
+        return false
+      end
+      # Lock
+      ip = ( @ip_start.valid? ) ? @ip_start : @ip_mouse
+      return false unless ip.valid?
+      origin = ip.position
+      offset = origin.offset( vector )
+      ip1 = Sketchup::InputPoint.new( origin )
+      ip2 = Sketchup::InputPoint.new( offset )
+      view.lock_inference( ip1, ip2 )
+      @axis_lock = vector
+      true
+    end
+
+    # @param [Sketchup::View] view
+    #
+    # @since 0.8.0
+    def unlock_axis( view )
+      view.lock_inference
+      @axis_lock = nil
+    end
+
+    # @param [Array<Sketchup::Face>] faces
+    # @param [Array<Surface>] surfaces
+    #
+    # @return [Array<Surface>]
+    # @since 0.8.0
+    def get_surfaces( faces, surfaces )
+      faces.map { |face|
+        surfaces.find { |surface| surface.include?( face ) } || face
+      }.uniq
+    end
+
+    # @param [Sketchup::InputPoint] ip1
+    # @param [Sketchup::InputPoint] ip2
+    #
+    # @return [Sketchup::Edge,Nil]
+    # @since 0.8.0
+    def split_faces( ip1, ip2 )
+      native_entities = Sketchup.active_model.active_entities
+      entities = EntitiesProvider.new( native_entities, native_entities )
+
+      e1 = ip1.vertex || ip1.edge
+      e2 = ip2.vertex || ip2.edge
+
+      return nil unless e1 && e2
+
+      # Find all the surfaces connected to the split points. Find the common
+      # shared surface - this is the one we want to split.
+      #
+      # (i) A Surface is currently a mesh with QuadFace.divider_props? - not
+      #     a native SketchUp surface.
+      faces = e1.faces | e2.faces
+      surfaces = Surface.get( faces ).uniq
+
+      e1_faces = get_surfaces( e1.faces, surfaces )
+      e2_faces = get_surfaces( e2.faces, surfaces )
+      common_faces = e1_faces & e2_faces
+
+      return nil if common_faces.empty?
+
+      # (?) Can there be more than one?
+      if common_faces.size != 1
+        raise ArgumentError, "Unexpected number of common faces: #{common_faces.size}"
+      end
+
+      common_face = common_faces.first
+
+      # Cache properties.
+      material      = common_face.material
+      back_material = common_face.back_material
+      normal        = common_face.normal
+
+      # Calculate loops for new faces.
+      #
+      # If we're looking for the second split the points are added to the
+      # front of the stack. That way we get an array where the points are two
+      # set of sorted vertices representing face loops.
+      vertices = common_face.vertices
+      inputpoints = [ @ip_start, @ip_mouse ]
+      points = []
+      stack = vertices.dup << vertices.first
+      until stack.empty?
+        vertex = stack.shift
+        break if stack.empty? # Skip the last one
+
+        next_vertex = stack.first
+        next if new_points = split( vertex, next_vertex, points, inputpoints )
+
+        if inputpoints.size == 1
+          points.unshift( vertex )
+        else
+          points << vertex
+        end
+      end # until
+
+      # Find where we need to split the points in order to obtain the two loops.
+      #
+      # The split-index will depend if the first vertex where split or not - in
+      # which case the index needs to be adjusted.
+      start = vertices.first
+      split_start = points.select { |vertex| vertex == start }.size == 2
+      index = points.index( start )
+
+      face1_size = ( split_start ) ? index + 1 : index
+      face2_size  = points.size - face1_size
+
+      #puts "> split_start: #{split_start}"
+      #puts "> index: #{index}"
+      #puts "> points.size: #{points.size}"
+      #puts "> face1_size: #{face1_size}"
+      #puts "> face2_size: #{face2_size}"
+
+      # From here on we need Point3d objects instead of vertices.
+      points.map! { |n| ( n.is_a?(Sketchup::Vertex) ) ? n.position : n }
+
+      # Extract the two point-sets representing the face loops.
+      face_points = []
+      face_points << points[ 0, face1_size ].reverse
+      face_points << points[ face1_size, face2_size ]
+
+      # Remove old face and create new ones.
+      common_face.erase!
+      edge = entities.add_line( ip1.position, ip2.position )
+      for new_face_points in face_points
+        face = entities.add_surface( new_face_points )
+        # Orient normals to be the same as original.
+        if normal % face.normal < 0.0
+          face.reverse!
+        end
+        # Transfer properties.
+        face.material = material
+        face.back_material = back_material
+      end
+
+      edge
+    end
+
+    # @param [Sketchup::Vertex] vertex
+    # @param [Sketchup::Vertex] next_vertex
+    # @param [Array<Sketchup::Vertex>] points
+    # @param [Array<Sketchup::InputPoint>] inputpoints
+    #
+    # return [Integer, Nil]
+    # @since 0.8.0
+    def split( vertex, next_vertex, points, inputpoints )
+      nsize = points.size
+      next_edge = ( vertex.edges & next_vertex.edges ).first
+      for ip in inputpoints
+        entity = ip.vertex || ip.edge
+        if entity.is_a?( Sketchup::Vertex )
+          if vertex == entity
+            if inputpoints.size == 1
+              points.unshift( vertex )
+              points << vertex
+            else
+              points << vertex
+              points.unshift( vertex )
+            end
+            inputpoints.delete( ip )
+            return points.size - nsize
+          end
+        elsif entity.is_a?( Sketchup::Edge )
+          if entity == next_edge
+            split_point = ip.position
+            if inputpoints.size == 1
+              points.unshift( vertex )
+              points.unshift( split_point )
+              points << split_point
+            else
+              points << vertex
+              points << split_point
+              points.unshift( split_point )
+            end
+            inputpoints.delete( ip )
+            return points.size - nsize
+          end
+        end
+      end # for
+      nil
+    end
+
+    # @param [Sketchup::Edge] edge
+    #
+    # return [Boolean]
+    # @since 0.8.0
+    def find_faces( edge )
+      native_entities = edge.parent.entities
+      entities = EntitiesProvider.new( native_entities, native_entities )
+      result = []
+      v1, v2 = edge.vertices
+      for v1_edge in v1.edges - [edge]
+        v3 = v1_edge.other_vertex( v1 )
+        for v2_edge in v2.edges - [edge, v1_edge]
+          v4 = v2_edge.other_vertex( v2 )
+          for v3_edge in v3.edges - [v1_edge, v2_edge]
+            if v3_edge.vertices.include?(v3) && v3_edge.vertices.include?(v4)
+              edges = [ edge, v1_edge, v3_edge, v2_edge ]
+              next if has_face?( edges, entities )
+              if v3 == v4
+                result << entities.add_face( v1, v2, v3 )
+              else
+                result << entities.add_quad( edges )
+              end
+            end
+          end
+        end
+      end
+      return !result.empty?
+    end
+
+    # @param [Array<Sketchup::Edge>] edges
+    # @param [EntitiesProvider] entities
+    #
+    # @since 0.8.0
+    def has_face?( edges, entities )
+      faces = edges.map { |edge| entities.get( edge.faces ).uniq }
+      !faces.inject( faces.first ) { |array, face | array & face }.empty?
+    end
+  
+  end # class LineTool
+
   # @since 0.7.0
   class WireframeToQuadsTool
   

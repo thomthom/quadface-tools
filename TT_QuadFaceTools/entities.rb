@@ -11,6 +11,112 @@ module TT::Plugins::QuadFaceTools
   
   # @since 0.2.0
   class InvalidQuadFace < StandardError; end
+
+
+  # @since 0.8.0
+  class Entity
+
+    # @return [Float]
+    # @since 0.8.0
+    def area
+      @faces.inject( 0.0 ) { |sum, face| sum + face.area }
+    end
+
+    # @return [Sketchup::Material]
+    # @since 0.8.0
+    def back_material
+      @faces[0].back_material
+    end
+    
+    # @param [Sketchup::Material] new_material
+    #
+    # @return [Sketchup::Material]
+    # @since 0.8.0
+    def back_material=( new_material )
+      for face in @faces
+        face.back_material = new_material
+      end
+      face.back_material
+    end
+
+    # @return [Array<Sketchup::Face>]
+    # @since 0.8.0
+    def faces
+      @faces.dup
+    end
+
+    # @param [Sketchup::Face] face
+    #
+    # @return [Boolean]
+    # @since 0.8.0
+    def include?( face )
+      @faces.include?( face )
+    end
+    
+    # @return [String]
+    # @since 0.8.0
+    def inspect
+      name = self.class.name.split('::').last
+      hex_id = TT.object_id_hex( self )
+      "#<#{name}:#{hex_id}>"
+    end
+
+    # @return [Sketchup::Material]
+    # @since 0.8.0
+    def material
+      @faces[0].material
+    end
+    
+    # @param [Sketchup::Material] new_material
+    #
+    # @return [Sketchup::Material]
+    # @since 0.8.0
+    def material=( new_material )
+      for face in @faces
+        face.material = new_material
+      end
+      face.material
+    end
+
+    # @return [Sketchup::Model]
+    # @since 0.8.0
+    def model
+      @faces[0].model
+    end
+
+    # @return [Geom::Vector3d]
+    # @since 0.8.0
+    def normal
+      x = y = z = 0.0
+      for face in @faces
+        vector = face.normal
+        x += vector.x
+        y += vector.y
+        z += vector.z
+      end
+      nfaces = @faces.size
+      x /= nfaces
+      y /= nfaces
+      z /= nfaces
+      Geom::Vector3d.new( x, y, z )
+    end
+
+    # @return [Sketchup::Entities]
+    # @since 0.8.0
+    def parent
+      @faces[0].parent
+    end
+
+    # @since 0.8.0
+    def reverse!
+      for face in @faces
+        face.reverse!
+      end
+      self
+    end
+    
+  end # class Entity
+
   
   # Wrapper class for making handling of quad faces easier. Since a quad face
   # might be triangulated, this class allows the possibly multiple native
@@ -21,7 +127,7 @@ module TT::Plugins::QuadFaceTools
   # * Two triangular faces joined by a soft edge bound by non-soft edges.
   #
   # @since 0.1.0
-  class QuadFace
+  class QuadFace < Entity
     
     # @param [Sketchup::Entity] entity
     #
@@ -220,28 +326,6 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
-    # @return [Float]
-    # @since 0.4.0
-    def area
-      @faces.inject( 0.0 ) { |sum, face| sum + face.area }
-    end
-    
-    # @return [Sketchup::Material]
-    # @since 0.3.0
-    def back_material
-      @faces[0].back_material
-    end
-    
-    # @param [Sketchup::Material] new_material
-    #
-    # @return [Sketchup::Material]
-    # @since 0.3.0
-    def back_material=( new_material )
-      for face in @faces
-        face.back_material = new_material
-      end
-      face.back_material
-    end
     
     # @param [#edges] quadface
     #
@@ -374,12 +458,6 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
-    # @return [Array<Sketchup::Face>]
-    # @since 0.1.0
-    def faces
-      @faces.dup
-    end
-    
     # @return [Boolean]
     # @since 0.3.0
     def flip_edge
@@ -438,39 +516,6 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
-    # @param [Sketchup::Face] face
-    #
-    # @return [Boolean]
-    # @since 0.1.0
-    def include?( face )
-      @faces.include?( face )
-    end
-    
-    # @return [Sketchup::Material]
-    # @since 0.3.0
-    def material
-      @faces[0].material
-    end
-    
-    # @param [Sketchup::Material] new_material
-    #
-    # @return [Sketchup::Material]
-    # @since 0.1.0
-    def material=( new_material )
-      for face in @faces
-        face.material = new_material
-      end
-      face.material
-    end
-    
-    # @return [String]
-    # @since 0.1.0
-    def inspect
-      name = self.class.name.split('::').last
-      hex_id = TT.object_id_hex( self )
-      "#<#{name}:#{hex_id}>"
-    end
-    
     # @return [Geom::PolygonMesh]
     # @since 0.1.0
     def mesh
@@ -487,13 +532,7 @@ module TT::Plugins::QuadFaceTools
         pm1
       end
     end
-    
-    # @return [Sketchup::Model]
-    # @since 0.6.0
-    def model
-      @faces[0].model
-    end
-    
+        
     # @return [Sketchup::Edge,nil]
     # @since 0.5.0
     def next_edge( edge )
@@ -539,12 +578,6 @@ module TT::Plugins::QuadFaceTools
         sorted.reverse! if sorted[0].reversed_in?( face )
         sorted
       end
-    end
-    
-    # @return [Sketchup::Entities]
-    # @since 0.6.0
-    def parent
-      @faces[0].parent
     end
     
     # @return [Boolean]
@@ -736,7 +769,7 @@ module TT::Plugins::QuadFaceTools
   
   
   # @since 0.7.0
-  class Surface
+  class Surface < Entity
     
     # @param [Sketchup::Entity] face
     #
@@ -744,18 +777,20 @@ module TT::Plugins::QuadFaceTools
     # @since 0.7.0
     def self.get( entities )
       cache = {}
-      entities.map { |e|
+      surfaces = []
+      for e in entities.map
         next if cache.include?( e )
         if e.is_a?( Sketchup::Face )
           surface = Surface.new( e )
           for face in surface.faces
             cache[ face ] = face
           end
-          surface
+          surfaces << surface
         else
-          e
+          surfaces << e
         end
-      }
+      end
+      surfaces
     end
     
     # @param [Sketchup::Face] face
@@ -784,20 +819,6 @@ module TT::Plugins::QuadFaceTools
         entities = @faces[0].parent.entities
         entities.erase_entities( @faces )
       end
-    end
-    
-    # @return [Array<Sketchup::Face>]
-    # @since 0.7.0
-    def faces
-      @faces.dup
-    end
-    
-    # @return [String]
-    # @since 0.7.0
-    def inspect
-      name = self.class.name.split('::').last
-      hex_id = TT.object_id_hex( self )
-      "#<#{name}:#{hex_id}>"
     end
     
     # @return [Array<Array<Sketchup::Edge>>]
@@ -1116,7 +1137,7 @@ module TT::Plugins::QuadFaceTools
         end
       elsif args.size == 4 && args.all? { |a| a.is_a?( Sketchup::Edge ) }
         # Edges
-        loop = TT::Edges.sort_edges( args )
+        loop = TT::Edges.sort( args )
         vertices = TT::Edges.sort_vertices( loop )
         points = vertices.map { |v| v.position }
       elsif args.size == 4 && args.all? { |a| a.is_a?( Geom::Point3d ) }
@@ -1141,6 +1162,60 @@ module TT::Plugins::QuadFaceTools
       end
     end
     
+    # @since 0.8.0
+    def add_surface( points )
+      entities = parent
+      if TT::Geom3d.planar_points?( points )
+        face = entities.add_face( points )
+        Surface.new( face )
+      else
+        # Create a planar mesh to use for triangulation.
+        plane = Geom.fit_plane_to_points( points )
+        planar_points = points.map { |pt| pt.project_to_plane( plane ) }
+        tempgroup = entities.add_group
+        tempface = tempgroup.entities.add_face( planar_points )
+        mesh = tempface.mesh
+        tempgroup.erase!
+        # Extract trangles.
+        indexes = {}
+        planar_points.each_with_index { |pt, i|
+          index = mesh.point_index( pt )
+          indexes[ index ] = points[ i ]
+        }
+        # Rebuild with original points.
+        triangles = []
+        for triangle in mesh.polygons
+          triangle_points = triangle.map { |i| indexes[i.abs] }
+          triangles << entities.add_face( triangle_points )
+        end
+        # Orient normals.
+        stack = triangles.dup
+        base_normal = stack.shift.normal
+        until stack.empty?
+          face = stack.shift
+          if face.normal % base_normal < 0
+            face.reverse!
+          end
+        end
+        # Smooth inner edges.
+        inner = []
+        stack = triangles.dup
+        until stack.empty?
+          current = stack.shift
+          for face in stack
+            edges = face.edges & current.edges
+            inner.concat( edges )
+          end
+        end
+        inner.uniq!
+        for edge in inner
+          QuadFace.set_divider_props( edge )
+        end
+        # Return a Surface entity.
+        Surface.new( triangles.first )
+      end
+    end
+
     # @since 0.6.0
     def all
       @types.values.map { |hash| hash.keys }.flatten
