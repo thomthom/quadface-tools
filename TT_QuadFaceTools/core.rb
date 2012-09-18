@@ -722,6 +722,9 @@ module TT::Plugins::QuadFaceTools
       soft_prop = edge.soft?
       smooth_prop = edge.smooth?
       hidden_prop = edge.hidden?
+      # Cache materials for later transfer.
+      material      = hexagon.material
+      back_material = hexagon.back_material
       #   Get the positions of the source edge in the correct order.
       next_edge = hexagon.next_edge( edge )
       vc = TT::Edges.common_vertex( edge, next_edge )
@@ -766,10 +769,16 @@ module TT::Plugins::QuadFaceTools
         e.smooth = smooth_prop
         e.hidden = hidden_prop
       }
-      provider.add_quad( pt1, pt2, ipt2, ipt1 )
-      provider.add_quad( e1pt1, e1pt2, ipt1, pt1 )
-      provider.add_quad( e2pt1, e2pt2, ipt2, pt2 )
-      provider.add_quad( e1pt2, e2pt2, ipt2, ipt1 )
+      new_faces = []
+      new_faces << provider.add_quad( pt1, pt2, ipt2, ipt1 )
+      new_faces << provider.add_quad( e1pt1, e1pt2, ipt1, pt1 )
+      new_faces << provider.add_quad( e2pt1, e2pt2, ipt2, pt2 )
+      new_faces << provider.add_quad( e1pt2, e2pt2, ipt2, ipt1 )
+      # Transfer materials.
+      for face in new_faces
+        face.material      = material
+        face.back_material = back_material
+      end
       # (!) Transfer UV mapping.
     end
     model.commit_operation
@@ -796,9 +805,14 @@ module TT::Plugins::QuadFaceTools
       next unless triangle && pentagon
       # Copy the soft, smooth and hidden properties of the source edge to the
       # new edges.
-      soft_prop = edge.soft?
+      soft_prop   = edge.soft?
       smooth_prop = edge.smooth?
       hidden_prop = edge.hidden?
+      # Copy the material to the new faces.
+      tri_material      = triangle.material
+      tri_back_material = triangle.back_material
+      pen_material      = pentagon.material
+      pen_back_material = pentagon.back_material
       # Find the edges 1 edge away from the source edge.
       loop = pentagon.outer_loop
       index = loop.index( edge )
@@ -851,9 +865,16 @@ module TT::Plugins::QuadFaceTools
         e.smooth = smooth_prop
         e.hidden = hidden_prop
       }
-      provider.add_quad( pts2[1], pts2[0], intersect, pt1 )
-      provider.add_quad( pts1[1], pts1[0], intersect, pt2 )
-      provider.add_quad( tri_pt, pt1, intersect, pt2 )
+      f1 = provider.add_quad( pts2[1], pts2[0], intersect, pt1 )
+      f2 = provider.add_quad( pts1[1], pts1[0], intersect, pt2 )
+      f3 = provider.add_quad( tri_pt, pt1, intersect, pt2 )
+      # Transfer materials.
+      f1.material      = pen_material
+      f1.back_material = pen_back_material
+      f2.material      = pen_material
+      f2.back_material = pen_back_material
+      f3.material      = tri_material
+      f3.back_material = tri_back_material
       # (!) Transfer UV mapping.
     end
     model.commit_operation
