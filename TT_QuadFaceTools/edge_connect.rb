@@ -270,6 +270,10 @@ module TT::Plugins::QuadFaceTools
         # 4 = X junction
         odd = splits % 2 == 1
         
+        # Cache properties
+        material = quadface.material
+        back_material = quadface.back_material
+
         # Erase original
         quadface.erase!
         
@@ -287,6 +291,9 @@ module TT::Plugins::QuadFaceTools
           edge = entities.add_line( line )
           new_edges << edge
         end
+
+        # Collect all faces.
+        faces = []
         
         # Face Strips
         (0...set_count).each { |x|
@@ -294,7 +301,7 @@ module TT::Plugins::QuadFaceTools
             i = ( x * set_size ) + y
             j = i + 1
             pts = lines[i] + lines[j].reverse
-            fill_face( entities, pts )
+            faces << fill_face( entities, pts )
           }
         }
         
@@ -306,7 +313,7 @@ module TT::Plugins::QuadFaceTools
             line1 = lines[set_size-1]
             line2 = lines[-1]
             pts = line1 + line2
-            fill_face( entities, pts )
+            faces << fill_face( entities, pts )
           end
         # Faces ( 3 edges )
         elsif set_count == 3
@@ -315,19 +322,19 @@ module TT::Plugins::QuadFaceTools
             pt1 = lines[set_size-1][0]
             pt2 = lines[set_size+set_size-1][0]
             pt3 = lines[-1][0]
-            entities.add_face( pt1, pt2, pt3 )
+            faces << entities.add_face( pt1, pt2, pt3 )
           else
             line1 = lines[set_size-1]
             line2 = lines[set_size+set_size-1]
             line3 = lines[-1]
             pts = line1 + line2 + line3
             if TT::Geom3d.planar_points?( pts )
-              entities.add_face( pts )
+              faces << entities.add_face( pts )
             else
-              f1 = entities.add_face( pts[0], pts[2], pts[1] )
-              f2 = entities.add_face( pts[0], pts[4], pts[5] )
-              f3 = entities.add_face( pts[2], pts[3], pts[4] )
-              f4 = entities.add_face( pts[0], pts[2], pts[4] )
+              faces << f1 = entities.add_face( pts[0], pts[2], pts[1] )
+              faces << f2 = entities.add_face( pts[0], pts[4], pts[5] )
+              faces << f3 = entities.add_face( pts[2], pts[3], pts[4] )
+              faces << f4 = entities.add_face( pts[0], pts[2], pts[4] )
               f4.edges.each { |e|
                 QuadFace.set_divider_props( e )
               }
@@ -342,7 +349,7 @@ module TT::Plugins::QuadFaceTools
             pt3 = lines[set_size+set_size+set_size-1][0]
             pt4 = lines[-1][0]
             # Points are always planar. (?)
-            entities.add_face( pt1, pt2, pt3, pt4 )
+            faces << entities.add_face( pt1, pt2, pt3, pt4 )
           else
             line1 = lines[set_size-1]
             line2 = lines[set_size+set_size-1]
@@ -350,14 +357,14 @@ module TT::Plugins::QuadFaceTools
             line4 = lines[-1]
             pts = line1 + line2 + line3 + line4
             if TT::Geom3d.planar_points?( pts )
-              entities.add_face( pts )
+              faces << entities.add_face( pts )
             else
-              f1 = entities.add_face( pts[0], pts[1], pts[2] )
-              f2 = entities.add_face( pts[2], pts[3], pts[4] )
-              f3 = entities.add_face( pts[4], pts[5], pts[6] )
-              f4 = entities.add_face( pts[6], pts[7], pts[0] )
-              f5 = entities.add_face( pts[0], pts[2], pts[4] )
-              f6 = entities.add_face( pts[4], pts[6], pts[0] )
+              faces << f1 = entities.add_face( pts[0], pts[1], pts[2] )
+              faces << f2 = entities.add_face( pts[2], pts[3], pts[4] )
+              faces << f3 = entities.add_face( pts[4], pts[5], pts[6] )
+              faces << f4 = entities.add_face( pts[6], pts[7], pts[0] )
+              faces << f5 = entities.add_face( pts[0], pts[2], pts[4] )
+              faces << f6 = entities.add_face( pts[4], pts[6], pts[0] )
               ( f5.edges + f6.edges ).each { |e|
                 QuadFace.set_divider_props( e )
               }
@@ -375,16 +382,23 @@ module TT::Plugins::QuadFaceTools
           # </debug>
           if polygon.size == 5 && !TT::Geom3d.planar_points?( polygon )
             pt1, pt2, pt3, pt4, pt5 = polygon
-            f1 = entities.add_face( pt1, pt2, pt4 )
-            f2 = entities.add_face( pt1, pt4, pt5 )
-            f3 = entities.add_face( pt2, pt3, pt4 )
+            faces << f1 = entities.add_face( pt1, pt2, pt4 )
+            faces << f2 = entities.add_face( pt1, pt4, pt5 )
+            faces << f3 = entities.add_face( pt2, pt3, pt4 )
             edges = ( f1.edges & f2.edges ) + ( f1.edges & f3.edges )
             edges.each { |e|
               QuadFace.set_divider_props( e )
             }
           else
-            fill_face( entities, polygon )
+            faces << fill_face( entities, polygon )
           end
+        end
+
+        # Transfer properties
+        faces.flatten!
+        for face in faces
+          face.material = material
+          face.back_material = back_material
         end
         
         progress.next
@@ -409,10 +423,10 @@ module TT::Plugins::QuadFaceTools
         face2 = entities.add_face( points[0], points[2], points[3] )
         edge = ( face1.edges & face2.edges )[0]
         QuadFace.set_divider_props( edge )
+        [ face1, face2 ]
       else
         entities.add_face( points )
       end
-      nil
     end
     
   end # class EdgeConnect
