@@ -81,8 +81,8 @@ module TT::Plugins::QuadFaceTools
         reuse_edge = ( view.model.active_entities.length - cached_size ) == 0
         # Edge will not be created if length is zero.
         if edge
-          #new_faces = find_faces( edge )
-          new_faces = false
+          new_faces = find_faces( edge )
+          #new_faces = false
           view.model.commit_operation
           if reuse_edge || split || new_faces
             reset()

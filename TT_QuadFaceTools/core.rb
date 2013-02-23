@@ -68,6 +68,7 @@ module TT::Plugins::QuadFaceTools
   require File.join( PATH, 'edge_connect.rb' )
   require File.join( PATH, 'mesh_converter.rb' )
   require File.join( PATH, 'gl.rb' )
+  require File.join( PATH, 'exporter_obj.rb' )
   
   
   ### MENU & TOOLBARS ### ------------------------------------------------------
@@ -374,6 +375,12 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Line'
     cmd_line = cmd
     @commands[:line_tool] = cmd
+
+    cmd = UI::Command.new( 'OBJ Format' ) { ExporterOBJ.export }
+    cmd.status_bar_text = 'Export model or selection to OBJ format.'
+    cmd.tooltip = 'Export to OBJ Format'
+    cmd_export_obj = cmd
+    @commands[:export_obj] = cmd
     
     cmd = UI::Command.new( 'Context Menu' )  {
       @settings[ :context_menu ] = !@settings[ :context_menu ]
@@ -444,6 +451,9 @@ module TT::Plugins::QuadFaceTools
     sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
     sub_menu.add_item( cmd_convert_legacy_quads )
     m.add_separator
+    sub_menu = m.add_submenu( 'Export' )
+    sub_menu.add_item( cmd_export_obj )
+    m.add_separator
     sub_menu = m.add_submenu( 'Preferences' )
     sub_menu.add_item( cmd_toggle_context_menu )
     m.add_separator
@@ -499,8 +509,9 @@ module TT::Plugins::QuadFaceTools
         sub_menu.add_separator
         sub_menu.add_item( cmd_convert_blender_quads_to_sketchup_quads )
         sub_menu.add_item( cmd_convert_legacy_quads )
-        #m.add_separator
-        #m.add_item( cmd_build_corners )
+        m.add_separator
+        sub_menu = m.add_submenu( 'Export' )
+        sub_menu.add_item( cmd_export_obj )
       end
     }
     
