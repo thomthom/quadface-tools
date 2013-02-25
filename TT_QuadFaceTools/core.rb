@@ -376,7 +376,7 @@ module TT::Plugins::QuadFaceTools
     cmd_line = cmd
     @commands[:line_tool] = cmd
 
-    cmd = UI::Command.new( 'OBJ Format' ) { ExporterOBJ.export }
+    cmd = UI::Command.new( 'OBJ Format' ) { ExporterOBJ.new.prompt }
     cmd.status_bar_text = 'Export model or selection to OBJ format.'
     cmd.tooltip = 'Export to OBJ Format'
     cmd_export_obj = cmd

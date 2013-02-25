@@ -770,18 +770,20 @@ module TT::Plugins::QuadFaceTools
   
   # @since 0.7.0
   class Surface < Entity
+
+    attr_reader :faces
     
     # @param [Sketchup::Entity] face
     #
     # @return [Array<Sketchup::Entity,Surface>]
     # @since 0.7.0
-    def self.get( entities )
+    def self.get( entities, sketchup_surface = false  )
       cache = {}
       surfaces = []
       for e in entities.map
         next if cache.include?( e )
         if e.is_a?( Sketchup::Face )
-          surface = Surface.new( e )
+          surface = Surface.new( e, sketchup_surface )
           for face in surface.faces
             cache[ face ] = face
           end
