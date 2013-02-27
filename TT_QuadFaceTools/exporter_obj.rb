@@ -20,10 +20,14 @@ module TT::Plugins::QuadFaceTools
     GROUP_BY_GROUPS  = 'g'.freeze
     GROUP_BY_OBJECTS = 'o'.freeze
 
+    NO_MATERIAL = -1
+
     # @since 0.8.0
     def initialize
       @vertex_index = 1
       @smoothing_index = 1
+      @materials = {}
+      @last_material = NO_MATERIAL
     end
 
     # @since 0.8.0
@@ -45,17 +49,26 @@ module TT::Plugins::QuadFaceTools
       model = Sketchup.active_model
       name = model_name( model )
 
+      Sketchup.status_text = 'Exporting OBJ file...'
+      material_library = material_library_filename( filename )
+      material_library_basename = File.basename( material_library )
       File.open( filename, 'wb+' ) { |file|
         sketchup_name = ( Sketchup.is_pro? ) ? 'SketchUp Pro' : 'SketchUp'
         file.puts "# Exported with #{PLUGIN_NAME} (#{PLUGIN_VERSION})"
         file.puts "# #{sketchup_name} #{Sketchup.version}"
         file.puts "# Model name: #{name}"
+        file.puts "# Units: Inches"
+        file.puts ''
+        file.puts "mtllib #{material_library_basename}"
         
         tr = model.edit_transform
         entities = model.active_entities
         object_name = obj_compatible_name( name )
         write_entities( file, object_name, entities, tr, group_type )
       }
+      Sketchup.status_text = 'Exporting material library for OBJ file...'
+      write_material_library( material_library, model, name )
+      Sketchup.status_text = 'Done!'
 
       true
     end
@@ -92,7 +105,7 @@ module TT::Plugins::QuadFaceTools
       unless smoothing_groups.empty?
         file.puts ''
         file.puts "#{group_type} #{name}"
-        for surface in smoothing_groups
+        for surface in sort_surfaces_by_material( smoothing_groups )
           write_surface( file, surface, transformation, vertices )
         end
       end
@@ -109,10 +122,37 @@ module TT::Plugins::QuadFaceTools
       vertices.size
     end
 
+    # In order to optimize the OBJ file the surfaces are sorted by material.
+    # It is only "surfaces" containing only one face that is sorted. The
+    # surfaces with more than one face is sorted within their smoothing group.
+    #
+    # @since 0.8.0
+    def sort_surfaces_by_material( surfaces )
+      surfaces.sort { |a,b|
+        if a.size == 1 && b.size == 1
+
+          if a[0].material.nil?
+            -1
+          elsif b[0].material.nil?
+            1
+          else
+            a[0].material <=> b[0].material
+          end
+
+        elsif a.size == 1
+          -1
+        elsif b.size == 1
+          1
+        else
+          0
+        end
+      }
+    end
+
     # @since 0.8.0
     def write_surface( file, surface, transformation, vertices )
       # Collect vertices and faces.
-      faces = []
+      material_groups = {}
       new_vertices = []
       for face in surface
         # Build vertex index.
@@ -125,7 +165,10 @@ module TT::Plugins::QuadFaceTools
         end
         # Build face definition.
         # (!) Sort by material.
-        faces << outer_loop.map { |vertex| vertices[ vertex ] }.join(' ')
+        #faces << outer_loop.map { |vertex| vertices[ vertex ] }.join(' ')
+        polygon = outer_loop.map { |vertex| vertices[ vertex ] }.join(' ')
+        material_groups[ face.material ] ||= []
+        material_groups[ face.material ] << polygon
       end
 
       # Enable smoothing for each group only if it has more than one face.
@@ -145,9 +188,12 @@ module TT::Plugins::QuadFaceTools
       end
 
       # Write face definitions.
-      file.puts '' if !faces.empty? && !new_vertices.empty?
-      for face in faces
-        file.puts "f #{face}"
+      file.puts '' if !material_groups.empty? && !new_vertices.empty?
+      for material, polygons in material_groups
+        set_active_material( file, material )
+        for polygon in polygons
+          file.puts "f #{polygon}"
+        end
       end
 
       # Turn off smoothing after each surface.
@@ -156,6 +202,104 @@ module TT::Plugins::QuadFaceTools
         file.puts "s off"
         @smoothing_index += 1
       end
+    end
+
+    # @since 0.8.0
+    def write_material_library( filename, model, modelname )
+      return false if @materials.empty?
+
+      File.open( filename, 'wb+' ) { |file|
+        sketchup_name = ( Sketchup.is_pro? ) ? 'SketchUp Pro' : 'SketchUp'
+        file.puts "# Exported with #{PLUGIN_NAME} (#{PLUGIN_VERSION})"
+        file.puts "# #{sketchup_name} #{Sketchup.version}"
+        file.puts "# Model name: #{modelname}"
+        
+        for material, name in @materials
+          color = get_material_color( material, model )
+          ambient_color  = format_material_color( [0,0,0] )
+          diffuse_color  = format_material_color( color )
+          specular_color = sprintf( '%.6f %.6f %.6f', 0.33, 0.33, 0.33 ) # SU values
+          opacity        = format_material_opacity( material )
+          file.puts ''
+          file.puts "newmtl #{name}"
+          file.puts "Ka #{ambient_color}"
+          file.puts "Kd #{diffuse_color}"
+          file.puts "Ks #{specular_color}"
+          file.puts "d #{opacity}" if opacity
+        end
+      }
+
+      @materials.clear
+      @last_material = NO_MATERIAL
+      true
+    end
+
+    # @since 0.8.0
+    def material_library_filename( obj_file_name )
+      path = File.dirname( obj_file_name )
+      basename = File.basename( obj_file_name, '.obj' )
+      filename = File.join( path, "#{basename}.mtl" )
+    end
+
+    # @since 0.8.0
+    def get_material_color( material, model )
+      if material
+        material.color
+      else
+        model.rendering_options['FaceFrontColor']
+      end
+    end
+
+    # @since 0.8.0
+    def format_material_color( color )
+      rgb = color.to_a[0..2].map { |i| i / 255.0 }
+      sprintf( '%.6f %.6f %.6f', *rgb )
+    end
+
+    # @since 0.8.0
+    def format_material_opacity( material )
+      opacity = ( material ) ? material.alpha : 1.0
+      if opacity == 1
+        nil
+      else
+        sprintf( '%.6f', opacity )
+      end
+    end
+
+    # @since 0.8.0
+    def set_active_material( file, material )
+      unless @materials.key?( material )
+        model = Sketchup.active_model
+        @materials[ material ] = get_obj_material_name( material, model )
+      end
+      return nil if @last_material == material
+      name = @materials[ material ]
+      file.puts ''
+      file.puts "usemtl #{name}"
+      file.puts ''
+      @last_material = material
+      name
+    end
+
+    # @since 0.8.0
+    def get_obj_material_name( material, model )
+      if material
+        name = material.name
+      else
+        name = get_unique_material_name( model, 'FrontColor' )
+      end
+      obj_compatible_name( name )
+    end
+
+    # @since 0.8.0
+    def get_unique_material_name( model, string )
+      name = string
+      index = 0
+      while model.materials[ name ]
+        name = "#{string}_#{index}"
+        index += 1
+      end
+      name
     end
 
     # @since 0.8.0
