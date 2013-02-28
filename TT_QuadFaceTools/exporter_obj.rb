@@ -10,52 +10,83 @@ module TT::Plugins::QuadFaceTools
   # @see http://en.wikipedia.org/wiki/Wavefront_.obj_file
   # @see http://www.fileformat.info/format/wavefrontobj/egff.htm
   # @see http://www.martinreddy.net/gfx/3d/OBJ.spec
+  # @see http://paulbourke.net/dataformats/obj/
   #
   # @since 0.8.0
   class ExporterOBJ
 
-    EXPORTER_VERSION = '0.1.0'.freeze
+    EXPORTER_VERSION = '0.2.0'.freeze
 
+    # Geom::PolygonMesh
     POLYGON_MESH_POINTS     = 0b000
     POLYGON_MESH_UVQ_FRONT  = 0b001
     POLYGON_MESH_UVQ_BACK   = 0b010
     POLYGON_MESH_NORMALS    = 0b100
     POLYGON_MESH_EVERYTHING = 0b111
 
+    # OBJ grouping alternatives.
     GROUP_BY_GROUPS  = 'g'.freeze
     GROUP_BY_OBJECTS = 'o'.freeze
 
     NO_MATERIAL = -1
+
+    # Matches Sketchup.active_model.options['UnitsOptions']['LengthUnit']
+    UNIT_METERS      =  4
+    UNIT_CENTIMETERS =  3
+    UNIT_MILLIMETERS =  2
+    UNIT_FEET        =  1
+    UNIT_INCHES      =  0
+    UNIT_MODEL       = -1
+
+    # Mirrors Sketchup::Importer constants
+    EXPORT_SUCCESS  = 0
+    EXPORT_FAIL     = 1
+    EXPORT_CANCELED = 2
 
     # @since 0.8.0
     def initialize
       reset()
     end
 
+    # @return [Integer]
     # @since 0.8.0
     def prompt
-      # Prompt for file to write to.
-      model = Sketchup.active_model
-      name = model_name( model )
+      name = model_name( Sketchup.active_model )
       filename = UI.savepanel( 'Export OBJ File', nil, "#{name}.obj" )
-      return false unless filename
+      return EXPORT_CANCELED unless filename
 
-      export( filename )
+      if filename.split('.').last != 'obj'
+        filename = "#{filename}.obj"
+      end
 
-      UI.messagebox("Exported to #{filename}")
+      # (!) Prompt for options.
+      # @see https://github.com/SketchUp/sketchup-stl/blob/master/src/sketchup-stl/exporter.rb#L149
+
+      if export( filename )
+        UI.messagebox( "Exported to #{filename}" )
+        EXPORT_SUCCESS
+      else
+        UI.messagebox( "Failed to export #{filename}" )
+        EXPORT_FAIL
+      end
     end
 
+    # @param [String] filename
+    # @param [Hash] options
+    #
+    # @return [Boolean]
     # @since 0.8.0
-    def export( filename, group_type = GROUP_BY_OBJECTS )
+    def export( filename, options = {} )
       reset()
+      @options.merge!( options )
 
       model = Sketchup.active_model
       name = model_name( model )
       filename = File.expand_path( filename )
 
       Sketchup.status_text = 'Exporting OBJ file...'
-      material_library = material_library_filename( filename )
-      material_library_basename = File.basename( material_library )
+      mtl_filename = material_library_filename( filename )
+      mtl_basename = File.basename( mtl_filename )
       File.open( filename, 'wb+' ) { |file|
         sketchup_name = ( Sketchup.is_pro? ) ? 'SketchUp Pro' : 'SketchUp'
         file.puts "# Exported with #{PLUGIN_NAME} (#{PLUGIN_VERSION})"
@@ -63,15 +94,15 @@ module TT::Plugins::QuadFaceTools
         file.puts "# Model name: #{name}"
         file.puts "# Units: Inches"
         file.puts ''
-        file.puts "mtllib #{material_library_basename}"
+        file.puts "mtllib #{mtl_basename}"
         
-        tr = model.edit_transform
+        tr = model.edit_transform.inverse
         entities = model.active_entities
         object_name = obj_compatible_name( name )
-        write_entities( file, object_name, entities, tr, group_type )
+        write_entities( file, object_name, entities, tr )
       }
       Sketchup.status_text = 'Exporting material library for OBJ file...'
-      write_material_library( material_library, model, name )
+      write_material_library( mtl_filename, model, name )
       Sketchup.status_text = 'Done!'
 
       reset() # Clean up references for GC.
@@ -80,19 +111,36 @@ module TT::Plugins::QuadFaceTools
 
     private
 
+    # @return [Nil]
     # @since 0.8.0
     def reset
-      @vertex_index = 1
-      @uvs = TT::JSON.new # UV Index: Key = UV, Value = UV
+      @options = {
+        :units        => UNIT_INCHES,
+        :group_type   => GROUP_BY_OBJECTS,
+        :up           => Z_AXIS,
+        :texture_maps => true,
+        :triangulate  => false,
+        :selection    => false
+      }
+
+      @vertices = TT::JSON.new # Vertex => Index
+      @uvs = TT::JSON.new      #     UV => Index
 
       @smoothing_index = 1
 
-      @materials = {} # Key = Material, Value = OBJ_Name
+      @materials = {} # Material => OBJ_Name
       @last_material = NO_MATERIAL
+      nil
     end
 
+    # @param [File] file
+    # @param [String] name
+    # @param [Array<Sketchup::Entity>, Sketchup::Entities] native_entities
+    # @param [Geom::Transformation] transformation
+    #
+    # @return [Integer]
     # @since 0.8.0
-    def write_entities( file, name, native_entities, transformation, group_type )
+    def write_entities( file, name, native_entities, transformation )
       # Traverse the mesh and identify smoothing groups. Smoothing groups are
       # extracted by the Surface class and each surface must be processed
       # by the entity provider in order to extract the quads and other faces
@@ -101,7 +149,6 @@ module TT::Plugins::QuadFaceTools
       surfaces = Surface.get( native_entities, true )
 
       # Collect geometry data.
-      vertices = TT::JSON.new # Ordered Hash
       instances = []
       smoothing_groups = []
       for entity in surfaces
@@ -119,10 +166,11 @@ module TT::Plugins::QuadFaceTools
 
       # Write out the content of this context.
       unless smoothing_groups.empty?
+        group_type = @options[ :group_type ]
         file.puts ''
         file.puts "#{group_type} #{name}"
         for surface in sort_surfaces_by_material( smoothing_groups )
-          write_surface( file, surface, transformation, vertices )
+          write_surface( file, surface, transformation )
         end
       end
 
@@ -132,16 +180,19 @@ module TT::Plugins::QuadFaceTools
         entities = definition.entities
         tr = transformation * instance.transformation
         name = instance_name( instance )
-        write_entities( file, name, entities, tr, group_type )
+        write_entities( file, name, entities, tr )
       end
 
-      vertices.size
+      surfaces.size
     end
 
     # In order to optimize the OBJ file the surfaces are sorted by material.
     # It is only "surfaces" containing only one face that is sorted. The
     # surfaces with more than one face is sorted within their smoothing group.
     #
+    # @param [Array<Array<Sketchup::Face,QuadFace>>] surfaces
+    #
+    # @return [Array<Sketchup::Face,QuadFace>]
     # @since 0.8.0
     def sort_surfaces_by_material( surfaces )
       surfaces.sort { |a,b|
@@ -165,6 +216,9 @@ module TT::Plugins::QuadFaceTools
       }
     end
 
+    # @param [Sketchup::Face,QuadFace] face
+    #
+    # @return [Array<Sketchup::Vertex>]
     # @since 0.8.0
     def get_uvs( face, outer_loop )
       if face.is_a?( QuadFace )
@@ -187,13 +241,21 @@ module TT::Plugins::QuadFaceTools
       uvs
     end
 
+    # @param [Sketchup::Face,QuadFace] face
+    #
+    # @return [Boolean]
     # @since 0.8.0
     def textured?( face )
       face.material && face.material.texture ? true : false
     end
 
+    # @param [File] file
+    # @param [Array<Sketchup::Face,QuadFace>] surface
+    # @param [Geom::Transformation] transformation
+    #
+    # @return [Integer]
     # @since 0.8.0
-    def write_surface( file, surface, transformation, vertices )
+    def write_surface( file, surface, transformation )
       # Collect vertices and faces.
       material_groups = {}
       new_vertices = []
@@ -203,10 +265,9 @@ module TT::Plugins::QuadFaceTools
         outer_loop = get_face_loop( face )
         for vertex in outer_loop
           # Index vertex.
-          unless vertices.key?( vertex )
+          unless @vertices.key?( vertex )
             new_vertices << vertex
-            vertices[ vertex ] = @vertex_index
-            @vertex_index += 1
+            @vertices[ vertex ] = @vertices.size + 1
           end
         end
         if textured?( face )
@@ -223,13 +284,13 @@ module TT::Plugins::QuadFaceTools
           end
           # Build face definition.
           polygon = outer_loop.map { |vertex|
-            vp = vertices[ vertex ]
+            vp = @vertices[ vertex ]
             vt = face_uv_indexes[ vertex ]
             "#{vp}/#{vt}"
           }.join(' ')
         else
           # Build face definition.
-          polygon = outer_loop.map { |vertex| vertices[ vertex ] }.join(' ')
+          polygon = outer_loop.map { |vertex| @vertices[ vertex ] }.join(' ')
         end
         material_groups[ face.material ] ||= []
         material_groups[ face.material ] << polygon
@@ -273,15 +334,22 @@ module TT::Plugins::QuadFaceTools
         file.puts "s off"
         @smoothing_index += 1
       end
+
+      material_groups.size
     end
 
+    # @param [String] filename
+    # @param [Sketchup::Model] model
+    # @param [String] modelname
+    #
+    # @return [Boolean]
     # @since 0.8.0
     def write_material_library( filename, model, modelname )
       return false if @materials.empty?
 
       # Everything is wrapped in an operation which is aborted because temporary
       # groups has to be created in order to extract the images.
-      model.start_operation( 'Extract OBJ Textures' )
+      model.start_operation( 'Extract OBJ Textures', true )
       tw = Sketchup.create_texture_writer
 
       File.open( filename, 'wb+' ) { |file|
@@ -309,8 +377,17 @@ module TT::Plugins::QuadFaceTools
       model.abort_operation
 
       true
+    rescue
+      model.abort_operation
+      raise
     end
 
+    # @param [Sketchup::Model] model
+    # @param [Sketchup::TextureWriter] tw
+    # @param [Sketchup::Material,Nil] material
+    # @param [String] mtl_filename
+    #
+    # @return [String]
     # @since 0.8.0
     def extract_texture( model, tw, material, mtl_filename )
       return nil if material.nil?
@@ -343,6 +420,9 @@ module TT::Plugins::QuadFaceTools
       relative_filename
     end
 
+    # @param [String] obj_file_name
+    #
+    # @return [String]
     # @since 0.8.0
     def material_library_filename( obj_file_name )
       path = File.dirname( obj_file_name )
@@ -350,6 +430,10 @@ module TT::Plugins::QuadFaceTools
       filename = File.join( path, "#{basename}.mtl" )
     end
 
+    # @param [Sketchup::Material,Nil] material
+    # @param [Sketchup::Model] model
+    #
+    # @return [Sketchup::Color]
     # @since 0.8.0
     def get_material_color( material, model )
       if material
@@ -359,12 +443,18 @@ module TT::Plugins::QuadFaceTools
       end
     end
 
+    # @param [Sketchup::Color] color
+    #
+    # @return [String]
     # @since 0.8.0
     def format_material_color( color )
       rgb = color.to_a[0..2].map { |i| i / 255.0 }
       sprintf( '%.6f %.6f %.6f', *rgb )
     end
 
+    # @param [Sketchup::Material,Nil] material
+    #
+    # @return [String]
     # @since 0.8.0
     def format_material_opacity( material )
       opacity = ( material ) ? material.alpha : 1.0
@@ -375,6 +465,10 @@ module TT::Plugins::QuadFaceTools
       end
     end
 
+    # @param [File] file
+    # @param [Sketchup::Material,Nil] material
+    #
+    # @return [String]
     # @since 0.8.0
     def set_active_material( file, material )
       unless @materials.key?( material )
@@ -390,6 +484,10 @@ module TT::Plugins::QuadFaceTools
       name
     end
 
+    # @param [Sketchup::Material,Nil] material
+    # @param [Sketchup::Model] model
+    #
+    # @return [String]
     # @since 0.8.0
     def get_obj_material_name( material, model )
       if material
@@ -400,6 +498,10 @@ module TT::Plugins::QuadFaceTools
       obj_compatible_name( name )
     end
 
+    # @param [Sketchup::Model] model
+    # @param [String] string
+    #
+    # @return [String]
     # @since 0.8.0
     def get_unique_material_name( model, string )
       name = string
@@ -411,6 +513,9 @@ module TT::Plugins::QuadFaceTools
       name
     end
 
+    # @param [Sketchup::Group,Sketchup::ComponentInstance,Sketchup::Image] instance
+    #
+    # @return [String]
     # @since 0.8.0
     def instance_name( instance )
       definition = TT::Instance.definition( instance )
@@ -423,16 +528,25 @@ module TT::Plugins::QuadFaceTools
       obj_compatible_name( name )
     end
 
+    # @param [String] string
+    #
+    # @return [String]
     # @since 0.8.0
     def obj_compatible_name( string )
-      string.gsub(/\s+/,'_') # Collapse and replace whitespace with _
+      string.gsub( /\s+/, '_' ) # Collapse and replace whitespace with _
     end
 
+    # @param [Sketchup::Model] model
+    #
+    # @return [String]
     # @since 0.8.0
     def model_name( model )
       ( model.title.empty? ) ? 'Unsaved Model' : model.title
     end
 
+    # @param [Sketchup::Face,QuadFace] face
+    #
+    # @return [Array<Sketchup::Vertex>]
     # @since 0.8.0
     def get_face_loop( face )
       if face.is_a?( QuadFace )
