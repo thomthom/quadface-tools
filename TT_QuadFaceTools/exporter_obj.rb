@@ -360,7 +360,7 @@ module TT::Plugins::QuadFaceTools
       file.puts '' if !new_vertices.empty?
       for vertex in new_vertices
         global_position = vertex.position.transform( transformation )
-        point = global_position.to_a.join(' ')
+        point = global_position.to_a.map { |i| i * @scale }.join(' ')
         file.puts "v #{point}"
       end
 
