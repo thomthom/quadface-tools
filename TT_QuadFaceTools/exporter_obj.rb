@@ -65,7 +65,6 @@ module TT::Plugins::QuadFaceTools
       last_options = load_last_options()
       options = option_dialog( last_options )
       return EXPORT_CANCELED unless options
-      p options
       save_options( options )
 
       if export( filename, options )
@@ -94,6 +93,7 @@ module TT::Plugins::QuadFaceTools
       Sketchup.status_text = 'Exporting OBJ file...'
       mtl_filename = material_library_filename( filename )
       mtl_basename = File.basename( mtl_filename )
+      object_name = obj_compatible_name( name )
       formatted_units = format_unit( @options[:units] )
       File.open( filename, 'wb+' ) { |file|
         sketchup_name = ( Sketchup.is_pro? ) ? 'SketchUp Pro' : 'SketchUp'
@@ -103,10 +103,25 @@ module TT::Plugins::QuadFaceTools
         file.puts "# Units: #{formatted_units}"
         file.puts ''
         file.puts "mtllib #{mtl_basename}"
+
+        if @options[:group_type] == GROUP_BY_GROUPS
+          file.puts ''
+          file.puts "o #{object_name}"
+        end
+
+        file.puts ''
+        file.puts "s off"
         
-        tr = model.edit_transform.inverse
+        if @options[:swap_yz]
+          tr_axes = Geom::Transformation.axes(
+            ORIGIN, X_AXIS, Z_AXIS.reverse, Y_AXIS
+          )
+          tr = tr_axes * model.edit_transform.inverse
+        else
+          tr = model.edit_transform.inverse
+        end
+
         entities = model.active_entities
-        object_name = obj_compatible_name( name )
         write_entities( file, object_name, entities, tr )
       }
       Sketchup.status_text = 'Exporting material library for OBJ file...'
@@ -298,6 +313,7 @@ module TT::Plugins::QuadFaceTools
           unless vertices.key?( vertex )
             new_vertices << vertex
             vertices[ vertex ] = @vertex_index
+            @vertex_index += 1
           end
         end
         if @options[:texture_maps] && textured?( face )
