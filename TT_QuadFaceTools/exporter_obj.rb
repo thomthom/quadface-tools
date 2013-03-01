@@ -121,7 +121,13 @@ module TT::Plugins::QuadFaceTools
           tr = model.edit_transform.inverse
         end
 
-        entities = model.active_entities
+        if @options[:selection]
+          # (i) If partial surface or quad is selected, the whole surface or
+          #     quad will be exported.
+          entities = model.selection
+        else
+          entities = model.active_entities
+        end
         write_entities( file, object_name, entities, tr )
       }
       Sketchup.status_text = 'Exporting material library for OBJ file...'
