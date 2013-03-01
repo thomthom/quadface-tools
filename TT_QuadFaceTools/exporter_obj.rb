@@ -53,20 +53,22 @@ module TT::Plugins::QuadFaceTools
     # @return [Integer]
     # @since 0.8.0
     def prompt
-      name = model_name( Sketchup.active_model )
-      filename = UI.savepanel( 'Export OBJ File', nil, "#{name}.obj" )
-      return EXPORT_CANCELED unless filename
-
-      if filename.split('.').last != 'obj'
-        filename = "#{filename}.obj"
-      end
-
+      # Prompt for options. (Hoping for Exporter API in SketchUp.)
       # (!) OSX Support
       last_options = load_last_options()
       options = option_dialog( last_options )
       return EXPORT_CANCELED unless options
       save_options( options )
 
+      # Prompt for filename, ensuring .obj postfix.
+      name = model_name( Sketchup.active_model )
+      filename = UI.savepanel( 'Export OBJ File', nil, "#{name}.obj" )
+      return EXPORT_CANCELED unless filename
+      if filename.split('.').last != 'obj'
+        filename = "#{filename}.obj"
+      end
+
+      # Export the model! :)
       if export( filename, options )
         UI.messagebox( "Exported to #{filename}" )
         EXPORT_SUCCESS
