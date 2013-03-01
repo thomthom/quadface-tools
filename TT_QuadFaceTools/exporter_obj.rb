@@ -16,6 +16,7 @@ module TT::Plugins::QuadFaceTools
   class ExporterOBJ
 
     EXPORTER_VERSION = '0.2.0'.freeze
+    EXPORTER_PREF_KEY = "#{PLUGIN_ID}\\Exporter\\OBJ"
 
     # Geom::PolygonMesh
     POLYGON_MESH_POINTS     = 0b000
@@ -61,9 +62,11 @@ module TT::Plugins::QuadFaceTools
       end
 
       # (!) OSX Support
-      options = option_dialog( @options )
+      last_options = load_last_options()
+      options = option_dialog( last_options )
       return EXPORT_CANCELED unless options
       p options
+      save_options( options )
 
       if export( filename, options )
         UI.messagebox( "Exported to #{filename}" )
@@ -114,7 +117,26 @@ module TT::Plugins::QuadFaceTools
       true
     end
 
+    # @return [Hash]
+    # @since 0.8.0
+    def load_last_options
+      options = {}
+      for key, default in @options
+        value = Sketchup.read_default( EXPORTER_PREF_KEY, key.to_s, default )
+        options[ key ] = value
+      end
+      options
+    end
+
     private
+
+    # @return [Hash]
+    # @since 0.8.0
+    def save_options( options )
+      for key, value in options
+        Sketchup.write_default( EXPORTER_PREF_KEY, key.to_s, value )
+      end
+    end
 
     # @return [Nil]
     # @since 0.8.0
