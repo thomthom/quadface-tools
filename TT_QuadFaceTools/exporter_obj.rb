@@ -130,8 +130,8 @@ module TT::Plugins::QuadFaceTools
 
       @scale = 1
 
-      @vertices = TT::JSON.new # Vertex => Index
-      @uvs = TT::JSON.new      #     UV => Index
+      @vertex_index = 1
+      @uvs = TT::JSON.new # UV => Index
 
       @smoothing_index = 1
 
@@ -156,6 +156,7 @@ module TT::Plugins::QuadFaceTools
       surfaces = Surface.get( native_entities, true )
 
       # Collect geometry data.
+      vertices = TT::JSON.new # Vertex => Index (Needs to be here due to instances.)
       instances = []
       smoothing_groups = []
       for entity in surfaces
@@ -177,7 +178,7 @@ module TT::Plugins::QuadFaceTools
         file.puts ''
         file.puts "#{group_type} #{name}"
         for surface in sort_surfaces_by_material( smoothing_groups )
-          write_surface( file, surface, transformation )
+          write_surface( file, surface, transformation, vertices )
         end
       end
 
@@ -262,7 +263,7 @@ module TT::Plugins::QuadFaceTools
     #
     # @return [Integer]
     # @since 0.8.0
-    def write_surface( file, surface, transformation )
+    def write_surface( file, surface, transformation, vertices )
       # Collect vertices and faces.
       material_groups = {}
       new_vertices = []
@@ -272,9 +273,9 @@ module TT::Plugins::QuadFaceTools
         outer_loop = get_face_loop( face )
         for vertex in outer_loop
           # Index vertex.
-          unless @vertices.key?( vertex )
+          unless vertices.key?( vertex )
             new_vertices << vertex
-            @vertices[ vertex ] = @vertices.size + 1
+            vertices[ vertex ] = @vertex_index
           end
         end
         if @options[:texture_maps] && textured?( face )
@@ -291,13 +292,13 @@ module TT::Plugins::QuadFaceTools
           end
           # Build face definition.
           polygon = outer_loop.map { |vertex|
-            vp = @vertices[ vertex ]
+            vp = vertices[ vertex ]
             vt = face_uv_indexes[ vertex ]
             "#{vp}/#{vt}"
           }.join(' ')
         else
           # Build face definition.
-          polygon = outer_loop.map { |vertex| @vertices[ vertex ] }.join(' ')
+          polygon = outer_loop.map { |vertex| vertices[ vertex ] }.join(' ')
         end
         material_groups[ face.material ] ||= []
         material_groups[ face.material ] << polygon
