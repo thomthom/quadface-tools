@@ -31,12 +31,13 @@ module TT::Plugins::QuadFaceTools
     NO_MATERIAL = -1
 
     # Matches Sketchup.active_model.options['UnitsOptions']['LengthUnit']
-    UNIT_METERS      =  4
-    UNIT_CENTIMETERS =  3
-    UNIT_MILLIMETERS =  2
-    UNIT_FEET        =  1
+    UNIT_MODEL       = -1 # Not a SketchUp value
     UNIT_INCHES      =  0
-    UNIT_MODEL       = -1
+    UNIT_FEET        =  1
+    UNIT_MILLIMETERS =  2
+    UNIT_CENTIMETERS =  3
+    UNIT_METERS      =  4
+    UNIT_KILOMETERS  =  5 # Not a SketchUp value
 
     # Mirrors Sketchup::Importer constants
     EXPORT_SUCCESS  = 0
@@ -59,8 +60,9 @@ module TT::Plugins::QuadFaceTools
         filename = "#{filename}.obj"
       end
 
-      # (!) Prompt for options.
-      # @see https://github.com/SketchUp/sketchup-stl/blob/master/src/sketchup-stl/exporter.rb#L149
+      options = option_dialog( @options )
+      return EXPORT_CANCELED unless options
+      p options
 
       if export( filename )
         UI.messagebox( "Exported to #{filename}" )
@@ -79,6 +81,7 @@ module TT::Plugins::QuadFaceTools
     def export( filename, options = {} )
       reset()
       @options.merge!( options )
+      @scale = unit_ratio( @options[:units] )
 
       model = Sketchup.active_model
       name = model_name( model )
@@ -87,12 +90,13 @@ module TT::Plugins::QuadFaceTools
       Sketchup.status_text = 'Exporting OBJ file...'
       mtl_filename = material_library_filename( filename )
       mtl_basename = File.basename( mtl_filename )
+      formatted_units = format_unit( @options[:units] )
       File.open( filename, 'wb+' ) { |file|
         sketchup_name = ( Sketchup.is_pro? ) ? 'SketchUp Pro' : 'SketchUp'
         file.puts "# Exported with #{PLUGIN_NAME} (#{PLUGIN_VERSION})"
         file.puts "# #{sketchup_name} #{Sketchup.version}"
         file.puts "# Model name: #{name}"
-        file.puts "# Units: Inches"
+        file.puts "# Units: #{formatted_units}"
         file.puts ''
         file.puts "mtllib #{mtl_basename}"
         
@@ -117,11 +121,13 @@ module TT::Plugins::QuadFaceTools
       @options = {
         :units        => UNIT_INCHES,
         :group_type   => GROUP_BY_OBJECTS,
-        :up           => Z_AXIS,
+        :swap_yz      => true,
         :texture_maps => true,
         :triangulate  => false,
         :selection    => false
       }
+
+      @scale = 1
 
       @vertices = TT::JSON.new # Vertex => Index
       @uvs = TT::JSON.new      #     UV => Index
@@ -553,6 +559,154 @@ module TT::Plugins::QuadFaceTools
         face.vertices
       else
         face.outer_loop.vertices
+      end
+    end
+
+    # @param [Hash] options
+    #
+    # @return [Hash]
+    # @since 0.8.0
+    def option_dialog( options )
+      html_source = File.join( PATH_HTML, 'exporter.html' )
+
+      window_options = {
+        :dialog_title     => 'Export OBJ Options',
+        :preferences_key  => false,
+        :scrollable       => false,
+        :resizable        => false,
+        :left             => 500,
+        :top              => 400,
+        :width            => 330,
+        :height           => 360
+      }
+
+      window = Window.new( window_options )
+      window.set_size( window_options[:width], window_options[:height] )
+      window.navigation_buttons_enabled = false
+
+      window.add_action_callback( 'Window_Ready' ) { |dialog, params|
+        dialog.update_value( 'lstInstances',         options[:group_type] )
+        dialog.update_value( 'chkExportSelection',   options[:selection] )
+        dialog.update_value( 'chkTriangulate',       options[:triangulate] )
+        dialog.update_value( 'chkExportTextureMaps', options[:texture_maps] )
+        dialog.update_value( 'chkSwapYZ',            options[:swap_yz] )
+        dialog.update_value( 'lstUnits',             options[:units] )
+      }
+
+      results = nil
+      window.add_action_callback( 'Event_Accept' ) { |dialog, params|
+        # Get data from webdialog.
+        results = {
+          :group_type   => dialog.get_element_value('lstInstances'),
+          :selection    => dialog.get_element_value('chkExportSelection'),
+          :triangulate  => dialog.get_element_value('chkTriangulate'),
+          :texture_maps => dialog.get_element_value('chkExportTextureMaps'),
+          :swap_yz      => dialog.get_element_value('chkSwapYZ'),
+          :units        => dialog.get_element_value('lstUnits')
+        }
+        # Convert to Ruby values.
+        results[:group_type]   = results[:group_type].to_i
+        results[:selection]    = (results[:selection] == 'true')
+        results[:triangulate]  = (results[:triangulate] == 'true')
+        results[:texture_maps] = (results[:texture_maps] == 'true')
+        results[:swap_yz]      = (results[:swap_yz] == 'true')
+        results[:units]        = results[:units].to_i
+        dialog.close
+      }
+
+      window.add_action_callback( 'Event_Cancel' ) { |dialog, params|
+        dialog.close
+      }
+
+      window.set_file( html_source )
+      window.show_modal
+      results
+    end
+
+    # @param [Integer] unit
+    #
+    # @return [String]
+    # @since 0.8.0
+    def format_unit( unit )
+      if unit == UNIT_MODEL
+        unit = Sketchup.active_model.options['UnitsOptions']['LengthUnit']
+      end
+      unit_to_string( unit )
+    end
+
+    # @param [Integer] unit
+    #
+    # @return [String]
+    # @since 0.8.0
+    def unit_to_string( unit )
+      case unit
+      when UNIT_KILOMETERS
+        'Kilometers'
+      when UNIT_METERS
+        'Meters'
+      when UNIT_CENTIMETERS
+        'Centimeters'
+      when UNIT_MILLIMETERS
+        'Millimeters'
+      when UNIT_FEET
+        'Feet'
+      when UNIT_INCHES
+        'Inches'
+      when UNIT_MODEL
+        'Model Units'
+      else
+        raise ArgumentError, 'Invalid unit type.'
+      end
+    end
+
+    # @param [String] string
+    #
+    # @return [Integer]
+    # @since 0.8.0
+    def string_to_unit( string )
+      case string
+      when 'Kilometers'
+        UNIT_KILOMETERS
+      when 'Meters'
+        UNIT_METERS
+      when 'Centimeters'
+        UNIT_CENTIMETERS
+      when 'Millimeters'
+        UNIT_MILLIMETERS
+      when 'Feet'
+        UNIT_FEET
+      when 'Inches'
+        UNIT_INCHES
+      when 'Model Units'
+        UNIT_MODEL
+      else
+        raise ArgumentError, 'Invalid unit string.'
+      end
+    end
+
+    # @param [Integer] unit
+    #
+    # @return [Float]
+    # @since 0.8.0
+    def unit_ratio( unit )
+      if unit == UNIT_MODEL
+        unit = Sketchup.active_model.options['UnitsOptions']['LengthUnit']
+      end
+      case unit
+      when UNIT_KILOMETERS
+        0.0000254
+      when UNIT_METERS
+        0.0254
+      when UNIT_CENTIMETERS
+        2.54
+      when UNIT_MILLIMETERS
+        25.4
+      when UNIT_FEET
+        0.0833333333333333
+      when UNIT_INCHES
+        1
+      else
+        raise ArgumentError, 'Invalid unit type.'
       end
     end
 
