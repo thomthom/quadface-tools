@@ -60,11 +60,12 @@ module TT::Plugins::QuadFaceTools
         filename = "#{filename}.obj"
       end
 
+      # (!) OSX Support
       options = option_dialog( @options )
       return EXPORT_CANCELED unless options
       p options
 
-      if export( filename )
+      if export( filename, options )
         UI.messagebox( "Exported to #{filename}" )
         EXPORT_SUCCESS
       else
@@ -276,7 +277,7 @@ module TT::Plugins::QuadFaceTools
             @vertices[ vertex ] = @vertices.size + 1
           end
         end
-        if textured?( face )
+        if @options[:texture_maps] && textured?( face )
           # Build UV index
           face_uv_indexes = {}
           uvs = get_uvs( face, outer_loop )
@@ -319,10 +320,12 @@ module TT::Plugins::QuadFaceTools
       end
 
       # Write UV index.
-      file.puts '' if !new_uvs.empty?
-      for uvs in new_uvs
-        coordinate = uvs.join(' ')
-        file.puts "vt #{coordinate}"
+      if @options[:texture_maps]
+        file.puts '' if !new_uvs.empty?
+        for uvs in new_uvs
+          coordinate = uvs.join(' ')
+          file.puts "vt #{coordinate}"
+        end
       end
 
       # Write face definitions.
@@ -353,10 +356,12 @@ module TT::Plugins::QuadFaceTools
     def write_material_library( filename, model, modelname )
       return false if @materials.empty?
 
-      # Everything is wrapped in an operation which is aborted because temporary
-      # groups has to be created in order to extract the images.
-      model.start_operation( 'Extract OBJ Textures', true )
-      tw = Sketchup.create_texture_writer
+      if @options[:texture_maps]
+        # Everything is wrapped in an operation which is aborted because
+        # temporary groups has to be created in order to extract the images.
+        model.start_operation( 'Extract OBJ Textures', true )
+        tw = Sketchup.create_texture_writer
+      end
 
       File.open( filename, 'wb+' ) { |file|
         sketchup_name = ( Sketchup.is_pro? ) ? 'SketchUp Pro' : 'SketchUp'
@@ -370,21 +375,23 @@ module TT::Plugins::QuadFaceTools
           diffuse_color  = format_material_color( color )
           specular_color = sprintf( '%.6f %.6f %.6f', 0.33, 0.33, 0.33 ) # SU values
           opacity        = format_material_opacity( material )
-          texture        = extract_texture( model, tw, material, filename )
+          if @options[:texture_maps]
+            texture      = extract_texture( model, tw, material, filename )
+          end
           file.puts ''
           file.puts "newmtl #{name}"
           file.puts "Ka #{ambient_color}"
           file.puts "Kd #{diffuse_color}"
           file.puts "Ks #{specular_color}"
           file.puts "d #{opacity}" if opacity
-          file.puts "map_Kd #{texture}" if texture
+          file.puts "map_Kd #{texture}" if @options[:texture_maps] && texture
         end
       }
-      model.abort_operation
+      model.abort_operation if @options[:texture_maps]
 
       true
     rescue
-      model.abort_operation
+      model.abort_operation if @options[:texture_maps]
       raise
     end
 
@@ -605,7 +612,6 @@ module TT::Plugins::QuadFaceTools
           :units        => dialog.get_element_value('lstUnits')
         }
         # Convert to Ruby values.
-        results[:group_type]   = results[:group_type].to_i
         results[:selection]    = (results[:selection] == 'true')
         results[:triangulate]  = (results[:triangulate] == 'true')
         results[:texture_maps] = (results[:texture_maps] == 'true')
