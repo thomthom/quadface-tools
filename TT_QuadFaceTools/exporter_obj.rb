@@ -169,7 +169,7 @@ module TT::Plugins::QuadFaceTools
         :group_type   => GROUP_BY_OBJECTS,
         :swap_yz      => true,
         :texture_maps => true,
-        :triangulate  => false,
+        #:triangulate  => false,
         :selection    => false
       }
 
@@ -359,16 +359,18 @@ module TT::Plugins::QuadFaceTools
       end
 
       # Write vertex index.
-      file.puts '' if !new_vertices.empty?
-      for vertex in new_vertices
-        global_position = vertex.position.transform( transformation )
-        point = global_position.to_a.map { |i| i * @scale }.join(' ')
-        file.puts "v #{point}"
+      if !new_vertices.empty?
+        file.puts ''
+        for vertex in new_vertices
+          global_position = vertex.position.transform( transformation )
+          point = global_position.to_a.map { |i| i * @scale }.join(' ')
+          file.puts "v #{point}"
+        end
       end
 
       # Write UV index.
-      if @options[:texture_maps]
-        file.puts '' if !new_uvs.empty?
+      if @options[:texture_maps] && !new_uvs.empty?
+        file.puts '' if
         for uvs in new_uvs
           coordinate = uvs.join(' ')
           file.puts "vt #{coordinate}"
@@ -631,7 +633,7 @@ module TT::Plugins::QuadFaceTools
         :left             => 500,
         :top              => 400,
         :width            => 330,
-        :height           => 360
+        :height           => 340
       }
 
       window = Window.new( window_options )
@@ -641,7 +643,7 @@ module TT::Plugins::QuadFaceTools
       window.add_action_callback( 'Window_Ready' ) { |dialog, params|
         dialog.update_value( 'lstInstances',         options[:group_type] )
         dialog.update_value( 'chkExportSelection',   options[:selection] )
-        dialog.update_value( 'chkTriangulate',       options[:triangulate] )
+        #dialog.update_value( 'chkTriangulate',       options[:triangulate] )
         dialog.update_value( 'chkExportTextureMaps', options[:texture_maps] )
         dialog.update_value( 'chkSwapYZ',            options[:swap_yz] )
         dialog.update_value( 'lstUnits',             options[:units] )
@@ -653,14 +655,14 @@ module TT::Plugins::QuadFaceTools
         results = {
           :group_type   => dialog.get_element_value('lstInstances'),
           :selection    => dialog.get_element_value('chkExportSelection'),
-          :triangulate  => dialog.get_element_value('chkTriangulate'),
+          #:triangulate  => dialog.get_element_value('chkTriangulate'),
           :texture_maps => dialog.get_element_value('chkExportTextureMaps'),
           :swap_yz      => dialog.get_element_value('chkSwapYZ'),
           :units        => dialog.get_element_value('lstUnits')
         }
         # Convert to Ruby values.
         results[:selection]    = (results[:selection] == 'true')
-        results[:triangulate]  = (results[:triangulate] == 'true')
+        #results[:triangulate]  = (results[:triangulate] == 'true')
         results[:texture_maps] = (results[:texture_maps] == 'true')
         results[:swap_yz]      = (results[:swap_yz] == 'true')
         results[:units]        = results[:units].to_i

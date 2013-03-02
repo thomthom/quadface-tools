@@ -24,7 +24,7 @@ module TT::Plugins::QuadFaceTools
   PLUGIN_AUTHOR   = 'ThomThom'.freeze
   
   # Version information
-  RELEASE_DATE    = '01 Mar 13'.freeze
+  RELEASE_DATE    = '02 Mar 13'.freeze
   
   # Resource paths
   PATH_ROOT  = File.dirname( __FILE__ ).freeze
