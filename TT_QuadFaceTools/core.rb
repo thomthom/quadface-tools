@@ -68,6 +68,7 @@ module TT::Plugins::QuadFaceTools
   require File.join( PATH, 'edge_connect.rb' )
   require File.join( PATH, 'mesh_converter.rb' )
   require File.join( PATH, 'gl.rb' )
+  require File.join( PATH, 'window.rb' )
   require File.join( PATH, 'exporter_obj.rb' )
   
   

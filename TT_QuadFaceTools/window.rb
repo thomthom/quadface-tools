@@ -27,6 +27,17 @@ module TT::Plugins::QuadFaceTools
   # @since 0.8.0
   class Window < UI::WebDialog
 
+    # Make compatible with TT::GUI::ModalWrapper
+    #
+    # @since 0.8.0
+    def initialize( *args )
+      super
+      @closing = false
+      set_on_close {
+        @closing = true
+      }
+    end
+
     # Wrapper that makes calling JavaScript functions cleaner and easier. A very
     # simplified version of the wrapper used in TT::GUI::Window.
     # 
@@ -78,6 +89,24 @@ module TT::Plugins::QuadFaceTools
     # @since 0.8.0
     def parse_params( params )
       params.split( '|||' )
+    end
+
+    # Make compatible with TT::GUI::ModalWrapper
+    #
+    # @since 0.8.0
+    def show_window
+      if visible?
+        bring_to_front()
+      else
+        show_modal()
+      end
+    end
+
+    # Make compatible with TT::GUI::ModalWrapper
+    #
+    # @since 0.8.0
+    def closing?
+      @closing
     end
 
   end # class

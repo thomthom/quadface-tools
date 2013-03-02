@@ -41,9 +41,10 @@ module TT::Plugins::QuadFaceTools
     UNIT_KILOMETERS  =  5 # Not a SketchUp value
 
     # Mirrors Sketchup::Importer constants
-    EXPORT_SUCCESS  = 0
-    EXPORT_FAIL     = 1
-    EXPORT_CANCELED = 2
+    EXPORT_SUCCESS        = 0
+    EXPORT_FAIL           = 1
+    EXPORT_CANCELED       = 2
+    EXPORT_OSX_WORKAROUND = 9
 
     # @since 0.8.0
     def initialize
@@ -53,14 +54,43 @@ module TT::Plugins::QuadFaceTools
     # @return [Integer]
     # @since 0.8.0
     def prompt
-      # Prompt for options. (Hoping for Exporter API in SketchUp.)
-      # (!) OSX Support
+      if TT::System::PLATFORM_IS_WINDOWS
+        prompt_win
+      else
+        prompt_osx
+      end
+    end
+
+    # @return [Integer]
+    # @since 0.8.0
+    def prompt_osx
+      last_options = load_last_options()
+      option_dialog( last_options ) { |options|
+        save_options( options )
+        TT.defer {
+          # Deferring this avoids a BugSplat. Not sure why, but might be some
+          # clash with WebDialog closing and opening a modal dialog.
+          prompt_file( options )
+        }
+      }
+      EXPORT_OSX_WORKAROUND
+    end
+    private :prompt_osx
+
+    # @return [Integer]
+    # @since 0.8.0
+    def prompt_win
       last_options = load_last_options()
       options = option_dialog( last_options )
       return EXPORT_CANCELED unless options
       save_options( options )
+      prompt_file( options )
+    end
+    private :prompt_win
 
-      # Prompt for filename, ensuring .obj postfix.
+    # @return [Integer]
+    # @since 0.8.0
+    def prompt_file( options )
       name = model_name( Sketchup.active_model )
       filename = UI.savepanel( 'Export OBJ File', nil, "#{name}.obj" )
       return EXPORT_CANCELED unless filename
@@ -68,7 +98,6 @@ module TT::Plugins::QuadFaceTools
         filename = "#{filename}.obj"
       end
 
-      # Export the model! :)
       if export( filename, options )
         UI.messagebox( "Exported to #{filename}" )
         EXPORT_SUCCESS
@@ -77,6 +106,7 @@ module TT::Plugins::QuadFaceTools
         EXPORT_FAIL
       end
     end
+    private :prompt_file
 
     # @param [String] filename
     # @param [Hash] options
@@ -603,7 +633,7 @@ module TT::Plugins::QuadFaceTools
     # @return [String]
     # @since 0.8.0
     def model_name( model )
-      ( model.title.empty? ) ? 'Unsaved Model' : model.title
+      ( model.title.empty? ) ? 'Untitled' : model.title
     end
 
     # @param [Sketchup::Face,QuadFace] face
@@ -622,7 +652,7 @@ module TT::Plugins::QuadFaceTools
     #
     # @return [Hash]
     # @since 0.8.0
-    def option_dialog( options )
+    def option_dialog( options, &block )
       html_source = File.join( PATH_HTML, 'exporter.html' )
 
       window_options = {
@@ -631,14 +661,18 @@ module TT::Plugins::QuadFaceTools
         :scrollable       => false,
         :resizable        => false,
         :left             => 500,
-        :top              => 400,
-        :width            => 330,
-        :height           => 340
+        :top              => 300,
+        :width            => 360,
+        :height           => 335
       }
+      if TT::System::PLATFORM_IS_OSX
+        window_options[ :height ] = 355
+      end
 
       window = Window.new( window_options )
       window.set_size( window_options[:width], window_options[:height] )
       window.navigation_buttons_enabled = false
+      modal_window = TT::GUI::ModalWrapper.new( window )
 
       window.add_action_callback( 'Window_Ready' ) { |dialog, params|
         dialog.update_value( 'lstInstances',         options[:group_type] )
@@ -666,15 +700,21 @@ module TT::Plugins::QuadFaceTools
         results[:texture_maps] = (results[:texture_maps] == 'true')
         results[:swap_yz]      = (results[:swap_yz] == 'true')
         results[:units]        = results[:units].to_i
-        dialog.close
+        modal_window.close
+        if TT::System::PLATFORM_IS_OSX
+          puts 'OSX Event_Accept'
+          block.call( results )
+        end
+        Sketchup.active_model.active_view.invalidate # OSX
       }
 
       window.add_action_callback( 'Event_Cancel' ) { |dialog, params|
-        dialog.close
+        modal_window.close
+        Sketchup.active_model.active_view.invalidate # OSX
       }
 
       window.set_file( html_source )
-      window.show_modal
+      modal_window.show
       results
     end
 
