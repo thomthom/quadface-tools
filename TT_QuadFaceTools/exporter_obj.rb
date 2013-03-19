@@ -183,12 +183,15 @@ module TT::Plugins::QuadFaceTools
 
     private
 
+    # @param [Hash] options
+    #
     # @return [Hash]
     # @since 0.8.0
     def save_options( options )
       for key, value in options
         Sketchup.write_default( EXPORTER_PREF_KEY, key.to_s, value )
       end
+      options
     end
 
     # @return [Nil]
@@ -270,8 +273,9 @@ module TT::Plugins::QuadFaceTools
     end
 
     # In order to optimize the OBJ file the surfaces are sorted by material.
-    # It is only "surfaces" containing only one face that is sorted. The
-    # surfaces with more than one face is sorted within their smoothing group.
+    # It is only "surfaces" (smoothing groups) containing only one face that are
+    # sorted. The surfaces with more than one face is sorted within their
+    # smoothing group.
     #
     # @param [Array<Array<Sketchup::Face,QuadFace>>] surfaces
     #
@@ -300,8 +304,9 @@ module TT::Plugins::QuadFaceTools
     end
 
     # @param [Sketchup::Face,QuadFace] face
+    # @param [Array<Sketchup::Vertex>] outer_loop
     #
-    # @return [Array<Sketchup::Vertex>]
+    # @return [Hash] Key is a vertex, Value is UV
     # @since 0.8.0
     def get_uvs( face, outer_loop )
       if face.is_a?( QuadFace )
@@ -316,7 +321,7 @@ module TT::Plugins::QuadFaceTools
         end
       end
       # Convert to arrays with only X and Y values. This avoids the issue of
-      # hashes threating Point3d objects as all unique.
+      # hashes treating Point3d objects as all unique.
       uvs = {}
       for vertex, uv in mapping
         uvs[ vertex ] = uv.to_a[0..1]
@@ -335,6 +340,7 @@ module TT::Plugins::QuadFaceTools
     # @param [File] file
     # @param [Array<Sketchup::Face,QuadFace>] surface
     # @param [Geom::Transformation] transformation
+    # @param [Array<Sketchup::Vertex>] vertices
     #
     # @return [Integer]
     # @since 0.8.0
@@ -797,7 +803,7 @@ module TT::Plugins::QuadFaceTools
       when UNIT_MILLIMETERS
         25.4
       when UNIT_FEET
-        0.0833333333333333
+        1.0 / 12.0
       when UNIT_INCHES
         1
       else
