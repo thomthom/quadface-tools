@@ -198,7 +198,7 @@ module TT::Plugins::QuadFaceTools
     # @since 0.8.0
     def reset
       @options = {
-        :units        => UNIT_INCHES,
+        :units        => UNIT_MODEL,
         :group_type   => GROUP_BY_OBJECTS,
         :swap_yz      => true,
         :texture_maps => true,
