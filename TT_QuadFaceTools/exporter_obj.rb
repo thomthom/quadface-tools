@@ -681,6 +681,9 @@ module TT::Plugins::QuadFaceTools
       modal_window = TT::GUI::ModalWrapper.new( window )
 
       window.add_action_callback( 'Window_Ready' ) { |dialog, params|
+        if TT::System.is_windows?
+          TT::Win32.window_no_resize( window_options[:dialog_title] )
+        end
         dialog.update_value( 'lstInstances',         options[:group_type] )
         dialog.update_value( 'chkExportSelection',   options[:selection] )
         #dialog.update_value( 'chkTriangulate',       options[:triangulate] )
@@ -715,6 +718,11 @@ module TT::Plugins::QuadFaceTools
       }
 
       window.add_action_callback( 'Event_Cancel' ) { |dialog, params|
+        modal_window.close
+        Sketchup.active_model.active_view.invalidate # OSX
+      }
+
+      window.set_on_close {
         modal_window.close
         Sketchup.active_model.active_view.invalidate # OSX
       }
