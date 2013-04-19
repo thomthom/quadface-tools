@@ -6,11 +6,29 @@
 #-------------------------------------------------------------------------------
 
 require 'sketchup.rb'
-require 'TT_Lib2/core.rb'
+begin
+  require 'TT_Lib2/core.rb'
+rescue LoadError => e
+  module TT
+    if @lib2_update.nil?
+      url = 'http://www.thomthom.net/software/sketchup/tt_lib2/errors/not-installed'
+      options = {
+        :dialog_title => 'TT_Lib² Not Installed',
+        :scrollable => false, :resizable => false, :left => 200, :top => 200
+      }
+      w = UI::WebDialog.new( options )
+      w.set_size( 500, 300 )
+      w.set_url( "#{url}?plugin=#{File.basename( __FILE__ )}" )
+      w.show
+      @lib2_update = w
+    end
+  end
+end
 
-TT::Lib.compatible?( '2.7.0', 'QuadFace Tools' )
 
 #-------------------------------------------------------------------------------
+
+if defined?( TT::Lib ) && TT::Lib.compatible?( '2.7.0', 'QuadFace Tools' )
 
 module TT::Plugins::QuadFaceTools
   
@@ -394,7 +412,7 @@ module TT::Plugins::QuadFaceTools
     cmd_toggle_context_menu = cmd
     @commands[:context_menu] = cmd
     
-    cmd = UI::Command.new( 'About QuadFace Tools�' )  {
+    cmd = UI::Command.new( 'About QuadFace Tools…' )  {
       self.show_about_window
     }
     cmd.status_bar_text = 'Display plugin information and related links.'
@@ -1796,6 +1814,8 @@ module TT::Plugins::QuadFaceTools
   end
   
 end # module
+
+end # if TT_Lib
 
 #-------------------------------------------------------------------------------
 
