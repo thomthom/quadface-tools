@@ -1627,7 +1627,7 @@ module TT::Plugins::QuadFaceTools
     
     # Returns all cached native entities.
     #
-    # Use #analyse prior to this when full set if required.
+    # Use #analyse prior to this when full set is required.
     #
     # @return [Array<Sketchup::Face>]
     # @since 0.6.0
