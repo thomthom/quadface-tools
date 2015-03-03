@@ -19,6 +19,13 @@ body {
  */
 html, input, textarea, select, button {
   font: caption; /* Use native UI fonts */
+  /* Windows 8.1 (Or IE11?), or setting text scaling will cause text to appear
+   * too big under Windows. Setting explicit size in points appear to make
+   * things better.
+   *
+   * This isn't needed under OSX, but for now just apply it to all platforms.
+   */
+  font-size: 9pt;
 }
 
 
