@@ -96,9 +96,9 @@ module TT::Plugins::QuadFaceTools
     # @since 0.8.0
     def show_window
       if visible?
-        bring_to_front()
+        bring_to_front
       else
-        show_modal()
+        show_modal
       end
     end
 
