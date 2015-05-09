@@ -117,7 +117,7 @@ module TT::Plugins::QuadFaceTools
     cmd = UI::Command.new( 'Shrink Selection' ) { self.selection_shrink }
     cmd.small_icon = File.join( PATH_ICONS, 'SelectionShrink_16.png' )
     cmd.large_icon = File.join( PATH_ICONS, 'SelectionShrink_24.png' )
-    cmd.status_bar_text = 'Removes the bordering entitites from a selection.'
+    cmd.status_bar_text = 'Removes the bordering entities from a selection.'
     cmd.tooltip = 'Shrink Selection'
     cmd_selection_shrink = cmd
     @commands[:selection_shrink] = cmd
