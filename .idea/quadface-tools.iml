@@ -8,11 +8,16 @@
       <excludeFolder url="file://$MODULE_DIR$/../SketchUp-Ruby-API-Doc/generated" />
     </content>
     <content url="file://$MODULE_DIR$/src" />
+    <content url="file://$MODULE_DIR$/../tt-library-2">
+      <excludeFolder url="file://$MODULE_DIR$/../tt-library-2/Test Data" />
+      <excludeFolder url="file://$MODULE_DIR$/../tt-library-2/archive" />
+      <excludeFolder url="file://$MODULE_DIR$/../tt-library-2/cext" />
+    </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="RModuleSettingsStorage">
-    <LOAD_PATH number="2" string0="$MODULE_DIR$/src" string1="C:/Program Files/SketchUp/SketchUp 2015/Tools" />
+    <LOAD_PATH number="3" string0="$MODULE_DIR$/src" string1="C:/Program Files/SketchUp/SketchUp 2015/Tools" string2="$MODULE_DIR$/../tt-library-2" />
     <I18N_FOLDERS number="0" />
   </component>
 </module>
