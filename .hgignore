@@ -1,11 +1,12 @@
 syntax: glob
+
+# File types
 *.skb
-Archive/*
-Documentation/*
-Resources/Monkey/*
-Test Models/Temp Work Comp/*
-Research/*
+*.sublime-workspace
+
+# Folders
 Test Models/*
-Videos/*
 Resources/*
-*.sublime-*
+
+# RubyMine
+.idea/workspace.xml

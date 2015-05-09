@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="RUBY_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://C:/Program Files/SketchUp/SketchUp 2015/Tools">
+      <excludeFolder url="file://C:/Program Files/SketchUp/SketchUp 2015/Tools/RubyStdLib" />
+    </content>
+    <content url="file://$MODULE_DIR$/../SketchUp-Ruby-API-Doc">
+      <excludeFolder url="file://$MODULE_DIR$/../SketchUp-Ruby-API-Doc/generated" />
+    </content>
+    <content url="file://$MODULE_DIR$/src" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="RModuleSettingsStorage">
+    <LOAD_PATH number="2" string0="$MODULE_DIR$/src" string1="C:/Program Files/SketchUp/SketchUp 2015/Tools" />
+    <I18N_FOLDERS number="0" />
+  </component>
+</module>
