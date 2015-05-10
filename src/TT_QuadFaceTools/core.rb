@@ -88,7 +88,8 @@ module TT::Plugins::QuadFaceTools
   require File.join( PATH, 'gl.rb' )
   require File.join( PATH, 'window.rb' )
   require File.join( PATH, 'exporter_obj.rb' )
-  
+  require 'TT_QuadFaceTools/tools/offset'
+
   
   ### MENU & TOOLBARS ### ------------------------------------------------------
   
@@ -169,6 +170,12 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Shrink Loop'
     cmd_shrink_loop = cmd
     @commands[:shrink_loop] = cmd
+
+    cmd = UI::Command.new( 'Offset Loop' )  { self.offset_loop_tool }
+    cmd.status_bar_text = 'Offset an edge loop.'
+    cmd.tooltip = 'Offset Loop'
+    cmd_offset_loop_tool = cmd
+    @commands[:offset_loop_tool] = cmd
     
     cmd = UI::Command.new( 'Selection Region to Loop' )  { self.region_to_loop }
     cmd.status_bar_text = 'Select a loop of edges bordering the selected entities.'
@@ -431,6 +438,8 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_select_ring )
     m.add_item( cmd_select_loop )
     m.add_separator
+    m.add_item( cmd_offset_loop_tool )
+    m.add_separator
     m.add_item( cmd_region_to_loop )
     m.add_item( cmd_loop_to_region )
     m.add_separator
@@ -575,6 +584,7 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_unsmooth_quad_mesh )
     toolbar.add_separator
     toolbar.add_item( cmd_line )
+    toolbar.add_item( cmd_offset_loop_tool ) # TODO: Temporary.
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
@@ -1716,6 +1726,13 @@ module TT::Plugins::QuadFaceTools
     selection.remove( entities.native_entities )
     TT.debug "self.shrink_loops: #{Time.now - t}"
   end
+
+
+  def self.offset_loop_tool
+    model = Sketchup.active_model
+    model.select_tool(OffsetTool.new)
+    nil
+  end
   
   
   # Extend the selection by one entity from the current selection set.
@@ -1805,7 +1822,7 @@ module TT::Plugins::QuadFaceTools
     # Core file (this)
     #load __FILE__
     # Supporting files
-    x = Dir.glob( File.join(PATH, '*.{rb,rbs}') ).each { |file|
+    x = Dir.glob( File.join(PATH, '**/*.{rb,rbs}') ).each { |file|
       load file
     }
     x.length
