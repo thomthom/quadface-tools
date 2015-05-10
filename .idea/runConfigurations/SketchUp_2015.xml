@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="SketchUp 2015" type="RubyRemoteDebugConfigurationType" factoryName="Ruby remote debug" singleton="true">
+    <RUBY_REMOTE_DEBUG_CONFIG NAME="REMOTE_HOST" VALUE="localhost" />
+    <RUBY_REMOTE_DEBUG_CONFIG NAME="PORT" VALUE="7000" />
+    <RUBY_REMOTE_DEBUG_CONFIG NAME="DISPATCHER_PORT" VALUE="26162" />
+    <RUBY_REMOTE_DEBUG_CONFIG NAME="REMOTE_ROOT" VALUE="C:\Users\Thomas\AppData\Roaming\SketchUp\SketchUp 2015\SketchUp\Plugins" />
+    <RUBY_REMOTE_DEBUG_CONFIG NAME="LOCAL_ROOT" VALUE="C:\Users\Thomas\AppData\Roaming\SketchUp\SketchUp 2015\SketchUp\Plugins" />
+    <method />
+  </configuration>
+</component>
