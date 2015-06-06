@@ -69,6 +69,9 @@ class LoopOffset
   def pick_loop(x, y, view)
     input_point = view.inputpoint(x, y)
     edge = input_point.edge
+    unless valid_pick_edge?(edge)
+      edge = find_loop_start(x, y, view)
+    end
     if edge
       loop = @provider.find_edge_loop(edge)
       if loop
@@ -139,6 +142,30 @@ class LoopOffset
     @picked_point = nil
     @offset_point = nil
     nil
+  end
+
+  private
+
+  # @param [Integer] x
+  # @param [Integer] y
+  # @param [Sketchup::View] view
+  #
+  # @return [Sketchup::Edge, Nil]
+  def find_loop_start(x, y, view)
+    ph = view.pick_helper(x, y)
+    ph.all_picked.find { |entity|
+      valid_pick_edge?(entity)
+    }
+  end
+
+  # @param [Sketchup::Edge] edge
+  def valid_pick_edge?(edge)
+    return false unless edge.is_a?(Sketchup::Edge)
+    return false if @provider.is_diagonal?(edge)
+    unless edge.model.rendering_options['DrawHidden']
+      return false if !edge.layer.visible? || edge.hidden? || edge.soft?
+    end
+    true
   end
 
 end # class
