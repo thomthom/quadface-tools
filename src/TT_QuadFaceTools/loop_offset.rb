@@ -161,6 +161,7 @@ class LoopOffset
   # @param [Sketchup::Edge] edge
   def valid_pick_edge?(edge)
     return false unless edge.is_a?(Sketchup::Edge)
+    return false unless edge.parent.entities == edge.model.active_entities
     return false if @provider.is_diagonal?(edge)
     unless edge.model.rendering_options['DrawHidden']
       return false if !edge.layer.visible? || edge.hidden? || edge.soft?
