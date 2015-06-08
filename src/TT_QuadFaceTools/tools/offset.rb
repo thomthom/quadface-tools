@@ -21,7 +21,7 @@ class OffsetTool
 
   def initialize
     @state = State::PICK_LOOP
-    @loop_offset = LoopOffset.new
+    @loop_offset = LoopOffsetController.new
   end
 
   def activate

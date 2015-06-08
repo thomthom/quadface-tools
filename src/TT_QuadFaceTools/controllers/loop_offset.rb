@@ -11,7 +11,7 @@ require 'TT_QuadFaceTools/geometry'
 
 
 module TT::Plugins::QuadFaceTools
-class LoopOffset
+class LoopOffsetController
 
   COLOR_PICK_POINT = Sketchup::Color.new(255, 0, 0)
 
