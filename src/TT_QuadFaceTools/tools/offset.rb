@@ -7,7 +7,7 @@
 
 #require 'TT_QuadFaceTools/core'
 require 'TT_QuadFaceTools/entities'
-require 'TT_QuadFaceTools/loop_offset'
+require 'TT_QuadFaceTools/controllers/loop_offset'
 
 
 module TT::Plugins::QuadFaceTools
