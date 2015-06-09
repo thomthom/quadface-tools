@@ -60,7 +60,7 @@ class LoopOffset
 
   # @param [Length] value
   def distance=(value)
-    @distance = value.to_l
+    @distance = value ? value.to_l : value
     reset_cache
   end
 

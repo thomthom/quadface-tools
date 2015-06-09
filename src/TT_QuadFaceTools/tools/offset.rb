@@ -47,6 +47,16 @@ class OffsetTool
     view.invalidate
   end
 
+  def onCancel(_reason, view)
+    @loop_offset.reset
+    if @loop_offset.loop
+      @state = State::PICK_ORIGIN
+    else
+      @state = State::PICK_LOOP
+    end
+    view.invalidate
+  end
+
   # @param [Integer] x
   # @param [Integer] y
   # @param [Sketchup::View] view

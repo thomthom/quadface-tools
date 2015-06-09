@@ -31,6 +31,11 @@ class LoopOffsetController
     @provider = EntitiesProvider.new
   end
 
+  # @return [Array<Sketchup::Edge>] loop
+  def loop
+    @offset.loop
+  end
+
   # @param [Array<Sketchup::Edge>] loop
   def loop=(loop)
     @offset.loop = loop
@@ -82,24 +87,14 @@ class LoopOffsetController
   #
   # @return [Geom::Point3d, Nil]
   def pick_origin(x, y, view)
-    raise 'source loop not set' if @offset.loop.nil?
-    ph = view.pick_helper(x, y)
-    face = ph.picked_face
-    return nil unless face
-    edges = (face.edges & @offset.loop)
-    return nil unless edges.size == 1
-    edge = edges[0]
-    face_is_valid_pick = @provider.connected_quads(edge).any? { |quad|
-      quad.faces.include?(face)
-    }
-    return nil unless face_is_valid_pick
-    ray = view.pickray(x, y)
-    picked_point = Geom.intersect_line_plane(ray, face.plane)
-    raise 'invalid pick point' unless picked_point
-    @picked_face = face
-    @offset.start_quad = face
-    @offset.start_edge = edge
-    @offset.origin = Geometry.project_to_edge(picked_point, edge)
+    picked_point, edge, face = pick_face(x, y, view)
+    if picked_point && edge && face
+      @picked_face = face
+      @offset.start_quad = face
+      @offset.start_edge = edge
+      @offset.origin = Geometry.project_to_edge(picked_point, edge)
+    end
+    nil
   end
 
   # @param [Integer] x
@@ -108,9 +103,17 @@ class LoopOffsetController
   #
   # @return [Geom::Point3d, Nil]
   def pick_offset(x, y, view)
+    # Check if we switched which side to offset from.
+    _picked_point, edge, face = pick_face(x, y, view)
+    if edge && face && @offset.start_edge.faces.include?(face)
+      @picked_face = face
+      @offset.start_quad = face
+    end
+    # Compute the offset point and distance.
     ray = view.pickray(x, y)
     @offset_point = Geom.intersect_line_plane(ray, @picked_face.plane)
     @offset.distance = distance
+    nil
   end
 
   # @param [Sketchup::View] view
@@ -133,7 +136,7 @@ class LoopOffsetController
     if @offset_point
       view.line_stipple = ''
       view.line_width = 1
-      view.draw_points([@offset_point], 10, GL::Points::CROSS, COLOR_PICK_POINT)
+      view.draw_points([@offset_point], 10, GL::Points::CROSS, 'green')
     end
 
     if @offset.positions
@@ -154,6 +157,7 @@ class LoopOffsetController
     @offset.origin = nil
     @offset.start_edge = nil
     @offset.start_quad = nil
+    @offset.distance = nil
     nil
   end
 
@@ -169,6 +173,29 @@ class LoopOffsetController
     ph.all_picked.find { |entity|
       valid_pick_edge?(entity)
     }
+  end
+
+  # @param [Integer] x
+  # @param [Integer] y
+  # @param [Sketchup::View] view
+  #
+  # @return [Geom::Point3d, Nil]
+  def pick_face(x, y, view)
+    raise 'source loop not set' if @offset.loop.nil?
+    ph = view.pick_helper(x, y)
+    face = ph.picked_face
+    return nil unless face
+    edges = (face.edges & @offset.loop)
+    return nil unless edges.size == 1
+    edge = edges[0]
+    face_is_valid_pick = @provider.connected_quads(edge).any? { |quad|
+      quad.faces.include?(face)
+    }
+    return nil unless face_is_valid_pick
+    ray = view.pickray(x, y)
+    picked_point = Geom.intersect_line_plane(ray, face.plane)
+    raise 'invalid pick point' unless picked_point
+    [picked_point, edge, face]
   end
 
   # @param [Sketchup::Edge] edge
