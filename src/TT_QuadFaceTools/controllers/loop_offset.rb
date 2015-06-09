@@ -8,6 +8,7 @@
 require 'TT_QuadFaceTools/drawing_helper'
 require 'TT_QuadFaceTools/entities'
 require 'TT_QuadFaceTools/geometry'
+require 'TT_QuadFaceTools/loop_offset'
 
 
 module TT::Plugins::QuadFaceTools
@@ -16,20 +17,12 @@ class LoopOffsetController
   COLOR_PICK_POINT = Sketchup::Color.new(255, 0, 0)
 
   def initialize
-    # The source loop to be offset.
-    @loop = nil
+    # The calculated loop offset.
+    @offset = LoopOffset.new
 
-    # The source point on the source edge from where the offset is based.
-    @origin = nil
-
-    # The source edge in the loop from where the offset is based.
-    @edge = nil
-
-    # The face picked when picking the origin.
-    @face = nil
-
-    # The point picked on the face when picking the origin.
-    @picked_point = nil
+    # The relevant face under the cursor which determines which side of the
+    # loop the offset will be.
+    @picked_face = nil
 
     # The point picked on the face when picking the offset.
     @offset_point = nil
@@ -40,16 +33,16 @@ class LoopOffsetController
 
   # @param [Array<Sketchup::Edge>] loop
   def loop=(loop)
-    @loop = loop
+    @offset.loop = loop
     reset
   end
 
   def picked_loop?
-    !@loop.nil?
+    !@offset.loop.nil?
   end
 
   def picked_origin?
-    picked_loop? && !@origin.nil?
+    picked_loop? && !@offset.origin.nil?
   end
 
   def picked_offset?
@@ -58,7 +51,8 @@ class LoopOffsetController
 
   # @return [Length]
   def distance
-    @origin.distance(@offset_point)
+    point_on_loop = @offset_point.project_to_line(@offset.start_edge.line)
+    point_on_loop.distance(@offset_point)
   end
 
   # @param [Integer] x
@@ -75,7 +69,7 @@ class LoopOffsetController
     if edge
       loop = @provider.find_edge_loop(edge)
       if loop
-        @loop = loop
+        @offset.loop = loop
         return loop
       end
     end
@@ -88,11 +82,11 @@ class LoopOffsetController
   #
   # @return [Geom::Point3d, Nil]
   def pick_origin(x, y, view)
-    raise 'source loop not set' if @loop.nil?
+    raise 'source loop not set' if @offset.loop.nil?
     ph = view.pick_helper(x, y)
     face = ph.picked_face
     return nil unless face
-    edges = (face.edges & @loop)
+    edges = (face.edges & @offset.loop)
     return nil unless edges.size == 1
     edge = edges[0]
     face_is_valid_pick = @provider.connected_quads(edge).any? { |quad|
@@ -100,11 +94,12 @@ class LoopOffsetController
     }
     return nil unless face_is_valid_pick
     ray = view.pickray(x, y)
-    @picked_point = Geom.intersect_line_plane(ray, face.plane)
-    raise 'invalid pick point' unless @picked_point
-    @face = face
-    @edge = edge
-    @origin = Geometry.project_to_edge(@picked_point, edge)
+    picked_point = Geom.intersect_line_plane(ray, face.plane)
+    raise 'invalid pick point' unless picked_point
+    @picked_face = face
+    @offset.start_quad = face
+    @offset.start_edge = edge
+    @offset.origin = Geometry.project_to_edge(picked_point, edge)
   end
 
   # @param [Integer] x
@@ -114,16 +109,25 @@ class LoopOffsetController
   # @return [Geom::Point3d, Nil]
   def pick_offset(x, y, view)
     ray = view.pickray(x, y)
-    @offset_point = Geom.intersect_line_plane(ray, @face.plane)
+    @offset_point = Geom.intersect_line_plane(ray, @picked_face.plane)
+    @offset.distance = distance
   end
 
   # @param [Sketchup::View] view
   def draw(view)
-    if @origin
+
+    if @offset.start_quad # DEBUG
+      points = @offset.start_quad.vertices.map { |vertex| vertex.position }
+      view.drawing_color = [0, 0, 255, 64]
+      view.draw(GL_POLYGON, points)
+    end
+
+    if @offset.origin
+      points = [@offset.origin]
       view.line_stipple = ''
       view.line_width = 1
-      view.draw_points([@origin], 10, GL::Points::CROSS, COLOR_PICK_POINT)
-      view.draw_points([@origin], 10, GL::Points::OPEN_SQUARE, COLOR_PICK_POINT)
+      view.draw_points(points, 10, GL::Points::CROSS, COLOR_PICK_POINT)
+      view.draw_points(points, 10, GL::Points::OPEN_SQUARE, COLOR_PICK_POINT)
     end
 
     if @offset_point
@@ -132,15 +136,24 @@ class LoopOffsetController
       view.draw_points([@offset_point], 10, GL::Points::CROSS, COLOR_PICK_POINT)
     end
 
+    if @offset.positions
+      points = @offset.positions
+      view.line_stipple = ''
+      view.line_width = 2
+      view.drawing_color = 'red'
+      view.draw(GL_LINE_STRIP, points)
+      view.draw_points(points, 10, GL::Points::CROSS, COLOR_PICK_POINT)
+    end
+
     view
   end
 
   def reset
-    @edge = nil
-    @face = nil
-    @origin = nil
-    @picked_point = nil
+    @picked_face = nil
     @offset_point = nil
+    @offset.origin = nil
+    @offset.start_edge = nil
+    @offset.start_quad = nil
     nil
   end
 
