@@ -1698,15 +1698,19 @@ module TT::Plugins::QuadFaceTools
     end
     
     # @param [Sketchup::Entity] entity
+    # @param [Boolean] add_to_cache
     #
     # @return [Sketchup::Entity,QuadFace]
     # @since 0.6.0
     def get_entity( entity, add_to_cache = false )
-      if quad = @faces_to_quads[ entity ]
+      quad = @faces_to_quads[ entity ]
+      if quad
         quad
       elsif QuadFace.is?( entity )
         quad = QuadFace.new( entity )
-        cache_entity( quad ) if add_to_cache && @types[ Sketchup::Face ][ entity ]
+        if add_to_cache && @types[ Sketchup::Face ][ entity ].nil?
+          cache_entity( quad )
+        end
         quad
       else
         entity
