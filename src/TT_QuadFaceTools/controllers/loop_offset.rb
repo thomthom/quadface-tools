@@ -114,31 +114,31 @@ class LoopOffsetController
   #
   # @return [Geom::Point3d, Nil]
   def pick_offset(x, y, view)
-    # Check if we switched which side to offset from.
-    #_picked_point, edge, face = pick_face(x, y, view)
-    #if edge && face && @offset.start_edge.faces.include?(face)
-    #  @picked_face = face
-    #  @offset.start_quad = face
-    #end
     # Compute the offset point and distance.
     ray = view.pickray(x, y)
     @offset_point = Geom.intersect_line_plane(ray, @picked_face.plane)
     @offset.distance = distance
-
+    # Check if we switched which side to offset from.
     point_on_line = offset_origin
     quad1 = @offset.start_quad
     quad2 = quad1.next_face(@offset.start_edge)
-    if quad2
-      distance1 = quad1.centroid.distance(point_on_line)
-      distance2 = quad2.centroid.distance(point_on_line)
-      if distance != distance1 && distance2 < distance1
+    edge_vector = @offset.start_edge.line[1]
+    vector1 = @offset.origin.vector_to(quad1.centroid)
+    vector2 = @offset.origin.vector_to(point_on_line)
+    cross1 = edge_vector * vector1
+    cross2 = edge_vector * vector2
+    if cross1.dot(cross2) < 0.0
+      if quad2
+        # When there is an opposite quad we allow the offset to switch side.
         @picked_face = quad2.faces.find { |f|
           (f.edges | @offset.loop).size > 0
         }
         @offset.start_quad = quad2
+      else
+        # When there is no opposite quad the offset is capped to zero.
+        @offset.distance = 0.to_l
       end
     end
-
     nil
   end
 
