@@ -19,5 +19,18 @@ module GL
     FILLED_TRIANGLE = 7
   end
 
-end # module
+  module Stipple
+    SOLID_LINE      = ''.freeze
+    DOTTED_LINE     = '.'.freeze
+    SHORT_DASHES    = '-'.freeze
+    LONG_DASHES     = '_'.freeze
+    LONG_DASHES_X2  = '__'.freeze
+    LONG_DASHES_X3  = '___'.freeze
+    LONG_DASHES_X4  = '____'.freeze
+    DASH_DOT_DASH   = '-.-'.freeze
+    DOT_SPACE_DOT   = '. .'.freeze
+    DASH_SPACE_DASH = '- -'.freeze
+  end
+
+end # module GL
 end # module

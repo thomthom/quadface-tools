@@ -9,16 +9,28 @@ require 'TT_QuadFaceTools/drawing_helper'
 require 'TT_QuadFaceTools/entities'
 require 'TT_QuadFaceTools/geometry'
 require 'TT_QuadFaceTools/loop_offset'
+require 'TT_QuadFaceTools/settings'
 
 
 module TT::Plugins::QuadFaceTools
 class LoopOffsetController
 
-  COLOR_PICK_POINT = Sketchup::Color.new(255, 0, 0)
+  THIN_LINE  = 1
+  THICK_LINE = 2
+
+  PICK_POINT_SIZE = 10
+  POINT_SIZE = 6
+
+  POLYGON_ALPHA_NORMAL = 16
+  POLYGON_ALPHA_HIGHLIGHT = 64
+
 
   def initialize
+    # The entities provider. Caching the known quads.
+    @provider = EntitiesProvider.new
+
     # The calculated loop offset.
-    @offset = LoopOffset.new
+    @offset = LoopOffset.new(@provider)
 
     # The relevant face under the cursor which determines which side of the
     # loop the offset will be.
@@ -30,8 +42,9 @@ class LoopOffsetController
     # The valid neighbouring faces to the loop.
     @loop_faces = []
 
-    # The entities provider. Caching the known quads.
-    @provider = EntitiesProvider.new
+    # Toggles debug mode.
+    # TT::Plugins::QuadFaceTools::Settings.write('DebugOffset', true)
+    @debug = Settings.read('DebugOffset', false)
   end
 
   # @return [Array<Sketchup::Edge>] loop
@@ -145,77 +158,96 @@ class LoopOffsetController
   # @param [Sketchup::View] view
   def draw(view)
 
-    if @offset.start_quad # DEBUG
+    # Visualize the quad representing the start and side for the offset.
+    if @offset.start_quad
       points = @offset.start_quad.vertices.map { |vertex| vertex.position }
-      view.drawing_color = [0, 0, 255, 64]
+      view.drawing_color = selection_color(view, POLYGON_ALPHA_HIGHLIGHT)
       view.draw(GL_POLYGON, points)
     end
 
+    # Visualize the faces that neighbours to the loop.
     unless @loop_faces.empty?
       triangles = []
-      @loop_faces.each { |face|
+      faces = @loop_faces.dup
+      faces.delete(@offset.start_quad)
+      faces.each { |face|
         mesh = face.mesh
         mesh.count_polygons.times { |i|
           triangles.concat(mesh.polygon_points_at(i + 1))
         }
       }
-      view.drawing_color = [0, 255, 0, 64]
+      view.drawing_color = selection_color(view, POLYGON_ALPHA_NORMAL)
       view.draw(GL_TRIANGLES, triangles)
     end
 
+    # Visualize the picked start point on the loop.
     if @offset.origin
       points = [@offset.origin]
-      view.line_stipple = ''
-      view.line_width = 1
-      view.draw_points(points, 10, GL::Points::CROSS, COLOR_PICK_POINT)
-      view.draw_points(points, 10, GL::Points::OPEN_SQUARE, COLOR_PICK_POINT)
+      view.line_stipple = GL::Stipple::SOLID_LINE
+      view.line_width = THIN_LINE
+      view.draw_points(points, PICK_POINT_SIZE, GL::Points::CROSS,
+                       selection_color(view))
+      view.draw_points(points, PICK_POINT_SIZE, GL::Points::OPEN_SQUARE,
+                       selection_color(view))
     end
 
+    # Visualize the offset position where the offset loop will intersect.
     if @offset_point
-      view.line_stipple = ''
-      view.line_width = 1
-      view.draw_points([@offset_point], 10, GL::Points::CROSS, COLOR_PICK_POINT)
+      view.line_stipple = GL::Stipple::SOLID_LINE
+      view.line_width = THIN_LINE
+      view.draw_points([@offset_point], POINT_SIZE, GL::Points::CROSS,
+                       selection_color(view))
     end
 
+    # Visualize the projections for the offset point relative to the offset
+    # loop and pick origin.
     if @offset.origin && @offset.start_edge && @offset_point
       point_on_line = offset_origin
 
-      view.line_width = 1
-      view.line_stipple = ''
-      view.draw_points([point_on_line], 6, GL::Points::CROSS, COLOR_PICK_POINT)
+      view.line_width = THIN_LINE
+      view.line_stipple = GL::Stipple::SOLID_LINE
+      view.draw_points([point_on_line], POINT_SIZE, GL::Points::CROSS,
+                       selection_color(view))
 
-      view.line_stipple = '.'
+      view.line_stipple = GL::Stipple::DOTTED_LINE
       view.draw(GL_LINES, @offset.origin, point_on_line)
 
-      view.line_stipple = '_'
+      view.line_stipple = GL::Stipple::LONG_DASHES
       view.draw(GL_LINES, @offset_point, point_on_line)
     end
 
-    if @offset.start_quad
+    # Visualize the centroids for the starting quad and it's opposite neighbour.
+    if @debug && @offset.start_quad
       points = []
+      # Start quad centroid.
       quad1 = @offset.start_quad
       points << quad1.centroid
-
+      # Opposite centroid.
       quad2 = quad1.next_face(@offset.start_edge)
       points << quad2.centroid if quad2
-
-      view.line_width = 1
-      view.line_stipple = ''
-      view.draw_points(points, 6, GL::Points::PLUS, 'purple')
+      # Just a simple cross.
+      view.line_width = THIN_LINE
+      view.line_stipple = GL::Stipple::SOLID_LINE
+      view.draw_points(points, POINT_SIZE, GL::Points::PLUS, 'purple')
     end
 
+    # Visualize the offset edges.
     if @offset.positions
       points = @offset.positions
-      view.line_stipple = ''
-      view.line_width = 2
-      view.drawing_color = 'red'
+      # Visualize edges.
+      view.line_stipple = GL::Stipple::SOLID_LINE
+      view.line_width = THIN_LINE
+      view.drawing_color = @debug ? 'red' : edge_color(view)
       view.draw(GL_LINE_STRIP, points)
-      view.line_width = 1
-      view.draw_points(points, 6, GL::Points::CROSS, COLOR_PICK_POINT)
-      points.each_with_index { |pt, i|
-        pt2d = view.screen_coords(pt)
-        view.draw_text(pt2d, "#{i}")
-      }
+      # Visualize points and their order.
+      if @debug
+        view.line_width = THIN_LINE
+        view.draw_points(points, POINT_SIZE, GL::Points::CROSS, 'red')
+        points.each_with_index { |pt, i|
+          pt2d = view.screen_coords(pt)
+          view.draw_text(pt2d, "#{i}")
+        }
+      end
     end
 
     view
@@ -233,6 +265,22 @@ class LoopOffsetController
 
   private
 
+  # @param [Sketchup::View] view
+  #
+  # @return [Sketchup::Color]
+  def edge_color(view)
+    view.model.rendering_options['ForegroundColor']
+  end
+
+  # @param [Sketchup::View] view
+  #
+  # @return [Sketchup::Color]
+  def selection_color(view, alpha = 255)
+    color = view.model.rendering_options['HighlightColor']
+    color.alpha = alpha
+    color
+  end
+
   # @param [Integer] x
   # @param [Integer] y
   # @param [Sketchup::View] view
@@ -245,10 +293,12 @@ class LoopOffsetController
     }
   end
 
+  # @return [Array(Geom::Point3d, Geom::Vector3d)]
   def offset_line
     [@offset_point, @offset.start_edge.line[1]]
   end
 
+  # @return [Geom::Point3d]
   def offset_origin
     @offset.origin.project_to_line(offset_line)
   end

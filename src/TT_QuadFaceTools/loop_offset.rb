@@ -11,9 +11,10 @@ class LoopOffset
 
   attr_reader :loop, :origin, :start_edge, :start_quad, :distance
 
-  def initialize
+  # @param [EntitiesProvider] provider
+  def initialize(provider)
     # The entities provider.
-    @provider = EntitiesProvider.new
+    @provider = provider
 
     # The source loop to be offset.
     @loop = nil
