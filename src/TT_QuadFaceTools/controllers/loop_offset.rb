@@ -42,6 +42,8 @@ class LoopOffsetController
     # The valid neighbouring faces to the loop.
     @loop_faces = []
 
+    @input_point = Sketchup::InputPoint.new
+
     # Toggles debug mode.
     # TT::Plugins::QuadFaceTools::Settings.write('DebugOffset', true)
     @debug = Settings.read('DebugOffset', false)
@@ -90,8 +92,8 @@ class LoopOffsetController
   #
   # @return [Array<Sketchup::Edge>, Nil]
   def pick_loop(x, y, view)
-    input_point = view.inputpoint(x, y)
-    edge = input_point.edge
+    @input_point.pick(view, x, y)
+    edge = @input_point.edge
     unless valid_pick_edge?(edge)
       edge = find_loop_start(x, y, view)
     end
@@ -128,7 +130,7 @@ class LoopOffsetController
   # @return [Geom::Point3d, Nil]
   def pick_offset(x, y, view)
     # Compute the offset point and distance.
-    ray = view.pickray(x, y)
+    ray = pick_ray(view, x, y)
     @offset_point = Geom.intersect_line_plane(ray, @picked_face.plane)
     @offset.distance = distance
     # Check if we switched which side to offset from.
@@ -250,6 +252,10 @@ class LoopOffsetController
       end
     end
 
+    if @input_point.display?
+      @input_point.draw(view)
+    end
+
     view
   end
 
@@ -260,6 +266,7 @@ class LoopOffsetController
     @offset.start_edge = nil
     @offset.start_quad = nil
     @offset.distance = nil
+    @input_point.clear
     nil
   end
 
@@ -320,10 +327,29 @@ class LoopOffsetController
       quad.faces.include?(face)
     }
     return nil unless face_is_valid_pick
-    ray = view.pickray(x, y)
+    ray = pick_ray(view, x, y)
     picked_point = Geom.intersect_line_plane(ray, face.plane)
     raise 'invalid pick point' unless picked_point
     [picked_point, edge, face]
+  end
+
+  # Get a pick ray which tried to use the InputPoint inference if appropriate.
+  #
+  # @param [Integer] x
+  # @param [Integer] y
+  # @param [Sketchup::View] view
+  #
+  # @return [Array(Geom::Point3d, Geom::Vector3d)]
+  def pick_ray(view, x, y)
+    @input_point.pick(view, x, y)
+    if @provider.is_diagonal?(@input_point.edge)
+      ray = view.pickray(x, y)
+      @input_point.clear
+    else
+      view.tooltip = @input_point.tooltip
+      ray = [@input_point.position, view.camera.eye]
+    end
+    ray
   end
 
   # @param [Sketchup::Edge] edge
