@@ -104,51 +104,53 @@ class LoopOffset
     # Calculate the offset points on the start quad's edges.
     pt1 = Geom::closest_points(line, edge1.line)[1]
     pt2 = Geom::closest_points(line, edge2.line)[1]
-
-    # TODO: This is just a dirty prototype. Clean up!
-    i = 0
-    loop = []
+    # Traverse the loop to calculate the offset.
     stack = []
     stack << [pt1, edge1, @start_quad]
-    stack << [pt2, edge2, @start_quad]
+    # First in one direction, this will be enough if the loop is closed.
+    loop_points = traverse(stack)
+    # If it's not a closed loop we also need to traverse in the other direction.
+    if loop_points.size < @loop.size
+      stack.clear
+      stack << [pt2, edge2, @start_quad]
+      # We need to reverse the order of the first set in order to make the new
+      # ones all appear in the same order.
+      loop_points.reverse!
+      loop_points.concat(traverse(stack))
+    end
+    # We now have a complete set of offset points.
+    loop_points
+  end
+
+  # @param [Array<Array(Geom::Point3d, Sketchup::Edge, Quad)>] stack
+  #
+  # @return [Array<Geom::Point3d>]
+  def traverse(stack)
+    loop_points = []
     until stack.empty?
-      i += 1
-      #puts "stack: #{i}"
-      # @type point [Geom::Point3d]
-      # @type edge [Sketchup::Edge]
-      # @type quad [Quad]
       point, edge, quad = stack.pop
-      loop << point
-
+      loop_points << point
+      # Traverse to the next neighboring quad.
       next_quad = quad.next_quad(edge)
-      #puts "> next_quad: #{next_quad}"
-
       next if next_quad.nil?
+      # Find the quad's shared edge with the loop - if any.
       edges = @loop & next_quad.edges
       next if edges.empty?
       raise if edges.size > 1
       loop_edge = edges[0]
-      #puts "> loop_edge: #{loop_edge}"
-
+      # Then we need the next edge that needs to be split.
       next_edge = next_quad.opposite_edge(edge)
-      #puts "> next_edge: #{next_edge}"
-
+      # Create a line parallel to the loop's edge - offset.
       loop_line = [point, loop_edge.line[1]]
       next_point = Geom::closest_points(loop_line, next_edge.line)[1]
-
+      # Push the next item to the stack.
       stack << [next_point, next_edge, next_quad]
-
-      break if stack.size == @loop.size
-
-      if i >= @loop.size
-        #puts "infinite loop! breaking out"
-        #raise "infinite loop"
+      # Make sure to break out when we've looped through a closed loop.
+      if loop_points.size > @loop.size
         break
       end
     end
-
-    #[pt1, offset_origin, pt2]
-    loop
+    loop_points
   end
 
   def reset_cache

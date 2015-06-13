@@ -146,6 +146,10 @@ class LoopOffsetController
       view.drawing_color = 'red'
       view.draw(GL_LINE_STRIP, points)
       view.draw_points(points, 10, GL::Points::CROSS, COLOR_PICK_POINT)
+      points.each_with_index { |pt, i|
+        pt2d = view.screen_coords(pt)
+        view.draw_text(pt2d, "#{i}")
+      }
     end
 
     view
