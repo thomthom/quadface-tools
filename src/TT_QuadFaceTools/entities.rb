@@ -325,7 +325,10 @@ module TT::Plugins::QuadFaceTools
         raise( ArgumentError, "Invalid number of arguments. ( #{args.size} out of 1..3 )" )
       end
     end
-    
+
+    def centroid
+      TT::Geom3d.average_point(positions)
+    end
     
     # @param [#edges] quadface
     #
