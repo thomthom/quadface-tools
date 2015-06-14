@@ -102,9 +102,10 @@ class OffsetTool
     when State::PICK_OFFSET
 
       @loop_offset.pick_offset(x, y, view)
-      # TODO: Build entities.
+      @loop_offset.do_offset
       @loop_offset.reset
-      @state = State::PICK_ORIGIN
+      #@state = State::PICK_ORIGIN # TODO
+      @state = State::PICK_LOOP
 
     else
       raise 'invalid tool state'

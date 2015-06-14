@@ -326,6 +326,8 @@ module TT::Plugins::QuadFaceTools
       end
     end
 
+    # @return [Geom::Point3d]
+    # @since 0.9.0
     def centroid
       TT::Geom3d.average_point(positions)
     end

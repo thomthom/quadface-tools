@@ -57,6 +57,7 @@ class LoopOffsetController
   # @param [Array<Sketchup::Edge>] loop
   def loop=(loop)
     @offset.loop = loop
+    reset
 
     @loop_faces.clear
     loop.each { |edge|
@@ -64,8 +65,6 @@ class LoopOffsetController
       @loop_faces.concat(faces)
     }
     @loop_faces.uniq!
-
-    reset
   end
 
   def picked_loop?
@@ -155,6 +154,20 @@ class LoopOffsetController
       end
     end
     nil
+  end
+
+  def do_offset
+    model = Sketchup.active_model
+    model.start_operation('Loop Offset', true)
+    new_loop = @offset.offset
+    model.selection.clear
+    model.selection.add(new_loop)
+    #@offset.loop = new_loop # TODO
+    @offset.loop = nil
+    new_loop
+  ensure
+    model.commit_operation
+    reset
   end
 
   # @param [Sketchup::View] view
@@ -266,6 +279,7 @@ class LoopOffsetController
     @offset.start_edge = nil
     @offset.start_quad = nil
     @offset.distance = nil
+    @loop_faces.clear
     @input_point.clear
     nil
   end

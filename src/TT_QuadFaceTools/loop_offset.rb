@@ -31,8 +31,9 @@ class LoopOffset
     # The offset distance.
     @distance = nil
 
-    # Cached array of points for the computed offset.
-    @positions = nil
+    # Result set of edge => point hash. Points might not be on the edge, but on
+    # its line.
+    @results = nil
   end
 
   # @param [Array<Sketchup::Edge>] value
@@ -69,7 +70,8 @@ class LoopOffset
   #
   # @return [Array<Geom::Point3d>]
   def positions
-    @positions ||= calculate
+    @results ||= calculate
+    @results ? @results.positions : nil
   end
 
   def ready?
@@ -80,14 +82,103 @@ class LoopOffset
   #
   # @return [Array<Edge>]
   def offset
+    @results ||= calculate
+    raise 'missing input parameters' if @results.nil?
 
+    map = @results.to_hash
+
+    loop_quads = []
+    @loop.each { |edge|
+      faces = @provider.get(edge.faces)
+      loop_quads.concat(faces)
+    }
+    loop_quads.uniq!
+
+    new_faces = []
+    native_faces = []
+    loop_quads.each { |quad|
+      edges = quad.edges.select { |edge| map[edge] }
+      next if edges.size < 2
+      raise 'unexpected result set' if edges.size > 2
+      native_faces.concat(quad.faces)
+
+      v1, v2, v3, v4 = quad.vertices
+      first_edge = v1.common_edge(v2)
+      if edges.include?(first_edge)
+        # Vertical
+        new_faces << [
+          v1.position,
+          map[v1.common_edge(v2)],
+          map[v3.common_edge(v4)],
+          v4.position
+        ]
+        new_faces << [
+          map[v1.common_edge(v2)],
+          v2.position,
+          v3.position,
+          map[v3.common_edge(v4)]
+        ]
+      else
+        # Horizontal
+        new_faces << [
+          v1.position,
+          v2.position,
+          map[v2.common_edge(v3)],
+          map[v4.common_edge(v1)]
+        ]
+        new_faces << [
+          map[v2.common_edge(v3)],
+          v3.position,
+          v4.position,
+          map[v4.common_edge(v1)]
+        ]
+      end
+    }
+    native_faces.uniq!
+
+    entities = Sketchup.active_model.active_entities
+    entities.erase_entities(native_faces)
+
+    new_loop = []
+    new_faces.each { |points|
+      @provider.add_quad(points)
+    }
+    reset_cache
+    new_loop
   end
 
   private
 
+  class ResultSet < Array
+
+    # Cached array of points for the computed offset.
+    #
+    # @return [Array<Geom::Point3d>]
+    def positions
+      @positions ||= map { |offset| offset.position }
+    end
+
+    # @return [Array<Sketchup::Edge>]
+    def edges
+      @edges ||= map { |offset| offset.edge }
+    end
+
+    # @result [Hash{Sketchup::Edge => Geom::Point3d}]
+    def to_hash
+      result = {}
+      each { |offset|
+        result[offset.edge] = offset.position
+      }
+      result
+    end
+
+  end # class
+
+  EdgeOffset = Struct.new(:edge, :position)
+
   # Returns the set of points for the given offset.
   #
-  # @return [Array<Geom::Point3d>]
+  # @return [ResultSet<EdgeOffset>]
   def calculate
     return nil unless ready?
     # Find the native face connected to the start edge.
@@ -109,28 +200,28 @@ class LoopOffset
     stack = []
     stack << [pt1, edge1, @start_quad]
     # First in one direction, this will be enough if the loop is closed.
-    loop_points = traverse(stack)
+    results = traverse(stack)
     # If it's not a closed loop we also need to traverse in the other direction.
-    if loop_points.size < @loop.size
+    if results.size < @loop.size
       stack.clear
       stack << [pt2, edge2, @start_quad]
       # We need to reverse the order of the first set in order to make the new
       # ones all appear in the same order.
-      loop_points.reverse!
-      loop_points.concat(traverse(stack))
+      results.reverse!
+      results.concat(traverse(stack))
     end
     # We now have a complete set of offset points.
-    loop_points
+    results
   end
 
   # @param [Array<Array(Geom::Point3d, Sketchup::Edge, Quad)>] stack
   #
-  # @return [Array<Geom::Point3d>]
+  # @return [ResultSet<EdgeOffset>]
   def traverse(stack)
-    loop_points = []
+    results = ResultSet.new
     until stack.empty?
       point, edge, quad = stack.pop
-      loop_points << point
+      results << EdgeOffset.new(edge, point)
       # Traverse to the next neighboring quad.
       next_quad = quad.next_quad(edge)
       next if next_quad.nil?
@@ -147,15 +238,15 @@ class LoopOffset
       # Push the next item to the stack.
       stack << [next_point, next_edge, next_quad]
       # Make sure to break out when we've looped through a closed loop.
-      if loop_points.size > @loop.size
+      if results.size > @loop.size
         break
       end
     end
-    loop_points
+    results
   end
 
   def reset_cache
-    @positions = nil
+    @results = nil
   end
 
 end # class
