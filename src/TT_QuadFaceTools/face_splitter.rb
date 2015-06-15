@@ -104,9 +104,11 @@ class FaceSplitter
       }
       quads.each { |quad|
         processed[quad] = true
-        split_edges = quad.edges.select { |edge| split_map[edge] }
+        split_edges = quad.edges.select { |edge|
+          split = split_map[edge]
+          split && TT::Edge.point_on_edge?(split.position, split.edge)
+        }
         next unless split_edges.size == 2
-        # TODO: Verify the split points are on the edges.
         splits = split_edges.map { |edge| split_map[edge] }
         face_splits << FaceSplit.new(quad, splits)
       }
