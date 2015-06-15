@@ -92,6 +92,7 @@ class FaceSplitter
         processed[quad] = true
         split_edges = quad.edges.select { |edge| split_map[edge] }
         next unless split_edges.size == 2
+        # TODO: Verify the split points are on the edges.
         splits = split_edges.map { |edge| split_map[edge] }
         face_splits << FaceSplit.new(quad, splits)
       }
@@ -105,44 +106,34 @@ class FaceSplitter
   def compute_new_faces(face_split)
     new_faces = []
     quad = face_split.face
+    # Get the two edges that should be split.
     split_edges = face_split.edge_splits.map { |edge_split| edge_split.edge }
-
+    # Build a map of Sketchup::Edge => EdgeSplit pairs.
     map = {}
     face_split.edge_splits.each { |edge_split|
       map[edge_split.edge] = edge_split.position
     }
-
-    v1, v2, v3, v4 = quad.vertices
+    # Determine the structure of the split in relationship to the vertex
+    # indicies.
+    v1, v2 = quad.vertices
     first_edge = v1.common_edge(v2)
-    if split_edges.include?(first_edge)
-      # Vertical
-      points1 = [
-        v1.position,
-        map[v1.common_edge(v2)],
-        map[v3.common_edge(v4)],
-        v4.position
-      ]
-      points2 = [
-        map[v1.common_edge(v2)],
-        v2.position,
-        v3.position,
-        map[v3.common_edge(v4)]
-      ]
-    else
-      # Horizontal
-      points1 = [
-        v1.position,
-        v2.position,
-        map[v2.common_edge(v3)],
-        map[v4.common_edge(v1)]
-      ]
-      points2 = [
-        map[v2.common_edge(v3)],
-        v3.position,
-        v4.position,
-        map[v4.common_edge(v1)]
-      ]
-    end
+    i = split_edges.include?(first_edge) ? 1 : 0
+    vs = quad.vertices
+    # Compute the positions for the new quads.
+    points1 = [
+      vs[i].position,
+      vs[i + 1].position,
+      map[vs[i + 1].common_edge(vs[i + 2])],
+      map[vs[(i + 3) % 4].common_edge(vs[(i + 4) % 4])]
+    ]
+    points2 = [
+      vs[i + 2].position,
+      vs[(i + 3) % 4].position,
+      map[vs[(i + 3) % 4].common_edge(vs[(i + 4) % 4])],
+      map[vs[(i + 5) % 4].common_edge(vs[(i + 6) % 4])]
+    ]
+    # TODO: Compute the UV mapping of the new quads.
+    # Build the data structures for the new quads.
     front_material_data = MaterialData.new(quad.material, nil)
     back_material_data = MaterialData.new(quad.back_material, nil)
     quad_data1 = QuadData.new(points1, front_material_data, back_material_data)
