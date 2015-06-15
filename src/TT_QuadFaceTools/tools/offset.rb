@@ -120,7 +120,7 @@ class OffsetTool
   # @param [Integer] key
   # @param [Sketchup::View] view
   def onKeyDown(key, _repeat, _flags, view)
-    if key & COPY_MODIFIER_KEY == COPY_MODIFIER_KEY
+    if key == COPY_MODIFIER_KEY
       @loop_offset.both_sides = !@loop_offset.both_sides
     end
     view.invalidate
