@@ -108,11 +108,6 @@ class FaceSplitter
     quad = face_split.face
     # Get the two edges that should be split.
     split_edges = face_split.edge_splits.map { |edge_split| edge_split.edge }
-    # Build a map of Sketchup::Edge => EdgeSplit pairs.
-    map = {}
-    face_split.edge_splits.each { |edge_split|
-      map[edge_split.edge] = edge_split.position
-    }
     # Determine the structure of the split in relationship to the vertex
     # indicies.
     v1, v2 = quad.vertices
@@ -120,27 +115,36 @@ class FaceSplitter
     i = split_edges.include?(first_edge) ? 1 : 0
     vs = quad.vertices
     # Compute the positions for the new quads.
-    points1 = [
-      vs[i].position,
-      vs[i + 1].position,
-      map[vs[i + 1].common_edge(vs[i + 2])],
-      map[vs[(i + 3) % 4].common_edge(vs[(i + 4) % 4])]
-    ]
-    points2 = [
-      vs[i + 2].position,
-      vs[(i + 3) % 4].position,
-      map[vs[(i + 3) % 4].common_edge(vs[(i + 4) % 4])],
-      map[vs[(i + 5) % 4].common_edge(vs[(i + 6) % 4])]
-    ]
-    # TODO: Compute the UV mapping of the new quads.
-    # Build the data structures for the new quads.
-    front_material_data = MaterialData.new(quad.material, nil)
-    back_material_data = MaterialData.new(quad.back_material, nil)
-    quad_data1 = QuadData.new(points1, front_material_data, back_material_data)
-    quad_data2 = QuadData.new(points2, front_material_data, back_material_data)
-    new_faces << quad_data1
-    new_faces << quad_data2
+    [0, 2].each { |j|
+      source = [
+        vs[i + j],
+        vs[(i + j + 1) % 4],
+        vs[(i + j + 1) % 4].common_edge(vs[(i + j + 2) % 4]),
+        vs[(i + j + 3) % 4].common_edge(vs[(i + j + 4) % 4])
+      ]
+      # Compute the positions for the new quads.
+      points = source_points(source)
+      # Build the data structures for the new quads.
+      front_data = MaterialData.new(quad.material)
+      back_data  = MaterialData.new(quad.back_material)
+      quad_data  = QuadData.new(points, front_data, back_data)
+      # TODO: Compute the UV mapping of the new quads.
+      # Push to the result list.
+      new_faces << quad_data
+    }
     new_faces
+  end
+
+  def source_points(source)
+    source.map { |entity|
+      if entity.is_a?(Sketchup::Vertex)
+        entity.position
+      elsif entity.is_a?(Sketchup::Edge)
+        split_map[entity].position
+      else
+        raise TypeError
+      end
+    }
   end
 
   def split_map
