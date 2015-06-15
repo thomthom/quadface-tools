@@ -261,7 +261,7 @@ class LoopOffsetController
     if @offset.positions
       # Visualize edges.
       view.line_stipple = GL::Stipple::SOLID_LINE
-      view.line_width = THIN_LINE
+      view.line_width = THICK_LINE
       view.drawing_color = @debug ? 'red' : edge_color(view)
       view.draw(GL_LINE_STRIP, @offset.positions)
       if both_sides
