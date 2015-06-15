@@ -18,6 +18,12 @@ class OffsetTool
     PICK_OFFSET = 2
   end
 
+  module CancelReason
+    ESC      = 0
+    RESELECT = 1
+    UNDO     = 2
+  end
+
   def initialize
     @state = State::PICK_LOOP
     @loop_offset = LoopOffsetController.new
@@ -46,15 +52,23 @@ class OffsetTool
     view.invalidate
   end
 
-  def onCancel(_reason, view)
+  # @param [Integer] reason
+  # @param [Sketchup::View] view
+  def onCancel(reason, view)
     @loop_offset.reset
-    case @state
-    when State::PICK_LOOP, State::PICK_ORIGIN
+    if reason == CancelReason::ESC
+      case @state
+      when State::PICK_LOOP, State::PICK_ORIGIN
+        @loop_offset.loop = nil
+        view.model.selection.clear
+        @state = State::PICK_LOOP
+      else
+        @state = State::PICK_ORIGIN
+      end
+    else
       @loop_offset.loop = nil
       view.model.selection.clear
       @state = State::PICK_LOOP
-    else
-      @state = State::PICK_ORIGIN
     end
     view.invalidate
   end
