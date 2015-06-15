@@ -643,7 +643,10 @@ module TT::Plugins::QuadFaceTools
         false
       end
     end
-    
+
+    # @param [Boolean] front
+    #
+    # @return [Hash{Sketchup::Vertex => Geom::Point3d}]
     # @since 0.4.0
     def uv_get( front = true )
       tw = Sketchup.create_texture_writer
@@ -662,7 +665,12 @@ module TT::Plugins::QuadFaceTools
       end
       mapping
     end
-    
+
+    # @param [Sketchup::Material]
+    # @param [Hash{Sketchup::Vertex => Geom::Point3d}] mapping
+    # @param [Boolean] front
+    #
+    # @return [Boolean]
     # @since 0.4.0
     def uv_set( new_material, mapping, front = true )
       unless new_material && new_material.texture

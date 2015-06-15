@@ -14,6 +14,7 @@ class FaceSplitter
   EdgeSplit = Struct.new(:edge, :position)
   FaceSplit = Struct.new(:face, :edge_splits)
   MaterialData = Struct.new(:material, :mapping)
+  UVPair = Struct.new(:position, :uv)
   QuadData = Struct.new(:positions, :front, :back)
 
   # @param [EntitiesProvider] provider
@@ -61,13 +62,26 @@ class FaceSplitter
 
   private
 
-  # @param [Quad] quad
+  # @param [QuadFace] quad
   # @param [MaterialData] material_data
   # @param [Boolean] front
   def apply_material(quad, material_data, front)
     return if material_data.nil?
     if material_data.mapping
-      quad.uv_set(material_data.material, material_data.mapping, front)
+      # Verify that quad.vertices return the same order they where created.
+      vertices = quad.vertices
+      sorted_vertices = material_data.mapping.map { |pair|
+        vertex = vertices.find { |vertex| vertex.position == pair.position }
+        raise 'failed to sort vertices' if vertex.nil?
+        vertex
+      }
+      # Apply the mapping to the quad.
+      uvs = material_data.mapping.map { |pair| pair.uv }
+      mapping = {}
+      sorted_vertices.each_with_index { |vertex, i|
+        mapping[vertex] = uvs[i]
+      }
+      quad.uv_set(material_data.material, mapping, front)
     else
       if front
         quad.material = material_data.material
@@ -125,16 +139,47 @@ class FaceSplitter
       # Compute the positions for the new quads.
       points = source_points(source)
       # Build the data structures for the new quads.
-      front_data = MaterialData.new(quad.material)
-      back_data  = MaterialData.new(quad.back_material)
-      quad_data  = QuadData.new(points, front_data, back_data)
-      # TODO: Compute the UV mapping of the new quads.
+      quad_data = QuadData.new(points)
+      quad_data.front = MaterialData.new(quad.material)
+      quad_data.front.mapping = uv_mapping(quad, source, true)
+      quad_data.back = MaterialData.new(quad.back_material)
+      quad_data.back.mapping = uv_mapping(quad, source, false)
       # Push to the result list.
       new_faces << quad_data
     }
     new_faces
   end
 
+  # @param [QuadFace]
+  # @param [Array<Sketchup::Vertex, Sketchup::Edge>] source
+  # @param [Boolean] front
+  #
+  # @return [Array<UVPair>]
+  def uv_mapping(quad, source, front)
+    uvs = quad.uv_get(front)
+    source.map { |entity|
+      if entity.is_a?(Sketchup::Vertex)
+        UVPair.new(entity.position, uvs[entity])
+      elsif entity.is_a?(Sketchup::Edge)
+        # Calculate the split point's weight in relationship to the edge's
+        # start and end vertex.
+        split = split_map[entity]
+        weight = entity.start.position.distance(split.position) / entity.length
+        # Now we can apply that to the UV data and get interpolated UV data
+        # for new split point.
+        uv1 = uvs[entity.start]
+        uv2 = uvs[entity.end]
+        uv = Geom.linear_combination(1.0 - weight, uv1, weight, uv2)
+        UVPair.new(split.position, uv)
+      else
+        raise TypeError
+      end
+    }
+  end
+
+  # @param [Array<Sketchup::Vertex, Sketchup::Edge>] source
+  #
+  # @return [Array<Geom::Point3d>]
   def source_points(source)
     source.map { |entity|
       if entity.is_a?(Sketchup::Vertex)
@@ -147,6 +192,7 @@ class FaceSplitter
     }
   end
 
+  # @return [Hash{Sketchup::Edge => EdgeSplit}]
   def split_map
     if @split_map.nil?
       @split_map = {}
