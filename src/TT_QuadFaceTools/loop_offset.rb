@@ -5,6 +5,8 @@
 #
 #-------------------------------------------------------------------------------
 
+require 'TT_QuadFaceTools/face_splitter'
+
 
 module TT::Plugins::QuadFaceTools
 class LoopOffset
@@ -84,65 +86,12 @@ class LoopOffset
   def offset
     @results ||= calculate
     raise 'missing input parameters' if @results.nil?
-
-    map = @results.to_hash
-
-    loop_quads = []
-    @loop.each { |edge|
-      faces = @provider.get(edge.faces)
-      loop_quads.concat(faces)
+    splitter = FaceSplitter.new(@provider)
+    @results.each { |offset|
+      splitter.add_split(offset.edge, offset.position)
     }
-    loop_quads.uniq!
-
-    new_faces = []
-    native_faces = []
-    loop_quads.each { |quad|
-      edges = quad.edges.select { |edge| map[edge] }
-      next if edges.size < 2
-      raise 'unexpected result set' if edges.size > 2
-      native_faces.concat(quad.faces)
-
-      v1, v2, v3, v4 = quad.vertices
-      first_edge = v1.common_edge(v2)
-      if edges.include?(first_edge)
-        # Vertical
-        new_faces << [
-          v1.position,
-          map[v1.common_edge(v2)],
-          map[v3.common_edge(v4)],
-          v4.position
-        ]
-        new_faces << [
-          map[v1.common_edge(v2)],
-          v2.position,
-          v3.position,
-          map[v3.common_edge(v4)]
-        ]
-      else
-        # Horizontal
-        new_faces << [
-          v1.position,
-          v2.position,
-          map[v2.common_edge(v3)],
-          map[v4.common_edge(v1)]
-        ]
-        new_faces << [
-          map[v2.common_edge(v3)],
-          v3.position,
-          v4.position,
-          map[v4.common_edge(v1)]
-        ]
-      end
-    }
-    native_faces.uniq!
-
-    entities = Sketchup.active_model.active_entities
-    entities.erase_entities(native_faces)
-
     new_loop = []
-    new_faces.each { |points|
-      @provider.add_quad(points)
-    }
+    splitter.split
     reset_cache
     new_loop
   end
@@ -161,15 +110,6 @@ class LoopOffset
     # @return [Array<Sketchup::Edge>]
     def edges
       @edges ||= map { |offset| offset.edge }
-    end
-
-    # @result [Hash{Sketchup::Edge => Geom::Point3d}]
-    def to_hash
-      result = {}
-      each { |offset|
-        result[offset.edge] = offset.position
-      }
-      result
     end
 
   end # class
