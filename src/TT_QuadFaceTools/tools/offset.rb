@@ -48,10 +48,13 @@ class OffsetTool
 
   def onCancel(_reason, view)
     @loop_offset.reset
-    if @loop_offset.loop
-      @state = State::PICK_ORIGIN
-    else
+    case @state
+    when State::PICK_LOOP, State::PICK_ORIGIN
+      @loop_offset.loop = nil
+      view.model.selection.clear
       @state = State::PICK_LOOP
+    else
+      @state = State::PICK_ORIGIN
     end
     view.invalidate
   end

@@ -70,7 +70,7 @@ class LoopOffsetController
     loop.each { |edge|
       faces = @provider.get(edge.faces)
       @loop_faces.concat(faces)
-    }
+    } if loop
     @loop_faces.uniq!
   end
 
@@ -175,6 +175,7 @@ class LoopOffsetController
     #@offset.loop = new_loop # TODO
     @offset.loop = nil
     copy_offset_to_other_side
+    @loop_faces.clear
     new_loop
   ensure
     model.commit_operation
@@ -296,7 +297,6 @@ class LoopOffsetController
     @offset.start_quad = nil
     @offset.distance = nil
     copy_offset_to_other_side
-    @loop_faces.clear
     @input_point.clear
     nil
   end
