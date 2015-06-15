@@ -5,7 +5,6 @@
 #
 #-------------------------------------------------------------------------------
 
-#require 'TT_QuadFaceTools/core'
 require 'TT_QuadFaceTools/entities'
 require 'TT_QuadFaceTools/controllers/loop_offset'
 
@@ -112,6 +111,15 @@ class OffsetTool
     end
 
     update_vcb
+    view.invalidate
+  end
+
+  # @param [Integer] key
+  # @param [Sketchup::View] view
+  def onKeyDown(key, _repeat, _flags, view)
+    if key & COPY_MODIFIER_KEY == COPY_MODIFIER_KEY
+      @loop_offset.both_sides = !@loop_offset.both_sides
+    end
     view.invalidate
   end
 

@@ -90,7 +90,7 @@ class LoopOffset
     @results.each { |offset|
       splitter.add_split(offset.edge, offset.position)
     }
-    new_loop = []
+    new_loop = [] # TODO: Return split.
     splitter.split
     reset_cache
     new_loop

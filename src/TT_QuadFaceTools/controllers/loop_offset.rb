@@ -25,12 +25,18 @@ class LoopOffsetController
   POLYGON_ALPHA_HIGHLIGHT = 64
 
 
+  attr_accessor :both_sides
+
+
   def initialize
     # The entities provider. Caching the known quads.
     @provider = EntitiesProvider.new
 
     # The calculated loop offset.
     @offset = LoopOffset.new(@provider)
+    @opposite_offset = LoopOffset.new(@provider)
+
+    @both_sides = false
 
     # The relevant face under the cursor which determines which side of the
     # loop the offset will be.
@@ -57,6 +63,7 @@ class LoopOffsetController
   # @param [Array<Sketchup::Edge>] loop
   def loop=(loop)
     @offset.loop = loop
+    @opposite_offset.loop = loop
     reset
 
     @loop_faces.clear
@@ -118,6 +125,7 @@ class LoopOffsetController
       @offset.start_quad = face
       @offset.start_edge = edge
       @offset.origin = Geometry.project_to_edge(picked_point, edge)
+      copy_offset_to_other_side
     end
     nil
   end
@@ -153,6 +161,7 @@ class LoopOffsetController
         @offset.distance = 0.to_l
       end
     end
+    copy_offset_to_other_side
     nil
   end
 
@@ -160,10 +169,12 @@ class LoopOffsetController
     model = Sketchup.active_model
     model.start_operation('Loop Offset', true)
     new_loop = @offset.offset
+    @opposite_offset.offset if both_sides
     model.selection.clear
     model.selection.add(new_loop)
     #@offset.loop = new_loop # TODO
     @offset.loop = nil
+    copy_offset_to_other_side
     new_loop
   ensure
     model.commit_operation
@@ -248,14 +259,19 @@ class LoopOffsetController
 
     # Visualize the offset edges.
     if @offset.positions
-      points = @offset.positions
       # Visualize edges.
       view.line_stipple = GL::Stipple::SOLID_LINE
       view.line_width = THIN_LINE
       view.drawing_color = @debug ? 'red' : edge_color(view)
-      view.draw(GL_LINE_STRIP, points)
+      view.draw(GL_LINE_STRIP, @offset.positions)
+      if both_sides
+        points = @opposite_offset.positions || []
+        view.draw(GL_LINE_STRIP, points) unless points.empty?
+      end
       # Visualize points and their order.
       if @debug
+        points = @offset.positions
+        points.concat(@opposite_offset.positions) if both_sides
         view.line_width = THIN_LINE
         view.draw_points(points, POINT_SIZE, GL::Points::CROSS, 'red')
         points.each_with_index { |pt, i|
@@ -279,12 +295,27 @@ class LoopOffsetController
     @offset.start_edge = nil
     @offset.start_quad = nil
     @offset.distance = nil
+    copy_offset_to_other_side
     @loop_faces.clear
     @input_point.clear
     nil
   end
 
   private
+
+  def copy_offset_to_other_side
+    @opposite_offset.loop = @offset.loop
+    @opposite_offset.origin = @offset.origin
+    @opposite_offset.start_edge = @offset.start_edge
+    @opposite_offset.start_quad = nil
+    if @offset.start_edge && @offset.start_quad
+      quad = @offset.start_quad
+      edge = @offset.start_edge
+      @opposite_offset.start_quad = quad.next_face(edge)
+    end
+    @opposite_offset.distance = @offset.distance
+    nil
+  end
 
   # @param [Sketchup::View] view
   #

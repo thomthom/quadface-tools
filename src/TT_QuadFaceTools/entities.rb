@@ -553,7 +553,7 @@ module TT::Plugins::QuadFaceTools
     def next_face( edge )
       return nil unless edge.faces.size == 2
       quadfaces = edge.faces.reject! { |face| @faces.include?( face ) }
-      return nil if quadfaces.empty?
+      return nil if quadfaces.nil? || quadfaces.empty?
       return nil unless valid_native_face?( quadfaces[0] )
       QuadFace.new( quadfaces[0] )
     end
