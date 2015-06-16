@@ -10,3 +10,4 @@ Resources/*
 
 # RubyMine
 .idea/workspace.xml
+*Thumbs.db

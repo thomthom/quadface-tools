@@ -325,7 +325,12 @@ module TT::Plugins::QuadFaceTools
         raise( ArgumentError, "Invalid number of arguments. ( #{args.size} out of 1..3 )" )
       end
     end
-    
+
+    # @return [Geom::Point3d]
+    # @since 0.9.0
+    def centroid
+      TT::Geom3d.average_point(positions)
+    end
     
     # @param [#edges] quadface
     #
@@ -548,7 +553,7 @@ module TT::Plugins::QuadFaceTools
     def next_face( edge )
       return nil unless edge.faces.size == 2
       quadfaces = edge.faces.reject! { |face| @faces.include?( face ) }
-      return nil if quadfaces.empty?
+      return nil if quadfaces.nil? || quadfaces.empty?
       return nil unless valid_native_face?( quadfaces[0] )
       QuadFace.new( quadfaces[0] )
     end
@@ -638,7 +643,10 @@ module TT::Plugins::QuadFaceTools
         false
       end
     end
-    
+
+    # @param [Boolean] front
+    #
+    # @return [Hash{Sketchup::Vertex => Geom::Point3d}]
     # @since 0.4.0
     def uv_get( front = true )
       tw = Sketchup.create_texture_writer
@@ -657,7 +665,12 @@ module TT::Plugins::QuadFaceTools
       end
       mapping
     end
-    
+
+    # @param [Sketchup::Material]
+    # @param [Hash{Sketchup::Vertex => Geom::Point3d}] mapping
+    # @param [Boolean] front
+    #
+    # @return [Boolean]
     # @since 0.4.0
     def uv_set( new_material, mapping, front = true )
       unless new_material && new_material.texture
@@ -1695,15 +1708,19 @@ module TT::Plugins::QuadFaceTools
     end
     
     # @param [Sketchup::Entity] entity
+    # @param [Boolean] add_to_cache
     #
     # @return [Sketchup::Entity,QuadFace]
     # @since 0.6.0
     def get_entity( entity, add_to_cache = false )
-      if quad = @faces_to_quads[ entity ]
+      quad = @faces_to_quads[ entity ]
+      if quad
         quad
       elsif QuadFace.is?( entity )
         quad = QuadFace.new( entity )
-        cache_entity( quad ) if add_to_cache && @types[ Sketchup::Face ][ entity ]
+        if add_to_cache && @types[ Sketchup::Face ][ entity ].nil?
+          cache_entity( quad )
+        end
         quad
       else
         entity
