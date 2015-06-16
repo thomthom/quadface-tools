@@ -9,7 +9,7 @@ require 'TT_Lib2/edges'
 
 
 module TT::Plugins::QuadFaceTools
-class Geometry
+module Geometry
 
   # @param [Geom::Point3d] point
   # @param [Sketchup::Edge] edge
