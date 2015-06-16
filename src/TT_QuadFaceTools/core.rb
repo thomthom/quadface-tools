@@ -172,6 +172,8 @@ module TT::Plugins::QuadFaceTools
     @commands[:shrink_loop] = cmd
 
     cmd = UI::Command.new( 'Offset Loop' )  { self.offset_loop_tool }
+    cmd.small_icon = File.join( PATH_ICONS, 'OffsetLoop_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'OffsetLoop_24.png' )
     cmd.status_bar_text = 'Offset an edge loop.'
     cmd.tooltip = 'Offset Loop'
     cmd_offset_loop_tool = cmd
@@ -453,6 +455,7 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_connect )
     m.add_item( cmd_insert_loops )
     m.add_item( cmd_remove_loops )
+    m.add_item( cmd_offset_loop_tool )
     m.add_separator
     m.add_item( cmd_build_corners )
     m.add_item( cmd_build_ends )
@@ -512,6 +515,7 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_connect )
         m.add_item( cmd_insert_loops )
         m.add_item( cmd_remove_loops )
+        m.add_item( cmd_offset_loop_tool )
         m.add_separator
         m.add_item( cmd_build_corners )
         m.add_item( cmd_build_ends )
@@ -562,10 +566,6 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_triangulate_selection )
     toolbar.add_item( cmd_remove_triangulation )
     toolbar.add_separator
-    toolbar.add_item( cmd_connect )
-    toolbar.add_item( cmd_insert_loops )
-    toolbar.add_item( cmd_remove_loops )
-    toolbar.add_separator
     toolbar.add_item( cmd_build_corners )
     toolbar.add_item( cmd_build_ends )
     toolbar.add_separator
@@ -583,8 +583,12 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_smooth_quad_mesh )
     toolbar.add_item( cmd_unsmooth_quad_mesh )
     toolbar.add_separator
+    toolbar.add_item( cmd_insert_loops )
+    toolbar.add_item( cmd_remove_loops )
+    toolbar.add_item( cmd_connect )
+    toolbar.add_item( cmd_offset_loop_tool )
+    toolbar.add_separator
     toolbar.add_item( cmd_line )
-    toolbar.add_item( cmd_offset_loop_tool ) # TODO: Temporary.
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
