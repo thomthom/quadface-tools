@@ -5,6 +5,7 @@
 #
 #-------------------------------------------------------------------------------
 
+require 'TT_QuadFaceTools/importers/mtl'
 require 'TT_QuadFaceTools/entities'
 require 'TT_QuadFaceTools/vertex_cache'
 
@@ -73,13 +74,16 @@ class ObjImporter < Sketchup::Importer
   #
   # @return [integer]
   def load_file(filename, show_summary)
+    base_path = File.dirname(filename)
     model = Sketchup.active_model
     model.start_operation('Import OBJ', true)
     group = model.active_entities.add_group
     entities = group.entities
     # OBJ files uses 1-based indicies.
+    materials = MtlParser.new(model, base_path)
     vertex_cache = VertexCache.new
     vertex_cache.index_base = 1
+    material = nil
     File.open(filename, 'r') { |file|
       file.each_line { |line|
         # Filter out comments.
@@ -133,7 +137,7 @@ class ObjImporter < Sketchup::Importer
               mapping << uvw # TODO: Convert UVW to UV?
             end
           }
-          create_face(entities, points, mapping)
+          create_face(entities, points, material, mapping)
         when 'o'
           # TODO: Object name.
           puts line
@@ -147,13 +151,13 @@ class ObjImporter < Sketchup::Importer
           puts line
           next
         when 'mtllib'
-          # TODO: Material library.
-          puts line
+          data.each { |library|
+            library_file = find_file(library, filename)
+            materials.read(library_file)
+          }
           next
         when 'usemtl'
-          # TODO: Material name.
-          puts line
-          next
+          material = materials.get(data[0])
         else
           raise "unknown token: #{token.inspect}"
         end
@@ -162,13 +166,17 @@ class ObjImporter < Sketchup::Importer
     model.commit_operation
     # Display summary back to the user
     if show_summary
-      UI.messagebox('TODO: Summary') # TODO
+      message = "OBJ Import Results\n"
+      message << "\n"
+      # TODO:
+      message << "Materials: #{materials.used_materials}\n"
+      UI.messagebox(message)
     end
     ImportResult::SUCCESS
   rescue => error
     p error
     puts error.backtrace.join("\n")
-    #model.abort_operation
+    model.abort_operation
     ImportResult::FAILURE
   end
 
@@ -176,20 +184,22 @@ class ObjImporter < Sketchup::Importer
 
   # @param [Sketchup::Entities] entities
   # @param [Array<Geom::Point3d>] points
+  # @oaram [Sketchup::Material, Nil]
   # @param [Array<Geom::Point3d>] mapping
   #
   # @return [Sketchup::Face, QuadFace]
-  def create_face(entities, points, mapping)
+  def create_face(entities, points, material, mapping)
     if TT::Geom3d.planar_points?(points)
       face = entities.add_face(points)
-      unless mapping.empty?
-        material = nil
+      if textured?(material) && !mapping.empty?
         face.position_material(material, mapping, true)
+      else
+        face.material = material
       end
     elsif points.size == 4
       provider = EntitiesProvider.new(entities)
       face = provider.add_quad(points)
-      unless mapping.empty?
+      if textured?(material) && !mapping.empty?
         vertices = sort_vertices(face.vertices, points)
         quad_mapping = {}
         vertices.each_with_index { |vertex, i|
@@ -197,6 +207,8 @@ class ObjImporter < Sketchup::Importer
           quad_mapping[vertex] = uvw
         }
         face.set_uv(quad_mapping)
+      else
+        face.material = material
       end
     else
       raise 'cannot import n-gons which are not planar'
@@ -205,6 +217,17 @@ class ObjImporter < Sketchup::Importer
   rescue
     p points
     raise
+  end
+
+  def find_file(filename, relative_to)
+    return File.expand_path(filename) if File.exist?(filename)
+    path = File.dirname(relative_to)
+    File.join(path, filename)
+  end
+
+  def textured?(material)
+    return false if material.nil?
+    material && material.texture
   end
 
   # @param [Array<String>] data

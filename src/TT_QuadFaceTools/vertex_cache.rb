@@ -22,7 +22,7 @@ class VertexCache
   end
 
   def add_uvw(u, v, w)
-    @texture_data << Geom::Point3d.new(u, v, q)
+    @texture_data << Geom::Point3d.new(u, v, w)
   end
 
   def get_vertex(index)
