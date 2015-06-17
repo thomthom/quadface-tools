@@ -525,7 +525,9 @@ module TT::Plugins::QuadFaceTools
     def material_library_filename( obj_file_name )
       path = File.dirname( obj_file_name )
       basename = File.basename( obj_file_name, '.obj' )
-      filename = File.join( path, "#{basename}.mtl" )
+      # Filename for .mtl files cannot contain spaces.
+      basename.gsub!(/\s+/, '_')
+      File.join( path, "#{basename}.mtl" )
     end
 
     # @param [Sketchup::Material,Nil] material
