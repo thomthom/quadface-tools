@@ -136,9 +136,9 @@ class ObjImporter < Sketchup::Importer
             point = vertex_cache.get_vertex(v)
             points << point
             if vt
-              uvw   = vertex_cache.get_uvw(vt)
+              uvw = vertex_cache.get_uvw(vt)
               mapping << point
-              mapping << uvw # TODO: Convert UVW to UV?
+              mapping << TT::UVQ.normalize(uvw)
             end
           }
           create_face(entities, points, material, mapping)
