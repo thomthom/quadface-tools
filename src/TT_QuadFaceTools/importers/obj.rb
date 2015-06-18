@@ -84,6 +84,7 @@ class ObjImporter < Sketchup::Importer
     vertex_cache = VertexCache.new
     vertex_cache.index_base = 1
     material = nil
+    stats = Statistics.new
     File.open(filename, 'r') { |file|
       file.each_line { |line|
         # Filter out comments.
@@ -115,6 +116,7 @@ class ObjImporter < Sketchup::Importer
             v = n.to_i
             point = vertex_cache.get_vertex(v)
             entities.add_cpoint(point)
+            stats.points += 1
           }
         when 'l'
           # Create edges ("lines").
@@ -123,6 +125,7 @@ class ObjImporter < Sketchup::Importer
             vertex_cache.get_vertex(v)
           }
           entities.add_edges(points)
+          stats.lines += 1
         when 'f'
           # Crease polygon faces.
           points = []
@@ -138,6 +141,7 @@ class ObjImporter < Sketchup::Importer
             end
           }
           create_face(entities, points, material, mapping)
+          stats.faces += 1
         when 'o'
           # TODO: Object name.
           puts line
@@ -169,8 +173,11 @@ class ObjImporter < Sketchup::Importer
       message = "OBJ Import Results\n"
       message << "\n"
       # TODO:
+      message << "Points: #{stats.points}\n"
+      message << "Lines: #{stats.lines}\n"
+      message << "Faces: #{stats.faces}\n"
       message << "Materials: #{materials.used_materials}\n"
-      UI.messagebox(message)
+      UI.messagebox(message, MB_MULTILINE)
     end
     ImportResult::SUCCESS
   rescue => error
@@ -181,6 +188,15 @@ class ObjImporter < Sketchup::Importer
   end
 
   private
+
+  Statistics = Struct.new(:points, :lines, :faces) do
+    def initialize(*args)
+      super(*args)
+      self.points ||= 0
+      self.lines  ||= 0
+      self.faces  ||= 0
+    end
+  end
 
   # @param [Sketchup::Entities] entities
   # @param [Array<Geom::Point3d>] points
