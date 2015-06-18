@@ -38,6 +38,7 @@ class MtlParser
       puts "unable to find file: #{filename}"
       return false
     end
+    # @see http://paulbourke.net/dataformats/mtl/
     File.open(filename, 'r') { |file|
       file.each_line { |line|
         # Filter out comments.

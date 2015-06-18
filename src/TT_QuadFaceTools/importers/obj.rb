@@ -86,6 +86,8 @@ class ObjImporter < Sketchup::Importer
     material = nil
     stats = Statistics.new
     Sketchup.status_text = 'Importing OBJ file...'
+    # @see http://paulbourke.net/dataformats/obj/
+    # @see http://www.martinreddy.net/gfx/3d/OBJ.spec
     File.open(filename, 'r') { |file|
       file.each_line { |line|
         # Filter out comments.
@@ -108,9 +110,6 @@ class ObjImporter < Sketchup::Importer
           v = (data.y || 0.0).to_f
           w = (data.z || 0.0).to_f
           vertex_cache.add_uvw(u, v, w)
-        when 'vn'
-          # Ignore vertex normals as we cannot use them for anything in SketchUp.
-          next
         when 'p'
           # Represent points as construction points.
           data.each { |n|
@@ -147,10 +146,6 @@ class ObjImporter < Sketchup::Importer
           # TODO: Object name.
           puts line
           next
-        when 'g'
-          # TODO: Group name.
-          puts line
-          next
         when 's'
           # TODO: Smoothing groups.
           puts line
@@ -164,7 +159,9 @@ class ObjImporter < Sketchup::Importer
         when 'usemtl'
           material = materials.get(data[0])
         else
-          raise "unknown token: #{token.inspect}"
+          # Any other token is either unknown or not supported. No errors is
+          # raised as the importer attempt to import what it can.
+          puts "Skipping token: #{token}"
         end
       }
     }
