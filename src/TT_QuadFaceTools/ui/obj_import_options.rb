@@ -20,7 +20,6 @@ class ObjImportOptions < Window
   # @return [TT::GUI::ModalWrapper]
   attr_reader :modal_window
 
-  # @param [Hash] options
   def initialize(&block)
     html_source = File.join(PATH_HTML, 'importer.html')
 
