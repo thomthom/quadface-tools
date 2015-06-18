@@ -192,7 +192,8 @@ class ObjImporter < Sketchup::Importer
         else
           # Any other token is either unknown or not supported. No errors is
           # raised as the importer attempt to import what it can.
-          puts "Skipping token: #{token}"
+          #puts "Skipping token: #{token}" # Consider logging this.
+          next
         end
       }
     }
