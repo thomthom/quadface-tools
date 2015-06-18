@@ -9,10 +9,10 @@
 module TT::Plugins::QuadFaceTools
 class MtlParser
 
-  attr_accessor :index_base
-
   Material = Struct.new(:name, :color, :alpha, :texture)
 
+  # @param [Sketchup::Model] model
+  # @param [String] base_path
   def initialize(model, base_path)
     @model = model
     @base_path = base_path
@@ -20,14 +20,19 @@ class MtlParser
     @sketchup_materials = {}
   end
 
+  # @return [Integer]
   def loaded_materials
     @materials.size
   end
 
+  # @return [Integer]
   def used_materials
     @sketchup_materials.size
   end
 
+  # @param [String] filename
+  #
+  # @return [Boolean]
   def read(filename)
     unless File.exist?(filename)
       puts "unable to find file: #{filename}"
@@ -61,6 +66,9 @@ class MtlParser
     true
   end
 
+  # @param [String] material_name
+  #
+  # @return [Sketchup::Material, Nil]
   def get(material_name)
     material = @sketchup_materials[material_name]
     if material.nil?
@@ -78,14 +86,24 @@ class MtlParser
 
   private
 
+  # @param [Numeric] value
+  # @param [Numeric] minimum
+  # @param [Numeric] maximum
+  #
+  # @return [Numeric]
   def clamp(value, minimum, maximum)
-    [[minimum, value.to_f].max, maximum].min
+    [[minimum, value].max, maximum].min
   end
 
+  # @return [Material, Nil]
   def current_material
+    raise 'no materials defined' if @materials.empty?
     @materials.last
   end
 
+  # @param [Array<String>] data
+  #
+  # @return [Float]
   def parse_alpha(data)
     case data[0]
     when '-halo'
@@ -95,6 +113,9 @@ class MtlParser
     end
   end
 
+  # @param [Array<String>] data
+  #
+  # @return [Sketchup::Color]
   def parse_color(data)
     case data[0]
     when 'spectral', 'xyz'
@@ -106,6 +127,9 @@ class MtlParser
     end
   end
 
+  # @param [Array<String>] data
+  #
+  # @return [Array<Integer>]
   def parse_rgb(data)
     raise 'need at least one component' if data.empty?
     rgb = data.map { |n| (255.0 * clamp(n.to_f, 0.0, 1.0)).to_i }
@@ -116,6 +140,9 @@ class MtlParser
     rgb
   end
 
+  # @param [Array<String>] data
+  #
+  # @return [String]
   def parse_texture(data)
     if data.size == 1
       filename = data[0]

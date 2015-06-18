@@ -19,7 +19,7 @@ class ObjImporter < Sketchup::Importer
   end
 
   # This method is called by SketchUp to determine the description that
-  # appears in the File > Import dialog's pulldown list of valid
+  # appears in the File > Import dialog's pull-down list of valid
   # importers.
   #
   # @return [String]
@@ -184,7 +184,7 @@ class ObjImporter < Sketchup::Importer
 
   # @param [Sketchup::Entities] entities
   # @param [Array<Geom::Point3d>] points
-  # @oaram [Sketchup::Material, Nil]
+  # @param [Sketchup::Material, Nil] material
   # @param [Array<Geom::Point3d>] mapping
   #
   # @return [Sketchup::Face, QuadFace]
@@ -219,12 +219,20 @@ class ObjImporter < Sketchup::Importer
     raise
   end
 
+  # If the given filename isn't found it's assumed to be relative to the
+  # second argument provided.
+  #
+  # @param [String] filename
+  # @param [String] relative_to
+  #
+  # @return [String]
   def find_file(filename, relative_to)
     return File.expand_path(filename) if File.exist?(filename)
     path = File.dirname(relative_to)
     File.join(path, filename)
   end
 
+  # @param [Sketchup::Material] material
   def textured?(material)
     return false if material.nil?
     material && material.texture
