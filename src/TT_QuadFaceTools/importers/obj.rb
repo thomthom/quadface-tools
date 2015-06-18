@@ -19,11 +19,6 @@ class ObjImporter < Sketchup::Importer
 
   IMPORTER_PREF_KEY = "#{PLUGIN_ID}\\Importer\\OBJ"
 
-  module ImportResult
-    SUCCESS = 0
-    FAILURE = 1
-  end
-
   # This method is called by SketchUp to determine the description that
   # appears in the File > Import dialog's pull-down list of valid
   # importers.
@@ -82,6 +77,9 @@ class ObjImporter < Sketchup::Importer
   #
   # @return [integer]
   def load_file(filename, show_summary)
+    unless File.exist?(filename)
+      Sketchup::Importer::ImportFileNotFound
+    end
     base_path = File.dirname(filename)
     model = Sketchup.active_model
     options = get_options
@@ -212,12 +210,12 @@ class ObjImporter < Sketchup::Importer
       message << "Smoothing Groups: #{smoothing_groups.size}\n"
       UI.messagebox(message, MB_MULTILINE)
     end
-    ImportResult::SUCCESS
+    Sketchup::Importer::ImportSuccess
   rescue => error
     p error
     puts error.backtrace.join("\n")
     model.abort_operation
-    ImportResult::FAILURE
+    Sketchup::Importer::ImportFail
   end
 
   private
