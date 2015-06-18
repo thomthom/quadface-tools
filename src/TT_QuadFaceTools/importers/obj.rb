@@ -78,7 +78,9 @@ class ObjImporter < Sketchup::Importer
     model = Sketchup.active_model
     model.start_operation('Import OBJ', true)
     group = model.active_entities.add_group
-    entities = group.entities
+    group.name = File.basename(filename)
+    root_entities = group.entities
+    entities = root_entities
     # OBJ files uses 1-based indicies.
     materials = MtlParser.new(model, base_path)
     vertex_cache = VertexCache.new
@@ -143,8 +145,9 @@ class ObjImporter < Sketchup::Importer
           create_face(entities, points, material, mapping)
           stats.faces += 1
         when 'o'
-          # TODO: Object name.
-          puts line
+          group = root_entities.add_group
+          group.name = data[0] unless data[0].empty?
+          entities = group.entities
           next
         when 's'
           # TODO: Smoothing groups.
@@ -212,7 +215,7 @@ class ObjImporter < Sketchup::Importer
         face.material = material
       end
     elsif points.size == 4
-      provider = EntitiesProvider.new(entities)
+      provider = EntitiesProvider.new([], entities)
       face = provider.add_quad(points)
       if textured?(material) && !mapping.empty?
         vertices = sort_vertices(face.vertices, points)
