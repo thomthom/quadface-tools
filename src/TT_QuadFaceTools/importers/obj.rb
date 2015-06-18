@@ -189,7 +189,6 @@ class ObjImporter < Sketchup::Importer
     if show_summary
       message = "OBJ Import Results\n"
       message << "\n"
-      # TODO:
       message << "Points: #{stats.points}\n"
       message << "Lines: #{stats.lines}\n"
       message << "Faces: #{stats.faces}\n"
