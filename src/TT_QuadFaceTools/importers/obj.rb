@@ -85,6 +85,7 @@ class ObjImporter < Sketchup::Importer
     vertex_cache.index_base = 1
     material = nil
     stats = Statistics.new
+    Sketchup.status_text = 'Importing OBJ file...'
     File.open(filename, 'r') { |file|
       file.each_line { |line|
         # Filter out comments.
@@ -168,6 +169,7 @@ class ObjImporter < Sketchup::Importer
       }
     }
     model.commit_operation
+    Sketchup.status_text = ''
     # Display summary back to the user
     if show_summary
       message = "OBJ Import Results\n"
