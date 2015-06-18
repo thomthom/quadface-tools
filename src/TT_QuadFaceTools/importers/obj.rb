@@ -6,12 +6,18 @@
 #-------------------------------------------------------------------------------
 
 require 'TT_QuadFaceTools/importers/mtl'
+require 'TT_QuadFaceTools/ui/obj_import_options'
 require 'TT_QuadFaceTools/entities'
+require 'TT_QuadFaceTools/unit_helper'
 require 'TT_QuadFaceTools/vertex_cache'
 
 
 module TT::Plugins::QuadFaceTools
 class ObjImporter < Sketchup::Importer
+
+  include UnitHelper
+
+  IMPORTER_PREF_KEY = "#{PLUGIN_ID}\\Importer\\OBJ"
 
   module ImportResult
     SUCCESS = 0
@@ -48,7 +54,7 @@ class ObjImporter < Sketchup::Importer
   #
   # @return [Boolean]
   def supports_options?
-    false
+    true
   end
 
   # This method is called by SketchUp when the user clicks on the
@@ -57,11 +63,13 @@ class ObjImporter < Sketchup::Importer
   #
   # @return [Nil]
   def do_options
-    # Todo: Add options:
-    # * Unit
-    # * Use materials (slower)
-    # * Ignore materials (faster)
-    # * Triangulate quads
+    options = get_options
+    @option_window ||= ObjImportOptions.new { |results|
+      process_options(results)
+    }
+    @option_window.options = options
+    @option_window.modal_window.show
+    process_options(@option_window.results) if TT::System::PLATFORM_IS_WINDOWS
     nil
   end
 
@@ -76,6 +84,7 @@ class ObjImporter < Sketchup::Importer
   def load_file(filename, show_summary)
     base_path = File.dirname(filename)
     model = Sketchup.active_model
+    options = get_options
     model.start_operation('Import OBJ', true)
     # The base group containing all the imported entities.
     group = model.active_entities.add_group
@@ -113,15 +122,22 @@ class ObjImporter < Sketchup::Importer
         case token
         when 'v'
           # Read the vertex data.
-          x = data.x.to_f
-          y = data.y.to_f
-          z = data.z.to_f
-          vertex_cache.add_vertex(x, y, z)
+          raise 'invalid vertex data' if data.size < 3
+          x, y, z = data.map { |n| convert_to_length(n, options[:units]) }
+          point = Geom::Point3d.new(x, y, z)
+          if options[:swap_yz]
+            tr = Geom::Transformation.axes(
+                ORIGIN, X_AXIS, Z_AXIS.reverse, Y_AXIS
+            ).inverse
+            point.transform!(tr)
+          end
+          vertex_cache.add_vertex(*point.to_a)
         when 'vt'
           # Read the vertex texture data.
+          # Spec says default is 0.0, but that yield invalid data for SketchUp.
           u = data.x.to_f
-          v = (data.y || 0.0).to_f
-          w = (data.z || 0.0).to_f
+          v = (data.y || 1.0).to_f
+          w = (data.z || 1.0).to_f
           vertex_cache.add_uvw(u, v, w)
         when 'p'
           # Represent points as construction points.
@@ -250,7 +266,7 @@ class ObjImporter < Sketchup::Importer
   def create_face(entities, points, material, mapping)
     if TT::Geom3d.planar_points?(points)
       face = entities.add_face(points)
-      if textured?(material) && !mapping.empty?
+      if textured?(material) && (2..8).include?(mapping.size)
         face.position_material(material, mapping, true)
       else
         face.material = material
@@ -314,6 +330,35 @@ class ObjImporter < Sketchup::Importer
       raise 'unable to sort vertices' if vertex.nil?
       vertex
     }
+  end
+
+  # @return [Hash{Symbol => Object}]
+  def default_options
+    {
+      :units   => UNIT_MODEL,
+      :swap_yz => true
+    }
+  end
+
+  # @return [Hash{Symbol => Object}]
+  def get_options
+    options = {}
+    default_options.each { |key, default|
+      value = Sketchup.read_default(IMPORTER_PREF_KEY, key.to_s, default)
+      options[key] = value
+    }
+    options
+  end
+
+  # @param [Hash{Symbol => Object}]
+  #
+  # @return [Nil]
+  def process_options(results)
+    # Save the options for next time.
+    results.each { |key, value|
+      Sketchup.write_default(IMPORTER_PREF_KEY, key.to_s, value)
+    }
+    nil
   end
 
 end # class
