@@ -88,12 +88,17 @@ module TT::Plugins::QuadFaceTools
   require File.join( PATH, 'gl.rb' )
   require File.join( PATH, 'window.rb' )
   require File.join( PATH, 'exporter_obj.rb' )
+  require 'TT_QuadFaceTools/importers/obj'
   require 'TT_QuadFaceTools/tools/offset'
 
   
   ### MENU & TOOLBARS ### ------------------------------------------------------
   
   unless file_loaded?( __FILE__ )
+
+    # Importers
+    Sketchup.register_importer(ObjImporter.new)
+
     
     @commands = {}
     def self.commands; @commands; end

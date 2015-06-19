@@ -31,6 +31,7 @@ module TT::Plugins::QuadFaceTools
 
     NO_MATERIAL = -1
 
+    # TODO: Use UnitHelper instead.
     # Matches Sketchup.active_model.options['UnitsOptions']['LengthUnit']
     UNIT_MODEL       = -1 # Not a SketchUp value
     UNIT_INCHES      =  0
@@ -198,6 +199,7 @@ module TT::Plugins::QuadFaceTools
     # @since 0.8.0
     def reset
       @options = {
+        # TODO: Triangulate n-gons.
         :units        => UNIT_MODEL,
         :group_type   => GROUP_BY_OBJECTS,
         :swap_yz      => true,
@@ -525,7 +527,9 @@ module TT::Plugins::QuadFaceTools
     def material_library_filename( obj_file_name )
       path = File.dirname( obj_file_name )
       basename = File.basename( obj_file_name, '.obj' )
-      filename = File.join( path, "#{basename}.mtl" )
+      # Filename for .mtl files cannot contain spaces.
+      basename.gsub!(/\s+/, '_')
+      File.join( path, "#{basename}.mtl" )
     end
 
     # @param [Sketchup::Material,Nil] material
@@ -748,6 +752,7 @@ module TT::Plugins::QuadFaceTools
     # @return [String]
     # @since 0.8.0
     def unit_to_string( unit )
+      # TODO: Use UnitHelper instead.
       case unit
       when UNIT_KILOMETERS
         'Kilometers'
@@ -773,6 +778,7 @@ module TT::Plugins::QuadFaceTools
     # @return [Integer]
     # @since 0.8.0
     def string_to_unit( string )
+      # TODO: Use UnitHelper instead.
       case string
       when 'Kilometers'
         UNIT_KILOMETERS
@@ -798,6 +804,7 @@ module TT::Plugins::QuadFaceTools
     # @return [Float]
     # @since 0.8.0
     def unit_ratio( unit )
+      # TODO: Use UnitHelper instead.
       if unit == UNIT_MODEL
         unit = Sketchup.active_model.options['UnitsOptions']['LengthUnit']
       end
