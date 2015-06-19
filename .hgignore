@@ -5,6 +5,7 @@ syntax: glob
 *.sublime-workspace
 
 # Folders
+archive/
 Test Models/*
 Resources/*
 
