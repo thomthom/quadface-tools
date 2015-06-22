@@ -56,7 +56,17 @@ class MtlParser
         when 'd'
           current_material.alpha = parse_alpha(data)
         when 'map_Kd'
-          current_material.texture = parse_texture(data)
+          begin
+            current_material.texture = parse_texture(data)
+          rescue RuntimeError # TODO: Add custom error type.
+            # Fall back to using the whole line as the filename. Version 0.8
+            # exported MTL files with spaces if the OBJ file had spaces.
+            result = line.match(/map_Kd\s+(.+)/)
+            raise if result.nil?
+            data = [result[1]]
+            puts "falling back to trying: #{data[0]}"
+            current_material.texture = parse_texture(data)
+          end
         else
           # Ignore these properties as they cannot be represented in SketchUp.
           #puts "ignoring token: #{token}" # TODO: Log.
@@ -153,6 +163,7 @@ class MtlParser
       File.expand_path(filename)
     else
       # TODO: Ignore options.
+      p data
       raise 'unsupported texture definition'
     end
   end
