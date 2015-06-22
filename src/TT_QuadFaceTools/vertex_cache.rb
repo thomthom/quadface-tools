@@ -66,6 +66,9 @@ class VertexCache
   #
   # @return [Integer]
   def get_index(index)
+    unless index.is_a?(Integer)
+      raise TypeError, "expected Integer, not #{index.class}"
+    end
     index < 0 ? index : index - @index_base
   end
 
