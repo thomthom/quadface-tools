@@ -183,10 +183,21 @@ class ObjImporter < Sketchup::Importer
           group_number = nil if group_number == 0
           smoothing_group = group_number
         when 'mtllib'
+          loaded = false
           data.each { |library|
             library_file = find_file(library, filename)
-            materials.read(library_file)
+            loaded ||= materials.read(library_file)
           }
+          if data.size > 1 && !loaded
+            # Fall back to using the whole line as the filename. Version 0.8
+            # exported MTL files with spaces if the OBJ file had spaces.
+            result = line.match(/mtllib\s+(.+)/)
+            next unless result
+            library = result[1]
+            library_file = find_file(library, filename)
+            puts "falling back to trying: #{library_file}"
+            materials.read(library_file)
+          end
         when 'usemtl'
           material = materials.get(data[0])
         else
@@ -302,7 +313,7 @@ class ObjImporter < Sketchup::Importer
   # @return [String]
   def find_file(filename, relative_to)
     return File.expand_path(filename) if File.exist?(filename)
-    path = File.dirname(relative_to)
+    path = File.expand_path(File.dirname(relative_to))
     File.join(path, filename)
   end
 
