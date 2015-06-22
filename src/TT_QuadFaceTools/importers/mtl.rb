@@ -59,7 +59,7 @@ class MtlParser
           current_material.texture = parse_texture(data)
         else
           # Ignore these properties as they cannot be represented in SketchUp.
-          puts "ignoring token: #{token}" # TODO: Remove.
+          #puts "ignoring token: #{token}" # TODO: Log.
           next
         end
       }
