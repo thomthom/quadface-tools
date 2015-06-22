@@ -220,6 +220,7 @@ class ObjImporter < Sketchup::Importer
       message << "Faces: #{stats.faces}\n"
       message << "Materials: #{materials.used_materials}\n"
       message << "Smoothing Groups: #{smoothing_groups.size}\n"
+      # TODO: Add elapsed time.
       UI.messagebox(message, MB_MULTILINE)
     end
     Sketchup::Importer::ImportSuccess
@@ -277,7 +278,16 @@ class ObjImporter < Sketchup::Importer
     if TT::Geom3d.planar_points?(points)
       face = entities.add_face(points)
       if textured?(material) && (2..8).include?(mapping.size)
-        face.position_material(material, mapping, true)
+        begin
+          face.position_material(material, mapping, true)
+        rescue ArgumentError => error
+          # TODO: Warn user about error. Log to error file.
+          puts "Failed to map #{face} (#{face.entityID})"
+          p mapping
+          p error
+          puts error.backtrace.join("\n")
+          face.material = material
+        end
       else
         face.material = material
       end
@@ -291,7 +301,16 @@ class ObjImporter < Sketchup::Importer
           uvw = mapping[(i * 2) + 1]
           quad_mapping[vertex] = uvw
         }
-        face.uv_set(material, quad_mapping, true)
+        begin
+          face.uv_set(material, quad_mapping, true)
+        rescue ArgumentError => error
+          # TODO: Warn user about error.
+          puts "Failed to map quad #{face}"
+          p mapping
+          p error
+          puts error.backtrace.join("\n")
+          face.material = material
+        end
       else
         face.material = material
       end
