@@ -291,7 +291,7 @@ class ObjImporter < Sketchup::Importer
           uvw = mapping[(i * 2) + 1]
           quad_mapping[vertex] = uvw
         }
-        face.set_uv(quad_mapping)
+        face.uv_set(material, quad_mapping, true)
       else
         face.material = material
       end
