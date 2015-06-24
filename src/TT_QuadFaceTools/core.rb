@@ -34,7 +34,9 @@ module TT::Plugins::QuadFaceTools
   
   
   ### PREFERENCES ### ----------------------------------------------------------
-  
+
+  # TT::Plugins::QuadFaceTools::Settings.write('DebugDisplayOffsetLoopTool', true)
+
   @settings = TT::Settings.new( PLUGIN_ID )
   # UI
   @settings.set_default( :context_menu, false )
@@ -89,6 +91,7 @@ module TT::Plugins::QuadFaceTools
   require File.join( PATH, 'window.rb' )
   require File.join( PATH, 'exporter_obj.rb' )
   require 'TT_QuadFaceTools/importers/obj'
+  require 'TT_QuadFaceTools/settings'
   require 'TT_QuadFaceTools/tools/offset'
 
   
@@ -460,7 +463,9 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_connect )
     m.add_item( cmd_insert_loops )
     m.add_item( cmd_remove_loops )
-    m.add_item( cmd_offset_loop_tool )
+    if Settings.read('DebugDisplayOffsetLoopTool', false)
+      m.add_item( cmd_offset_loop_tool )
+    end
     m.add_separator
     m.add_item( cmd_build_corners )
     m.add_item( cmd_build_ends )
@@ -520,7 +525,9 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_connect )
         m.add_item( cmd_insert_loops )
         m.add_item( cmd_remove_loops )
-        m.add_item( cmd_offset_loop_tool )
+        if Settings.read('DebugDisplayOffsetLoopTool', false)
+          m.add_item( cmd_offset_loop_tool )
+        end
         m.add_separator
         m.add_item( cmd_build_corners )
         m.add_item( cmd_build_ends )
@@ -591,7 +598,9 @@ module TT::Plugins::QuadFaceTools
     toolbar.add_item( cmd_insert_loops )
     toolbar.add_item( cmd_remove_loops )
     toolbar.add_item( cmd_connect )
-    toolbar.add_item( cmd_offset_loop_tool )
+    if Settings.read('DebugDisplayOffsetLoopTool', false)
+      toolbar.add_item( cmd_offset_loop_tool )
+    end
     toolbar.add_separator
     toolbar.add_item( cmd_line )
     if toolbar.get_last_state == TB_VISIBLE
