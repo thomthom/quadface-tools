@@ -25,7 +25,7 @@ module TT
   PLUGIN_ID       = 'TT_QuadFaceTools'.freeze
   PLUGIN_NAME     = 'QuadFace Tools'.freeze
   PLUGIN_VERSION  = '0.9.0'.freeze
-  BUILD_VERSION   = '001'.freeze
+  BUILD_VERSION   = '002'.freeze
   BUILD_TYPE      = DEVELOPMENT_BUILD
 
   # Resource paths
