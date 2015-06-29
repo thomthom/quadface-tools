@@ -346,7 +346,7 @@ class ObjImporter < Sketchup::Importer
   #
   # @return [Array<Integer>]
   def parse_triplet(data)
-    data.split('/').map { |n| n.to_i }
+    data.split('/').map { |n| n.empty? ? nil : n.to_i }
   end
 
   # @param [Array<Sketchup::Vertex>] vertices
