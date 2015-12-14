@@ -160,6 +160,12 @@ class ObjImporter < Sketchup::Importer
           data.each { |triplet|
             v, vt = parse_triplet(triplet)
             point = vertex_cache.get_vertex(v)
+            if points.include?(point)
+              puts "Duplicate points found"
+              puts "Line #{file.lineno}: #{line}"
+              stats.errors += 1
+              next
+            end
             points << point
             if vt
               uvw = vertex_cache.get_uvw(vt)
@@ -168,6 +174,11 @@ class ObjImporter < Sketchup::Importer
             end
           }
           face = create_face(entities, points, material, mapping)
+          if face.nil?
+            puts "Line #{file.lineno}: #{line}"
+            stats.errors += 1
+            next
+          end
           if smoothing_group
             smoothing_groups[smoothing_group] ||= []
             smoothing_groups[smoothing_group] << face
@@ -220,6 +231,10 @@ class ObjImporter < Sketchup::Importer
       message << "Faces: #{stats.faces}\n"
       message << "Materials: #{materials.used_materials}\n"
       message << "Smoothing Groups: #{smoothing_groups.size}\n"
+      if stats.errors > 0
+        message << "\n"
+        message << "Errors: #{stats.errors}\n"
+      end
       # TODO: Add elapsed time.
       UI.messagebox(message, MB_MULTILINE)
     end
@@ -233,13 +248,14 @@ class ObjImporter < Sketchup::Importer
 
   private
 
-  Statistics = Struct.new(:points, :lines, :faces, :objects) do
+  Statistics = Struct.new(:points, :lines, :faces, :objects, :errors) do
     def initialize(*args)
       super(*args)
       self.points  ||= 0
       self.lines   ||= 0
       self.faces   ||= 0
       self.objects ||= 0
+      self.errors ||= 0
     end
   end
 
@@ -314,13 +330,18 @@ class ObjImporter < Sketchup::Importer
       else
         face.material = material
       end
+    elsif points.size < 3
+      raise 'polygon with less than three unique vertices'
     else
       raise 'cannot import n-gons which are not planar'
     end
     face
-  rescue
-    p points
-    raise
+  rescue => error
+    puts points.inspect.gsub(/Point3d/, 'Geom::Point3d.new')
+    p error
+    puts error.backtrace.join("\n")
+    #raise
+    nil
   end
 
   # If the given filename isn't found it's assumed to be relative to the
