@@ -24,7 +24,7 @@ module TT
   PLUGIN          = self
   PLUGIN_ID       = 'TT_QuadFaceTools'.freeze
   PLUGIN_NAME     = 'QuadFace Tools'.freeze
-  PLUGIN_VERSION  = '0.9.2'.freeze
+  PLUGIN_VERSION  = '0.9.3'.freeze
   BUILD_VERSION   = '001'.freeze
   BUILD_TYPE      = RELEASE_BUILD
 
@@ -45,7 +45,7 @@ module TT
     @ex = SketchupExtension.new(PLUGIN_NAME, loader)
     @ex.description = 'Suite of tools for manipulating quad faces.'
     @ex.version     = "#{PLUGIN_VERSION}.#{BUILD_VERSION}#{BUILD_TYPE}"
-    @ex.copyright   = 'Thomas Thomassen © 2011—2015'
+    @ex.copyright   = 'Thomas Thomassen © 2011—2016'
     @ex.creator     = 'Thomas Thomassen (thomas@thomthom.net)'
     Sketchup.register_extension(@ex, true)
   end

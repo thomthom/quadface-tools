@@ -436,6 +436,22 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Display plugin information and related links.'
     cmd_about = cmd
     @commands[:about] = cmd
+
+    cmd = UI::Command.new( 'Count Polygons' )  {
+      self.analyze_active_entities
+    }
+    cmd.status_bar_text = 'Count the number of polygons in the current context.'
+    cmd.tooltip = 'Count the number of polygons.'
+    cmd_count_polygons = cmd
+    @commands[:count_polygons] = cmd
+
+    cmd = UI::Command.new( 'Colorize Polygons' )  {
+      self.analyze_active_entities(true)
+    }
+    cmd.status_bar_text = 'Colorize tris, quads and n-gons.'
+    cmd.tooltip = 'Colorize tris, quads and n-gons.'
+    cmd_color_polygons = cmd
+    @commands[:count_polygons] = cmd
     
     
     # Menus
@@ -483,6 +499,10 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_unwrap_uv_grid )
     m.add_separator
     m.add_item( cmd_line )
+    m.add_separator
+    sub_menu = m.add_submenu( 'Analyze' )
+    sub_menu.add_item( cmd_count_polygons )
+    sub_menu.add_item( cmd_color_polygons )
     m.add_separator
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
@@ -673,7 +693,67 @@ module TT::Plugins::QuadFaceTools
   def self.line_tool
     Sketchup.active_model.select_tool( LineTool.new )
   end
-  
+
+  # @since 0.9.3
+  def self.analyze_active_entities(colorize = false)
+    stats = {
+        :tris  => 0,
+        :quads => 0,
+        :ngons => 0
+    }
+
+    model = Sketchup.active_model
+    TT::Model.start_operation('Colorize Quads') if colorize
+    self.analyze_entities(model.active_entities, stats, colorize)
+    model.commit_operation if colorize
+
+    num_polygons = stats[:tris] + stats[:quads] + stats[:ngons]
+    results  = "Triangles: #{stats[:tris]}\n"
+    results << "    Quads: #{stats[:quads]}\n"
+    results << "   N-Gons: #{stats[:ngons]}\n"
+    results << "--------------------\n"
+    results << "    Total: #{num_polygons}\n"
+
+    # TODO: These methods are doing two functions, untangle them.
+    UI.messagebox(results, MB_MULTILINE) unless colorize
+    nil
+  end
+
+  # @since 0.9.3
+  COLOR_TRI  = Sketchup::Color.new(0, 0, 192)
+  COLOR_QUAD = Sketchup::Color.new(0, 192, 0)
+  COLOR_NGON = Sketchup::Color.new(192, 0, 0)
+
+  # @since 0.9.3
+  def self.analyze_entities(entities, stats, colorize = false)
+    provider = EntitiesProvider.new(entities)
+    provider.each { |entity|
+      case entity
+      when QuadFace
+        stats[:quads] += 1
+        entity.material = COLOR_QUAD if colorize
+      when Sketchup::Face
+        case entity.vertices.size
+        when 3
+          stats[:tris] += 1
+          entity.material = COLOR_TRI if colorize
+        when 4
+          # Don't think this should ever trigger. Should end up in QuadFace.
+          stats[:quads] += 1
+          entity.material = COLOR_QUAD if colorize
+        else
+          stats[:ngons] += 1
+          entity.material = COLOR_NGON if colorize
+        end
+      when Sketchup::Group, Sketchup::ComponentInstance
+        definition = TT::Instance.definition(entity)
+        self.analyze_entities(definition.entities, stats, colorize)
+      else
+        next
+      end
+    }
+    nil
+  end
   
   # @since 0.5.0
   def self.show_about_window
