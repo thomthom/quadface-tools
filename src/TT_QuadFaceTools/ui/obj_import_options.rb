@@ -80,6 +80,8 @@ class ObjImportOptions < Window
     }
 
     set_file(html_source)
+  rescue Exception => exception
+    ERROR_REPORTER.handle(exception)
   end
 
 end # class

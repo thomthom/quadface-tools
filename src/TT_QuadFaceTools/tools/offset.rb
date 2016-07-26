@@ -39,17 +39,23 @@ class OffsetTool
     end
 
     update_vcb
+  rescue Exception => exception
+    ERROR_REPORTER.handle(exception)
   end
 
   # @param [Sketchup::View] view
   def deactivate(view)
     view.invalidate
+  rescue Exception => exception
+    ERROR_REPORTER.handle(exception)
   end
 
   # @param [Sketchup::View] view
   def resume(view)
     update_vcb
     view.invalidate
+  rescue Exception => exception
+    ERROR_REPORTER.handle(exception)
   end
 
   # @param [Integer] reason
@@ -71,6 +77,8 @@ class OffsetTool
       @state = State::PICK_LOOP
     end
     view.invalidate
+  rescue Exception => exception
+    ERROR_REPORTER.handle(exception)
   end
 
   # @param [Integer] x
@@ -99,6 +107,8 @@ class OffsetTool
 
     update_vcb
     view.invalidate
+  rescue Exception => exception
+    ERROR_REPORTER.handle(exception)
   end
 
   # @param [Integer] x
@@ -129,6 +139,8 @@ class OffsetTool
 
     update_vcb
     view.invalidate
+  rescue Exception => exception
+    ERROR_REPORTER.handle(exception)
   end
 
   # @param [Integer] key
@@ -138,11 +150,15 @@ class OffsetTool
       @loop_offset.both_sides = !@loop_offset.both_sides
     end
     view.invalidate
+  rescue Exception => exception
+    ERROR_REPORTER.handle(exception)
   end
 
   # @param [Sketchup::View] view
   def draw(view)
     @loop_offset.draw(view)
+  rescue Exception => exception
+    ERROR_REPORTER.handle(exception)
   end
 
   private

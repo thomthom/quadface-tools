@@ -21,6 +21,8 @@ module TT::Plugins::QuadFaceTools
     # @since 0.8.0
     def enableVCB?
       true
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.8.0
@@ -28,17 +30,23 @@ module TT::Plugins::QuadFaceTools
       @vcb_length = nil
       reset()
       Sketchup.active_model.active_view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.8.0
     def resume( view )
       update_ui()
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.8.0
     def deactivate( view )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.8.0
@@ -51,6 +59,8 @@ module TT::Plugins::QuadFaceTools
       # (!)
       update_ui()
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.8.0
@@ -65,6 +75,8 @@ module TT::Plugins::QuadFaceTools
       # 2: the user did an undo while the tool was active.
       reset()
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
 
     # @since 0.8.0
@@ -100,6 +112,8 @@ module TT::Plugins::QuadFaceTools
       end
       unlock_axis( view )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.8.0
@@ -116,6 +130,8 @@ module TT::Plugins::QuadFaceTools
       end
       view.tooltip = @ip_mouse.tooltip
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
 
     # @since 0.8.0
@@ -135,6 +151,8 @@ module TT::Plugins::QuadFaceTools
         lock_axis( view, [1,0,0] )
       end
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
 
     # @since 0.8.0
@@ -145,6 +163,8 @@ module TT::Plugins::QuadFaceTools
         unlock_axis( view )
       end
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.8.0
@@ -160,11 +180,15 @@ module TT::Plugins::QuadFaceTools
         view.set_color_from_line( pt1, pt2 )
         view.draw( GL_LINES, pt1, pt2 )
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
 
     # @since 0.8.0
     def onSetCursor
       UI.set_cursor( @cursor )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     private
@@ -441,6 +465,8 @@ module TT::Plugins::QuadFaceTools
     # @since 0.7.0
     def enableVCB?
       true
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.7.0
@@ -448,17 +474,23 @@ module TT::Plugins::QuadFaceTools
       find_quads()
       update_ui()
       Sketchup.active_model.active_view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.7.0
     def resume( view )
       update_ui()
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.7.0
     def deactivate( view )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.7.0
@@ -474,17 +506,23 @@ module TT::Plugins::QuadFaceTools
       end
       update_ui()
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.7.0
     def onReturn( view )
       generate_mesh()
       view.model.select_tool( nil )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.7.0
     def draw( view )
       draw_quads( view )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     private
@@ -647,17 +685,23 @@ module TT::Plugins::QuadFaceTools
     # @since 0.3.0
     def activate
       update_ui()
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
     def resume( view )
       update_ui()
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
     def deactivate( view )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -668,6 +712,8 @@ module TT::Plugins::QuadFaceTools
         view.model.commit_operation
       end
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -686,6 +732,8 @@ module TT::Plugins::QuadFaceTools
           view.invalidate
         end
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -701,6 +749,8 @@ module TT::Plugins::QuadFaceTools
         edge = @quadface.divider
         view.draw( GL_LINES, edge.vertices.map { |v| v.position } )
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     private
@@ -746,12 +796,16 @@ module TT::Plugins::QuadFaceTools
       @vcb_text = ''
       update_ui()
       model.active_view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
     def resume( view )
       update_ui()
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -762,6 +816,8 @@ module TT::Plugins::QuadFaceTools
       PLUGIN.settings[ :connect_window_y ] = @window.top
       view.model.selection.remove_observer( @selection_observer )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -770,6 +826,8 @@ module TT::Plugins::QuadFaceTools
         update_ui()
         view.invalidate
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -778,6 +836,8 @@ module TT::Plugins::QuadFaceTools
         update_ui()
         view.invalidate
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -813,12 +873,16 @@ module TT::Plugins::QuadFaceTools
         end
       end
       #view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
     def draw( view )
       @edge_connect.draw( view )
       draw_HUD( view )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -826,12 +890,16 @@ module TT::Plugins::QuadFaceTools
       puts 'onReturn'
       do_splits()
       close_tool()
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
     def onCancel( reason, view )
       @vcb_text = ''
       update_ui()
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -842,6 +910,8 @@ module TT::Plugins::QuadFaceTools
       menu.add_separator
       menu.add_item( 'Apply' ) { do_splits(); close_tool() }
       menu.add_item( 'Cancel' ) { close_tool() }
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -870,6 +940,7 @@ module TT::Plugins::QuadFaceTools
         end
       end
       
+    # TODO: Hook up error reporter.
     rescue
       UI.beep
       raise
@@ -881,6 +952,8 @@ module TT::Plugins::QuadFaceTools
     # @since 0.3.0
     def enableVCB?
       true
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -915,6 +988,8 @@ module TT::Plugins::QuadFaceTools
       end
       onUserText( @vcb_text, view, true )
       false
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -923,6 +998,8 @@ module TT::Plugins::QuadFaceTools
       @key_shift = false if key == CONSTRAIN_MODIFIER_KEY
       onSetCursor()
       false
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
@@ -935,11 +1012,15 @@ module TT::Plugins::QuadFaceTools
         cursor = @cursor
       end
       UI.set_cursor( cursor )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.3.0
     def onSelectionChange( selection )
       @edge_connect.cut_edges = selected_edges()
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     private
@@ -1130,12 +1211,16 @@ module TT::Plugins::QuadFaceTools
       model.remove_observer( @model_observer )
       model.add_observer( @model_observer )
       model.active_view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.1.0
     def resume( view )
       update_cache( view )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.1.0
@@ -1144,6 +1229,8 @@ module TT::Plugins::QuadFaceTools
       PLUGIN.settings[ :ui_show_poles ] = @ui_show_poles
       view.model.remove_observer( @model_observer )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.1.0
@@ -1181,6 +1268,8 @@ module TT::Plugins::QuadFaceTools
       # Reset trippleclick flags
       @doubleclick = false
       UI.stop_timer( @timer_doubleclick ) if @timer_doubleclick
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.1.0
@@ -1207,6 +1296,8 @@ module TT::Plugins::QuadFaceTools
           end
         end
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.1.0
@@ -1242,6 +1333,8 @@ module TT::Plugins::QuadFaceTools
       @doubleclick = true
       UI.stop_timer( @timer_doubleclick ) if @timer_doubleclick
       @timer_doubleclick = UI.start_timer( 0.2, false ) { @doubleclick = false }
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @see http://code.google.com/apis/sketchup/docs/ourdoc/tool.html#onKeyDown
@@ -1252,6 +1345,8 @@ module TT::Plugins::QuadFaceTools
       @key_shift = true if key == CONSTRAIN_MODIFIER_KEY
       onSetCursor() # This blocks the VCB. (But "p onSetCursor()" does not.. ? )
       false # The VCB is not blocked as long as onSetCursor isn't the last call.
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @see http://code.google.com/apis/sketchup/docs/ourdoc/tool.html#onKeyUp
@@ -1262,6 +1357,8 @@ module TT::Plugins::QuadFaceTools
       @key_shift = false if key == CONSTRAIN_MODIFIER_KEY
       onSetCursor()
       false
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.1.0
@@ -1275,6 +1372,8 @@ module TT::Plugins::QuadFaceTools
       draw_poles( view, @n_cache, [0,0,255] )
       draw_poles( view, @e_cache, [0,128,0] )
       draw_poles( view, @x_cache, [255,0,0] )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @see http://code.google.com/apis/sketchup/docs/ourdoc/tool.html#onSetCursor
@@ -1291,6 +1390,8 @@ module TT::Plugins::QuadFaceTools
         cursor = @cursor
       end
       UI.set_cursor( cursor )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.2.0
@@ -1351,11 +1452,15 @@ module TT::Plugins::QuadFaceTools
       m.add_separator
       m.add_item( PLUGIN.commands[ :blender_to_quads ] )
       m.add_item( PLUGIN.commands[ :convert_legacy_quads ] )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.2.0
     def onModelChange( model )
       update_geometry_cache()
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     private
@@ -1568,6 +1673,8 @@ module TT::Plugins::QuadFaceTools
     def onTransactionStart( model )
       #puts 'onTransactionStart'
       UI.stop_timer( @delay )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @param [Sketchup::Model] model
@@ -1603,6 +1710,8 @@ module TT::Plugins::QuadFaceTools
         @tool.onModelChange( model )
         model.active_view.invalidate
       }
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @param [Sketchup::Model] model
@@ -1611,6 +1720,8 @@ module TT::Plugins::QuadFaceTools
     def onTransactionUndo( model )
       #puts 'onTransactionUndo'
       @tool.onModelChange( model )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @param [Sketchup::Model] model
@@ -1619,6 +1730,8 @@ module TT::Plugins::QuadFaceTools
     def onTransactionRedo( model )
       #puts 'onTransactionRedo'
       @tool.onModelChange( model )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
   end # class ModelChangeObserver
@@ -1643,6 +1756,8 @@ module TT::Plugins::QuadFaceTools
       #     only one to trigger when a single element is added.
       #puts 'onSelectionAdded'
       selectionChanged( selection )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @param [Sketchup::Selection] selection
@@ -1655,6 +1770,8 @@ module TT::Plugins::QuadFaceTools
       #     for single elements.
       #puts 'onSelectionRemoved'
       selectionChanged( selection )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @param [Sketchup::Selection] selection
@@ -1664,6 +1781,8 @@ module TT::Plugins::QuadFaceTools
       # (i) Does not trigger when a single element is added or removed.
       #puts 'onSelectionBulkChange'
       selectionChanged( selection )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @param [Sketchup::Selection] selection
@@ -1672,6 +1791,8 @@ module TT::Plugins::QuadFaceTools
     def onSelectionCleared( selection )
       #puts 'onSelectionCleared'
       selectionChanged( selection )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     private

@@ -66,6 +66,8 @@ class ObjImporter < Sketchup::Importer
     @option_window.modal_window.show
     process_options(@option_window.results) if TT::System::PLATFORM_IS_WINDOWS
     nil
+  rescue Exception => exception
+    ERROR_REPORTER.handle(exception)
   end
 
   # This method is called by SketchUp after the user has selected a file
@@ -239,10 +241,9 @@ class ObjImporter < Sketchup::Importer
       UI.messagebox(message, MB_MULTILINE)
     end
     Sketchup::Importer::ImportSuccess
-  rescue => error
-    p error
-    puts error.backtrace.join("\n")
+  rescue Exception => exception
     model.abort_operation
+    ERROR_REPORTER.report(exception)
     Sketchup::Importer::ImportFail
   end
 

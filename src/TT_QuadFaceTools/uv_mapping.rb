@@ -30,16 +30,22 @@ module TT::Plugins::QuadFaceTools
       else
         Sketchup.active_model.tools.push_tool( @uv_grid )
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
     def resume( view )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
     def deactivate( view )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -48,6 +54,8 @@ module TT::Plugins::QuadFaceTools
         view.model.commit_operation
         view.model.select_tool( nil )
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -61,6 +69,8 @@ module TT::Plugins::QuadFaceTools
           @group.transform!( tr )
         end
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -72,11 +82,15 @@ module TT::Plugins::QuadFaceTools
         @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
         view.model.tools.push_tool( @uv_grid )
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.5.0
     def draw( view )
       @ip_mouse.draw( view ) if @ip_mouse.display?
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @param [Array<Hash>] grid
@@ -213,16 +227,22 @@ module TT::Plugins::QuadFaceTools
       else
         Sketchup.active_model.tools.push_tool( @uv_grid )
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
     def resume( view )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
     def deactivate( view )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @param [Array<Hash>] grid
@@ -273,16 +293,22 @@ module TT::Plugins::QuadFaceTools
       else
         Sketchup.active_model.tools.push_tool( @uv_grid )
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
     def resume( view )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
     def deactivate( view )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @param [Array<Hash>] grid
@@ -358,6 +384,8 @@ module TT::Plugins::QuadFaceTools
     # @since 0.4.0
     def enableVCB?
       return true
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -396,12 +424,16 @@ module TT::Plugins::QuadFaceTools
         #puts '> No Grid'
         Sketchup.active_model.tools.push_tool( @uv_grid )
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
     def resume( view )
       update_ui()
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -418,6 +450,8 @@ module TT::Plugins::QuadFaceTools
       end
       
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -432,6 +466,8 @@ module TT::Plugins::QuadFaceTools
         scale_v( ip )
       end
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -440,6 +476,8 @@ module TT::Plugins::QuadFaceTools
         #puts 'Commit'
         view.model.commit_operation
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -473,6 +511,8 @@ module TT::Plugins::QuadFaceTools
         end
       end
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -483,6 +523,8 @@ module TT::Plugins::QuadFaceTools
           view.model.abort_operation
         end
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -522,6 +564,8 @@ module TT::Plugins::QuadFaceTools
       map_mesh()
       view.model.commit_operation
       update_ui()
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -574,6 +618,8 @@ module TT::Plugins::QuadFaceTools
       
       # InputPoint indicating interaction with the axis.
       @ip_mouse.draw( view ) if @ip_mouse.display?
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -641,6 +687,8 @@ module TT::Plugins::QuadFaceTools
       context_menu.set_validation_proc( m ) {
         ( @draw_uv_grid ) ? MF_CHECKED : MF_UNCHECKED
       }
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @return [Nil]
@@ -1060,17 +1108,23 @@ module TT::Plugins::QuadFaceTools
     def activate
       #puts 'UV_Grid'
       update_ui()
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
     def resume( view )
       update_ui()
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
     def deactivate( view )
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -1096,6 +1150,8 @@ module TT::Plugins::QuadFaceTools
         @v_edge = nil
         view.invalidate
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -1135,6 +1191,8 @@ module TT::Plugins::QuadFaceTools
       end
       update_ui()
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -1191,6 +1249,8 @@ module TT::Plugins::QuadFaceTools
       
       view.tooltip = @ip_mouse.tooltip
       view.invalidate
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.4.0
@@ -1240,7 +1300,9 @@ module TT::Plugins::QuadFaceTools
         view.line_width = 3
         view.draw( GL_LINES, points )
       end
-      
+    
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
     
     # @since 0.5.0

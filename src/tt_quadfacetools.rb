@@ -25,6 +25,7 @@ module TT
   PLUGIN_ID       = 'TT_QuadFaceTools'.freeze
   PLUGIN_NAME     = 'QuadFace Tools'.freeze
   PLUGIN_VERSION  = '0.9.3'.freeze
+  PLUGIN_URL      = 'http://evilsoftwareempire.com/quadfacetools'.freeze
   BUILD_VERSION   = '001'.freeze
   BUILD_TYPE      = RELEASE_BUILD
 
@@ -34,14 +35,14 @@ module TT
   FILENAMESPACE = File.basename(file, '.rb')
   PATH_ROOT     = File.dirname(file).freeze
   PATH          = File.join(PATH_ROOT, FILENAMESPACE).freeze
-  PATH_ICONS = File.join(PATH, 'icons').freeze
-  PATH_HTML  = File.join(PATH, 'html').freeze
+  PATH_ICONS    = File.join(PATH, 'icons').freeze
+  PATH_HTML     = File.join(PATH, 'html').freeze
 
 
   ### EXTENSION ### ------------------------------------------------------------
 
   unless file_loaded?(__FILE__)
-    loader = File.join(PATH, 'core.rb')
+    loader = File.join(PATH, 'bootstrap')
     @ex = SketchupExtension.new(PLUGIN_NAME, loader)
     @ex.description = 'Suite of tools for manipulating quad faces.'
     @ex.version     = "#{PLUGIN_VERSION}.#{BUILD_VERSION}#{BUILD_TYPE}"

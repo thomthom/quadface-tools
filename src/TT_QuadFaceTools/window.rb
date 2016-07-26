@@ -57,6 +57,8 @@ module TT::Plugins::QuadFaceTools
       }.join( ',' )
       function = "#{function}(#{arguments});"
       execute_script( function )
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
 
     # (i) Assumes the WebDialog HTML includes `base.js`.
@@ -100,6 +102,8 @@ module TT::Plugins::QuadFaceTools
       else
         show_modal
       end
+    rescue Exception => exception
+      ERROR_REPORTER.handle(exception)
     end
 
     # Make compatible with TT::GUI::ModalWrapper
