@@ -24,7 +24,7 @@ module TT
   PLUGIN          = self
   PLUGIN_ID       = 'TT_QuadFaceTools'.freeze
   PLUGIN_NAME     = 'QuadFace Tools'.freeze
-  PLUGIN_VERSION  = '0.9.4'.freeze
+  PLUGIN_VERSION  = '0.10.0'.freeze
   PLUGIN_URL      = 'http://evilsoftwareempire.com/quadfacetools'.freeze
   BUILD_VERSION   = '001'.freeze
   BUILD_TYPE      = RELEASE_BUILD
