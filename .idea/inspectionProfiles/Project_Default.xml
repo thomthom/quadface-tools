@@ -6,5 +6,6 @@
       <option name="m_minLength" value="2" />
     </inspection_tool>
     <inspection_tool class="RubyInstanceMethodNamingConvention" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="RubyTooManyMethodsInspection" enabled="false" level="WARNING" enabled_by_default="false" />
   </profile>
 </component>

@@ -15,6 +15,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" scope="PROVIDED" name="test-unit (v2.0.0.0, ruby-2.0.0-p576) [gem]" level="application" />
   </component>
   <component name="RModuleSettingsStorage">
     <LOAD_PATH number="3" string0="$MODULE_DIR$/src" string1="C:/Program Files/SketchUp/SketchUp 2015/Tools" string2="$MODULE_DIR$/../tt-library-2" />

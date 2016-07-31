@@ -30,6 +30,8 @@ end
 
 if defined?( TT::Lib ) && TT::Lib.compatible?( '2.7.0', 'QuadFace Tools' )
 
+require 'TT_QuadFaceTools/analyze'
+
 module TT::Plugins::QuadFaceTools
   
   
@@ -440,7 +442,7 @@ module TT::Plugins::QuadFaceTools
     @commands[:about] = cmd
 
     cmd = Command.new( 'Count Polygons' )  {
-      self.analyze_active_entities
+      Analyzer.analyze_active_entities
     }
     cmd.status_bar_text = 'Count the number of polygons in the current context.'
     cmd.tooltip = 'Count the number of polygons.'
@@ -448,12 +450,23 @@ module TT::Plugins::QuadFaceTools
     @commands[:count_polygons] = cmd
 
     cmd = Command.new( 'Colorize Polygons' )  {
-      self.analyze_active_entities(true)
+      Analyzer.analyze_active_entities(true)
     }
     cmd.status_bar_text = 'Colorize tris, quads and n-gons.'
     cmd.tooltip = 'Colorize tris, quads and n-gons.'
     cmd_color_polygons = cmd
-    @commands[:count_polygons] = cmd
+    @commands[:color_polygons] = cmd
+
+    cmd = Command.new( 'Live Mesh Analysis' )  {
+      Analyzer.toggle_live_analysis
+    }
+    cmd.set_validation_proc  {
+      ( Analyzer.is_active_model_observed? ) ? MF_CHECKED : MF_UNCHECKED
+    }
+    cmd.status_bar_text = 'Colorize tris, quads and n-gons.'
+    cmd.tooltip = 'Colorize tris, quads and n-gons.'
+    cmd_live_mesh_analysis = cmd
+    @commands[:live_mesh_analysis] = cmd
     
     
     # Menus
@@ -505,6 +518,8 @@ module TT::Plugins::QuadFaceTools
     sub_menu = m.add_submenu( 'Analyze' )
     sub_menu.add_item( cmd_count_polygons )
     sub_menu.add_item( cmd_color_polygons )
+    sub_menu.add_separator
+    sub_menu.add_item( cmd_live_mesh_analysis )
     m.add_separator
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
@@ -696,67 +711,6 @@ module TT::Plugins::QuadFaceTools
     Sketchup.active_model.select_tool( LineTool.new )
   end
 
-  # @since 0.9.3
-  def self.analyze_active_entities(colorize = false)
-    stats = {
-        :tris  => 0,
-        :quads => 0,
-        :ngons => 0
-    }
-
-    model = Sketchup.active_model
-    TT::Model.start_operation('Colorize Quads') if colorize
-    self.analyze_entities(model.active_entities, stats, colorize)
-    model.commit_operation if colorize
-
-    num_polygons = stats[:tris] + stats[:quads] + stats[:ngons]
-    results  = "Triangles: #{stats[:tris]}\n"
-    results << "    Quads: #{stats[:quads]}\n"
-    results << "   N-Gons: #{stats[:ngons]}\n"
-    results << "--------------------\n"
-    results << "    Total: #{num_polygons}\n"
-
-    # TODO: These methods are doing two functions, untangle them.
-    UI.messagebox(results, MB_MULTILINE) unless colorize
-    nil
-  end
-
-  # @since 0.9.3
-  COLOR_TRI  = Sketchup::Color.new(0, 0, 192)
-  COLOR_QUAD = Sketchup::Color.new(0, 192, 0)
-  COLOR_NGON = Sketchup::Color.new(192, 0, 0)
-
-  # @since 0.9.3
-  def self.analyze_entities(entities, stats, colorize = false)
-    provider = EntitiesProvider.new(entities)
-    provider.each { |entity|
-      case entity
-      when QuadFace
-        stats[:quads] += 1
-        entity.material = COLOR_QUAD if colorize
-      when Sketchup::Face
-        case entity.vertices.size
-        when 3
-          stats[:tris] += 1
-          entity.material = COLOR_TRI if colorize
-        when 4
-          # Don't think this should ever trigger. Should end up in QuadFace.
-          stats[:quads] += 1
-          entity.material = COLOR_QUAD if colorize
-        else
-          stats[:ngons] += 1
-          entity.material = COLOR_NGON if colorize
-        end
-      when Sketchup::Group, Sketchup::ComponentInstance
-        definition = TT::Instance.definition(entity)
-        self.analyze_entities(definition.entities, stats, colorize)
-      else
-        next
-      end
-    }
-    nil
-  end
-  
   # @since 0.5.0
   def self.show_about_window
     # (!) Add links to download page, SCF and donation page when TT_Lib2
