@@ -7,7 +7,6 @@ syntax: glob
 # Folders
 archive/
 Test Models/*
-Resources/*
 
 # RubyMine
 .idea/workspace.xml

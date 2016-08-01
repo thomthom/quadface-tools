@@ -463,8 +463,10 @@ module TT::Plugins::QuadFaceTools
     cmd.set_validation_proc  {
       ( Analyzer.is_active_model_observed? ) ? MF_CHECKED : MF_UNCHECKED
     }
+    cmd.small_icon = File.join( PATH_ICONS, 'Analysis_16.png' )
+    cmd.large_icon = File.join( PATH_ICONS, 'Analysis_24.png' )
     cmd.status_bar_text = 'Colorize tris, quads and n-gons.'
-    cmd.tooltip = 'Colorize tris, quads and n-gons.'
+    cmd.tooltip = 'Live mesh analysis which will colorize tris, quads and n-gons.'
     cmd_live_mesh_analysis = cmd
     @commands[:live_mesh_analysis] = cmd
     
@@ -640,6 +642,8 @@ module TT::Plugins::QuadFaceTools
     end
     toolbar.add_separator
     toolbar.add_item( cmd_line )
+    toolbar.add_separator
+    toolbar.add_item( cmd_live_mesh_analysis )
     if toolbar.get_last_state == TB_VISIBLE
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
