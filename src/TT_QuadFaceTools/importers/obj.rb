@@ -306,9 +306,10 @@ class ObjImporter < Sketchup::Importer
   def create_face(entities, points, material, mapping)
     if TT::Geom3d.planar_points?(points)
       face = entities.add_face(points)
-      # TODO: Check face orientation. SketchUp might try to adjust the face to
+      # Check face orientation. SketchUp might try to adjust the face to
       # a neighbouring face - and this isn't always ideal. For instance,
       # internal faces can easily affect exterior faces like this.
+      face.reverse! if face_reversed?(points, face)
       if textured?(material) && (2..8).include?(mapping.size)
         begin
           face.position_material(material, mapping, true)
@@ -328,6 +329,7 @@ class ObjImporter < Sketchup::Importer
     elsif points.size == 4
       provider = EntitiesProvider.new([], entities)
       face = provider.add_quad(points)
+      # TODO: Check face orientation.
       if textured?(material) && !mapping.empty?
         vertices = sort_vertices(face.vertices, points)
         quad_mapping = {}
@@ -362,6 +364,17 @@ class ObjImporter < Sketchup::Importer
     puts error.backtrace.join("\n")
     #raise
     nil
+  end
+
+  # @param [Array<Geom::Point3d>] points
+  # @param [Sketchup::Face] face
+  #
+  # @return [Boolean]
+  def face_reversed?(points, face)
+    vertices = face.outer_loop.vertices
+    start_point = points[0]
+    start_vertex = vertices.find { |v| v.position == start_point }
+    points[1] != vertices[1].position
   end
 
   # If the given filename isn't found it's assumed to be relative to the
