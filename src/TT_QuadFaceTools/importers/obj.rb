@@ -17,7 +17,11 @@ class ObjImporter < Sketchup::Importer
 
   include UnitHelper
 
-  IMPORTER_PREF_KEY = "#{PLUGIN_ID}\\Importer\\OBJ"
+  IMPORTER_PREF_KEY = "#{PLUGIN_ID}\\Importer\\OBJ".freeze
+
+  SWAP_YZ_TRANSFORM = Geom::Transformation.axes(
+      ORIGIN, X_AXIS, Z_AXIS, Y_AXIS.reverse
+  ).freeze
 
   # This method is called by SketchUp to determine the description that
   # appears in the File > Import dialog's pull-down list of valid
@@ -90,6 +94,7 @@ class ObjImporter < Sketchup::Importer
     group = model.active_entities.add_group
     group.name = File.basename(filename)
     root_entities = group.entities
+    parent_entities = root_entities
     # The current Sketchup::Entities collection new entities should be added to.
     entities = root_entities
     # Material manager for the OBJ file being parsed.
@@ -125,12 +130,7 @@ class ObjImporter < Sketchup::Importer
           raise 'invalid vertex data' if data.size < 3
           x, y, z = data.map { |n| convert_to_length(n, options[:units]) }
           point = Geom::Point3d.new(x, y, z)
-          if options[:swap_yz]
-            tr = Geom::Transformation.axes(
-                ORIGIN, X_AXIS, Z_AXIS.reverse, Y_AXIS
-            ).inverse
-            point.transform!(tr)
-          end
+          point.transform!(SWAP_YZ_TRANSFORM) if options[:swap_yz]
           vertex_cache.add_vertex(*point.to_a)
         when 'vt'
           # Read the vertex texture data.
@@ -186,11 +186,18 @@ class ObjImporter < Sketchup::Importer
             smoothing_groups[smoothing_group] << face
           end
           stats.faces += 1
+        when 'g'
+          # Assuming that objects can contain groups.
+          group = parent_entities.add_group
+          group.name = data[0] unless data[0].empty?
+          entities = group.entities
+          stats.objects += 1
         when 'o'
           group = root_entities.add_group
           group.name = data[0] unless data[0].empty?
           entities = group.entities
-          stats.objects += 1
+          parent_entities = entities
+          stats.groups += 1
         when 's'
           group_number = data[0] == 'off' ? nil : data[0].to_i
           group_number = nil if group_number == 0
@@ -231,6 +238,8 @@ class ObjImporter < Sketchup::Importer
       message << "Points: #{stats.points}\n"
       message << "Lines: #{stats.lines}\n"
       message << "Faces: #{stats.faces}\n"
+      message << "Objects: #{stats.objects}\n"
+      message << "Groups: #{stats.groups}\n"
       message << "Materials: #{materials.used_materials}\n"
       message << "Smoothing Groups: #{smoothing_groups.size}\n"
       if stats.errors > 0
@@ -244,19 +253,22 @@ class ObjImporter < Sketchup::Importer
   rescue Exception => exception
     model.abort_operation
     ERROR_REPORTER.report(exception)
+    p exception
+    puts exception.backtrace.join("\n")
     Sketchup::Importer::ImportFail
   end
 
   private
 
-  Statistics = Struct.new(:points, :lines, :faces, :objects, :errors) do
+  Statistics = Struct.new(:points, :lines, :faces, :objects, :groups, :errors) do
     def initialize(*args)
       super(*args)
       self.points  ||= 0
       self.lines   ||= 0
       self.faces   ||= 0
       self.objects ||= 0
-      self.errors ||= 0
+      self.groups  ||= 0
+      self.errors  ||= 0
     end
   end
 
@@ -294,9 +306,13 @@ class ObjImporter < Sketchup::Importer
   def create_face(entities, points, material, mapping)
     if TT::Geom3d.planar_points?(points)
       face = entities.add_face(points)
+      # TODO: Check face orientation. SketchUp might try to adjust the face to
+      # a neighbouring face - and this isn't always ideal. For instance,
+      # internal faces can easily affect exterior faces like this.
       if textured?(material) && (2..8).include?(mapping.size)
         begin
           face.position_material(material, mapping, true)
+          face.position_material(material, mapping, false)
         rescue ArgumentError => error
           # TODO: Warn user about error. Log to error file.
           puts "Failed to map #{face} (#{face.entityID})"
@@ -304,6 +320,7 @@ class ObjImporter < Sketchup::Importer
           p error
           puts error.backtrace.join("\n")
           face.material = material
+          face.back_material = material
         end
       else
         face.material = material
@@ -320,6 +337,7 @@ class ObjImporter < Sketchup::Importer
         }
         begin
           face.uv_set(material, quad_mapping, true)
+          face.uv_set(material, quad_mapping, false)
         rescue ArgumentError => error
           # TODO: Warn user about error.
           puts "Failed to map quad #{face}"
@@ -327,6 +345,7 @@ class ObjImporter < Sketchup::Importer
           p error
           puts error.backtrace.join("\n")
           face.material = material
+          face.back_material = material
         end
       else
         face.material = material
