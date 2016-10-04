@@ -50,6 +50,7 @@ module TT::Plugins::QuadFaceTools
     private
 
     def get_icon_path(path)
+      return path unless Sketchup.version.to_i > 15
       vector_icon = get_vector_path(path)
       File.exist?(vector_icon) ? vector_icon : path
     end
