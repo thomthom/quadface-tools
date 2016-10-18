@@ -219,7 +219,13 @@ class ObjImporter < Sketchup::Importer
             materials.read(library_file)
           end
         when 'usemtl'
-          material = materials.get(data[0])
+          # If we don't get a material from the MtlParser then it probably means
+          # it wasn't able to find the materials file. In this case we try to
+          # fall back to using currently selected material. UVLayout for
+          # instance will generate new OBJ files without MTL files.
+          # - Source: SketchUcation user Ithil
+          # TODO(thomthom): Maybe expose this behaviour as a user option.
+          material = materials.get(data[0]) || model.materials.current
         else
           # Any other token is either unknown or not supported. No errors is
           # raised as the importer attempt to import what it can.
