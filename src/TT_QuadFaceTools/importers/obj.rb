@@ -179,6 +179,8 @@ class ObjImporter < Sketchup::Importer
             v, vt = parse_triplet(triplet)
             point = vertex_cache.get_vertex(v)
             if points.include?(point)
+              # TODO: Message error back to user without raising error. Need to
+              # continue reading file.
               puts 'Duplicate points found'
               puts "Line #{file.lineno}: #{line}"
               stats.errors += 1
@@ -231,6 +233,7 @@ class ObjImporter < Sketchup::Importer
             next unless result
             library = result[1]
             library_file = find_file(library, filename)
+            # TODO: Refactor puts to debug and/or logging.
             puts "falling back to trying: #{library_file}"
             loaded ||= materials.read(library_file)
           end
@@ -242,19 +245,31 @@ class ObjImporter < Sketchup::Importer
           # instance will generate new OBJ files without MTL files.
           # - Source: SketchUcation user Ithil
           # TODO(thomthom): Maybe expose this behaviour as a user option.
-          material = materials.get(data[0]) || model.materials.current
+          # material = materials.get(data[0]) || model.materials.current
+          material = materials.get(data[0])
+          if material.nil?
+            materials.load(data[0])
+            material = materials.get(data[0])
+          end
+          if material.nil?
+            # TODO: Message error back to user without raising error. Need to
+            # continue reading file.
+            puts "material not found: #{material_name}" if definition.nil?
+            material = model.materials.current
+          end
         else
           # Any other token is either unknown or not supported. No errors is
           # raised as the importer attempt to import what it can.
-          #puts "Skipping token: #{token}" # Consider logging this.
+          # puts "Skipping token: #{token}" # TODO: Consider logging this.
           next
         end
       }
     }
-    rescue ArgumentError, ObjEncodingError, Encoding::EncodingError => error
+    rescue ArgumentError, ObjEncodingError, EncodingError => error
       if error.is_a?(ArgumentError) && !error.message.include?('invalid byte sequence')
         raise
       end
+      # TODO: Log errors. (Allow user to access?)
       puts error.backtrace.first
       custom_encodings ||= Encoding.name_list
       raise if custom_encodings.empty?
@@ -288,7 +303,11 @@ class ObjImporter < Sketchup::Importer
     Sketchup::Importer::ImportSuccess
   rescue Exception => exception
     model.abort_operation
+    # Ensure the error is reported.
     ERROR_REPORTER.report(exception)
+    # The importer interface have its own way to handle errors, so we don't
+    # re-raise. Instead output to console.
+    # TODO: Output to $STDERR?
     p exception
     puts exception.backtrace.join("\n")
     Sketchup::Importer::ImportFail
@@ -385,9 +404,16 @@ class ObjImporter < Sketchup::Importer
       else
         face.material = material
       end
+    elsif points.size == 3
+      # TODO: Throw custom errors that can be used for more detailed failure
+      # messages.
+      # TODO: TriangleTooSmall < CreateFaceError
+      raise 'triangle is too small'
     elsif points.size < 3
+      # TODO: NotEnoughUniquePoints < CreateFaceError
       raise 'polygon with less than three unique vertices'
     else
+      # TODO: NgonNotPlanar < CreateFaceError
       raise 'cannot import n-gons which are not planar'
     end
     face
@@ -443,6 +469,7 @@ class ObjImporter < Sketchup::Importer
   def sort_vertices(vertices, order_by_points)
     order_by_points.map { |point|
       vertex = vertices.find { |vertex| vertex.position == point }
+      # TODO: Custom error. (?)
       raise 'unable to sort vertices' if vertex.nil?
       vertex
     }

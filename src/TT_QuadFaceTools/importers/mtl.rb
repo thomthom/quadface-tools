@@ -87,7 +87,6 @@ class MtlParser
     material = @sketchup_materials[material_name]
     if material.nil?
       definition = @materials.find { |m| m.name == material_name }
-      puts "material not found: #{material_name}" if definition.nil?
       return nil if definition.nil?
       material = @model.materials.add(material_name)
       material.color = definition.color if definition.color
@@ -96,6 +95,20 @@ class MtlParser
       @sketchup_materials[material_name] = material
     end
     material
+  end
+
+  # Used to force load a material without a mtllib. (Yes, such files exist.)
+  #
+  # @param [String] material_name
+  #
+  # @return [Nil]
+  def load(material_name)
+    material_texture = parse_texture(["#{material_name}.*"])
+    material = Material.new(material_name)
+    material.color = Sketchup::Color.new('silver')
+    material.texture = material_texture
+    @materials << material
+    nil
   end
 
   private
@@ -178,14 +191,19 @@ class MtlParser
   #
   # @return [String]
   def find_texture_file(filename)
-    # TODO: What does this line do?
-    #filename_alt = data.join.[](/(?=[\/\\])*(\w[_\w.\s])+\.\w{3,4}/)
     search_paths = [
         File.join(@base_path, filename),
         File.join(@base_path, 'map', filename),
         File.join(@base_path, 'maps', filename)
     ]
     search_paths.each { |path|
+      # The filename is treated as a glob pattern if there is a * in it.
+      # This is for scenarios were the file extension isn't known.
+      if path.include?('*')
+        pattern = File.expand_path(path)
+        result = Dir.glob(pattern)
+        path = result.first || ''
+      end
       return path if File.exist?(path)
     }
     filename
