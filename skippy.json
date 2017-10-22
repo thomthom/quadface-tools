@@ -1,0 +1,8 @@
+{
+  "name": "Quad Face Tools",
+  "description": "",
+  "namespace": "TT::Plugins::QuadFaceTools",
+  "author": "Unknown",
+  "copyright": "Copyright (c) 2017",
+  "license": "None"
+}
