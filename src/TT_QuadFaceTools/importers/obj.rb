@@ -23,6 +23,8 @@ class ObjImporter < Sketchup::Importer
       ORIGIN, X_AXIS, Z_AXIS, Y_AXIS.reverse
   ).freeze
 
+  class ObjEncodingError < StandardError; end
+
   # This method is called by SketchUp to determine the description that
   # appears in the File > Import dialog's pull-down list of valid
   # importers.
@@ -115,14 +117,28 @@ class ObjImporter < Sketchup::Importer
     Sketchup.status_text = 'Importing OBJ file...'
     # @see http://paulbourke.net/dataformats/obj/
     # @see http://www.martinreddy.net/gfx/3d/OBJ.spec
-    File.open(filename, 'r') { |file|
+    custom_encodings = nil
+    encoding = 'UTF-8'
+    attempts = 0 
+    begin
+    File.open(filename, "r:#{encoding}:UTF-8") { |file|
+      puts "Reading file. External encoding: #{file.external_encoding}"
       file.each_line { |line|
         # Filter out comments.
         next if line.start_with?('#')
         # Filter out empty lines.
         next if line.strip.empty?
         # Parse the line data and extract the line token.
-        data = line.split(/\s+/)
+        begin
+          data = line.split(/\s+/)
+        rescue ArgumentError => e
+          #p line.bytes if e.message.include?('invalid byte sequence')
+          if e.message.include?('invalid byte sequence')
+            p line.encoding
+            puts line
+          end 
+          raise
+        end
         token = data.shift
         case token
         when 'v'
@@ -163,7 +179,9 @@ class ObjImporter < Sketchup::Importer
             v, vt = parse_triplet(triplet)
             point = vertex_cache.get_vertex(v)
             if points.include?(point)
-              puts "Duplicate points found"
+              # TODO: Message error back to user without raising error. Need to
+              # continue reading file.
+              puts 'Duplicate points found'
               puts "Line #{file.lineno}: #{line}"
               stats.errors += 1
               next
@@ -215,19 +233,52 @@ class ObjImporter < Sketchup::Importer
             next unless result
             library = result[1]
             library_file = find_file(library, filename)
+            # TODO: Refactor puts to debug and/or logging.
             puts "falling back to trying: #{library_file}"
-            materials.read(library_file)
+            loaded ||= materials.read(library_file)
           end
+          raise ObjEncodingError if !loaded && custom_encodings
         when 'usemtl'
+          # If we don't get a material from the MtlParser then it probably means
+          # it wasn't able to find the materials file. In this case we try to
+          # fall back to using currently selected material. UVLayout for
+          # instance will generate new OBJ files without MTL files.
+          # - Source: SketchUcation user Ithil
+          # TODO(thomthom): Maybe expose this behaviour as a user option.
+          # material = materials.get(data[0]) || model.materials.current
           material = materials.get(data[0])
+          if material.nil?
+            materials.load(data[0])
+            material = materials.get(data[0])
+          end
+          if material.nil?
+            # TODO: Message error back to user without raising error. Need to
+            # continue reading file.
+            puts "material not found: #{material_name}" if definition.nil?
+            material = model.materials.current
+          end
         else
           # Any other token is either unknown or not supported. No errors is
           # raised as the importer attempt to import what it can.
-          #puts "Skipping token: #{token}" # Consider logging this.
+          # puts "Skipping token: #{token}" # TODO: Consider logging this.
           next
         end
       }
     }
+    rescue ArgumentError, ObjEncodingError, EncodingError => error
+      if error.is_a?(ArgumentError) && !error.message.include?('invalid byte sequence')
+        raise
+      end
+      # TODO: Log errors. (Allow user to access?)
+      puts error.backtrace.first
+      custom_encodings ||= Encoding.name_list
+      raise if custom_encodings.empty?
+      encoding = custom_encodings.pop
+      puts "Failed to read file. Retrying with encoding: #{encoding}"
+      attempts += 1
+      raise 'MAX ATTEMPTS' if attempts > Encoding.list.size
+      retry
+    end
     apply_smoothing_groups(smoothing_groups)
     model.commit_operation
     Sketchup.status_text = ''
@@ -252,7 +303,11 @@ class ObjImporter < Sketchup::Importer
     Sketchup::Importer::ImportSuccess
   rescue Exception => exception
     model.abort_operation
+    # Ensure the error is reported.
     ERROR_REPORTER.report(exception)
+    # The importer interface have its own way to handle errors, so we don't
+    # re-raise. Instead output to console.
+    # TODO: Output to $STDERR?
     p exception
     puts exception.backtrace.join("\n")
     Sketchup::Importer::ImportFail
@@ -263,12 +318,9 @@ class ObjImporter < Sketchup::Importer
   Statistics = Struct.new(:points, :lines, :faces, :objects, :groups, :errors) do
     def initialize(*args)
       super(*args)
-      self.points  ||= 0
-      self.lines   ||= 0
-      self.faces   ||= 0
-      self.objects ||= 0
-      self.groups  ||= 0
-      self.errors  ||= 0
+      each_pair { |key, value|
+        send("#{key.to_s}=", 0) if value.nil?
+      }
     end
   end
 
@@ -352,9 +404,16 @@ class ObjImporter < Sketchup::Importer
       else
         face.material = material
       end
+    elsif points.size == 3
+      # TODO: Throw custom errors that can be used for more detailed failure
+      # messages.
+      # TODO: TriangleTooSmall < CreateFaceError
+      raise 'triangle is too small'
     elsif points.size < 3
+      # TODO: NotEnoughUniquePoints < CreateFaceError
       raise 'polygon with less than three unique vertices'
     else
+      # TODO: NgonNotPlanar < CreateFaceError
       raise 'cannot import n-gons which are not planar'
     end
     face
@@ -410,6 +469,7 @@ class ObjImporter < Sketchup::Importer
   def sort_vertices(vertices, order_by_points)
     order_by_points.map { |point|
       vertex = vertices.find { |vertex| vertex.position == point }
+      # TODO: Custom error. (?)
       raise 'unable to sort vertices' if vertex.nil?
       vertex
     }

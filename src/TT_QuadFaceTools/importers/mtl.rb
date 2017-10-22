@@ -46,7 +46,10 @@ class MtlParser
         # Filter out empty lines.
         next if line.strip.empty?
         # Parse the line data and extract the line token.
-        data = line.split(/\s+/)
+        # Note that we strip away whitespace as some applications add extra
+        # whitespace that might otherwise interfere. For instance, 3dsmax adds
+        # tab characters to the start of the line.
+        data = line.strip.split(/\s+/)
         token = data.shift
         case token
         when 'newmtl'
@@ -84,7 +87,6 @@ class MtlParser
     material = @sketchup_materials[material_name]
     if material.nil?
       definition = @materials.find { |m| m.name == material_name }
-      puts "material not found: #{material_name}" if definition.nil?
       return nil if definition.nil?
       material = @model.materials.add(material_name)
       material.color = definition.color if definition.color
@@ -93,6 +95,20 @@ class MtlParser
       @sketchup_materials[material_name] = material
     end
     material
+  end
+
+  # Used to force load a material without a mtllib. (Yes, such files exist.)
+  #
+  # @param [String] material_name
+  #
+  # @return [Nil]
+  def load(material_name)
+    material_texture = parse_texture(["#{material_name}.*"])
+    material = Material.new(material_name)
+    material.color = Sketchup::Color.new('silver')
+    material.texture = material_texture
+    @materials << material
+    nil
   end
 
   private
@@ -156,9 +172,12 @@ class MtlParser
   # @return [String]
   def parse_texture(data)
     if data.size == 1
+      # First we assume this is absolute path.
       filename = data[0]
+      # Then we check if we can find the file and then search for if we can't.
+      # The search is made relative from the OBJ path.
       unless File.exist?(filename)
-        filename = File.join(@base_path, filename)
+        filename = find_texture_file(filename)
       end
       File.expand_path(filename)
     else
@@ -166,6 +185,28 @@ class MtlParser
       p data
       raise 'unsupported texture definition'
     end
+  end
+
+  # @param [String] filename
+  #
+  # @return [String]
+  def find_texture_file(filename)
+    search_paths = [
+        File.join(@base_path, filename),
+        File.join(@base_path, 'map', filename),
+        File.join(@base_path, 'maps', filename)
+    ]
+    search_paths.each { |path|
+      # The filename is treated as a glob pattern if there is a * in it.
+      # This is for scenarios were the file extension isn't known.
+      if path.include?('*')
+        pattern = File.expand_path(path)
+        result = Dir.glob(pattern)
+        path = result.first || ''
+      end
+      return path if File.exist?(path)
+    }
+    filename
   end
 
 end # class
