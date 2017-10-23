@@ -1,0 +1,11 @@
+Face: HSL 0,0,220
+Edge: HSL 0,0,80
+
+Triangulation: HSL 0,0,120
+
+New Edge: HSL 150,255,140
+New Face: HSL 150,255,200
+
+New Edge on New Face: HSL 150,255,100
+
+Removed Edge: HSL 0,255,120
