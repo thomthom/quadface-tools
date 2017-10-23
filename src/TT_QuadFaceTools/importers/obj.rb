@@ -25,6 +25,13 @@ class ObjImporter < Sketchup::Importer
 
   class ObjEncodingError < StandardError; end
 
+  attr_accessor :stats
+
+  def initialize(parse_only: false)
+    @parse_only = parse_only
+    @stats = nil
+  end
+
   # This method is called by SketchUp to determine the description that
   # appears in the File > Import dialog's pull-down list of valid
   # importers.
@@ -113,7 +120,7 @@ class ObjImporter < Sketchup::Importer
     # The current smoothing group new faces should be added to unless its Nil.
     smoothing_group = nil
     # Statistics over the imported OBJ data.
-    stats = Statistics.new
+    @stats = Statistics.new
     Sketchup.status_text = 'Importing OBJ file...'
     # @see http://paulbourke.net/dataformats/obj/
     # @see http://www.martinreddy.net/gfx/3d/OBJ.spec
