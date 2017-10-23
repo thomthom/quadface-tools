@@ -42,9 +42,9 @@ class VertexCache
   #
   # @return [Geom::Point3d]
   def get_vertex(index)
-    i = get_index(index)
+    i = get_index(index, @vertices)
     if i < 0 || i >= @vertices.size
-      raise IndexError, 'invalid vertex index'
+      raise IndexError, "invalid vertex index: #{index} (#{i})"
     end
     @vertices[i]
   end
@@ -53,9 +53,9 @@ class VertexCache
   #
   # @return [Geom::Point3d]
   def get_uvw(index)
-    i = get_index(index)
+    i = get_index(index, @texture_data)
     if i < 0 || i >= @texture_data.size
-      raise IndexError, 'invalid vertex texture index'
+      raise IndexError, "invalid vertex texture index: #{index} (#{i})"
     end
     @texture_data[i]
   end
@@ -63,13 +63,14 @@ class VertexCache
   private
 
   # @param [Integer] index
+  # @param [Enumerable] collection
   #
   # @return [Integer]
-  def get_index(index)
+  def get_index(index, collection)
     unless index.is_a?(Integer)
       raise TypeError, "expected Integer, not #{index.class}"
     end
-    index < 0 ? index : index - @index_base
+    index < 0 ? collection.size + index : index - @index_base
   end
 
 end # class

@@ -25,6 +25,13 @@ class ObjImporter < Sketchup::Importer
 
   class ObjEncodingError < StandardError; end
 
+  attr_accessor :stats
+
+  def initialize(parse_only: false)
+    @parse_only = parse_only
+    @stats = nil
+  end
+
   # This method is called by SketchUp to determine the description that
   # appears in the File > Import dialog's pull-down list of valid
   # importers.
@@ -113,7 +120,7 @@ class ObjImporter < Sketchup::Importer
     # The current smoothing group new faces should be added to unless its Nil.
     smoothing_group = nil
     # Statistics over the imported OBJ data.
-    stats = Statistics.new
+    @stats = Statistics.new
     Sketchup.status_text = 'Importing OBJ file...'
     # @see http://paulbourke.net/dataformats/obj/
     # @see http://www.martinreddy.net/gfx/3d/OBJ.spec
@@ -160,16 +167,19 @@ class ObjImporter < Sketchup::Importer
           data.each { |n|
             v = n.to_i
             point = vertex_cache.get_vertex(v)
-            entities.add_cpoint(point)
+            entities.add_cpoint(point) unless @parse_only
             stats.points += 1
           }
         when 'l'
           # Create edges ("lines").
-          points = data.each { |triplet|
+          points = data.map { |triplet|
             v = parse_triplet(triplet)[0]
             vertex_cache.get_vertex(v)
           }
-          entities.add_edges(points)
+          puts 'Line:'
+          p points
+          entities.add_edges(points) unless @parse_only
+          stats.edges += (points.size - 1)
           stats.lines += 1
         when 'f'
           # Crease polygon faces.
@@ -193,28 +203,34 @@ class ObjImporter < Sketchup::Importer
               mapping << TT::UVQ.normalize(uvw)
             end
           }
-          face = create_face(entities, points, material, mapping)
-          if face.nil?
-            puts "Line #{file.lineno}: #{line}"
-            stats.errors += 1
-            next
-          end
-          if smoothing_group
-            smoothing_groups[smoothing_group] ||= []
-            smoothing_groups[smoothing_group] << face
+          unless @parse_only
+            face = create_face(entities, points, material, mapping)
+            if face.nil?
+              puts "Line #{file.lineno}: #{line}"
+              stats.errors += 1
+              next
+            end
+            if smoothing_group
+              smoothing_groups[smoothing_group] ||= []
+              smoothing_groups[smoothing_group] << face
+            end
           end
           stats.faces += 1
         when 'g'
           # Assuming that objects can contain groups.
-          group = parent_entities.add_group
-          group.name = data[0] unless data[0].empty?
-          entities = group.entities
+          unless @parse_only
+            group = parent_entities.add_group
+            group.name = data[0] unless data[0].empty?
+            entities = group.entities
+          end
           stats.objects += 1
         when 'o'
-          group = root_entities.add_group
-          group.name = data[0] unless data[0].empty?
-          entities = group.entities
-          parent_entities = entities
+          unless @parse_only
+            group = root_entities.add_group
+            group.name = data[0] unless data[0].empty?
+            entities = group.entities
+            parent_entities = entities
+          end
           stats.groups += 1
         when 's'
           group_number = data[0] == 'off' ? nil : data[0].to_i
@@ -283,6 +299,8 @@ class ObjImporter < Sketchup::Importer
     model.commit_operation
     Sketchup.status_text = ''
     # Display summary back to the user
+    stats.materials = materials.used_materials.size
+    stats.smoothing_groups = smoothing_groups.size
     if show_summary
       message = "OBJ Import Results\n"
       message << "\n"
@@ -291,8 +309,8 @@ class ObjImporter < Sketchup::Importer
       message << "Faces: #{stats.faces}\n"
       message << "Objects: #{stats.objects}\n"
       message << "Groups: #{stats.groups}\n"
-      message << "Materials: #{materials.used_materials}\n"
-      message << "Smoothing Groups: #{smoothing_groups.size}\n"
+      message << "Materials: #{materials.used_materials.size}\n"
+      message << "Smoothing Groups: #{stats.smoothing_groups}\n"
       if stats.errors > 0
         message << "\n"
         message << "Errors: #{stats.errors}\n"
@@ -315,7 +333,8 @@ class ObjImporter < Sketchup::Importer
 
   private
 
-  Statistics = Struct.new(:points, :lines, :faces, :objects, :groups, :errors) do
+  Statistics = Struct.new(:points, :lines, :faces, :objects, :groups,
+      :smoothing_groups, :materials, :edges, :errors) do
     def initialize(*args)
       super(*args)
       each_pair { |key, value|

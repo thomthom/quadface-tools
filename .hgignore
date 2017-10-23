@@ -11,3 +11,6 @@ Test Models/*
 # RubyMine
 .idea/workspace.xml
 *Thumbs.db
+
+# Files
+tests/QuadFace Tools/TC_ObjImporter/*_01.*
