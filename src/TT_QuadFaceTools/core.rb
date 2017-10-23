@@ -503,9 +503,7 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_connect )
     m.add_item( cmd_insert_loops )
     m.add_item( cmd_remove_loops )
-    if Settings.read('DebugDisplayOffsetLoopTool', false)
-      m.add_item( cmd_offset_loop_tool )
-    end
+    m.add_item( cmd_offset_loop_tool )
     m.add_separator
     m.add_item( cmd_build_corners )
     m.add_item( cmd_build_ends )
@@ -572,9 +570,7 @@ module TT::Plugins::QuadFaceTools
         m.add_item( cmd_connect )
         m.add_item( cmd_insert_loops )
         m.add_item( cmd_remove_loops )
-        if Settings.read('DebugDisplayOffsetLoopTool', false)
-          m.add_item( cmd_offset_loop_tool )
-        end
+        m.add_item( cmd_offset_loop_tool )
         m.add_separator
         m.add_item( cmd_build_corners )
         m.add_item( cmd_build_ends )
