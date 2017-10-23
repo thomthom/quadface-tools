@@ -172,12 +172,15 @@ class ObjImporter < Sketchup::Importer
           }
         when 'l'
           # Create edges ("lines").
-          points = data.each { |triplet|
+          points = data.map { |triplet|
             v = parse_triplet(triplet)[0]
             vertex_cache.get_vertex(v)
           }
+          puts 'Line:'
+          p points
           entities.add_edges(points) unless @parse_only
-          stats.lines += 1 # BUG: Add number of points
+          stats.edges += (points.size - 1)
+          stats.lines += 1
         when 'f'
           # Crease polygon faces.
           points = []
@@ -331,7 +334,7 @@ class ObjImporter < Sketchup::Importer
   private
 
   Statistics = Struct.new(:points, :lines, :faces, :objects, :groups,
-      :smoothing_groups, :materials, :errors) do
+      :smoothing_groups, :materials, :edges, :errors) do
     def initialize(*args)
       super(*args)
       each_pair { |key, value|

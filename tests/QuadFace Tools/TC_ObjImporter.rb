@@ -231,4 +231,28 @@ class TC_ObjImporter < TestUp::TestCase
     assert_parsed(expected, importer)
   end
 
+
+  def test_import_line_obj
+    model = Sketchup.active_model
+    obj_file = get_test_obj('line.obj')
+
+    options = {
+      units: QFT::ObjImporter::UNIT_INCHES,
+      swap_yz: false,
+    }
+    importer = get_importer(options)
+
+    importer.load_file(obj_file, false)   
+
+    expected = {
+      edges: 6,
+      lines: 2,
+      objects: 0,
+      materials: 0,
+      smoothing_groups: 0,
+      errors: 0,
+    }
+    assert_parsed(expected, importer)
+  end
+
 end # class

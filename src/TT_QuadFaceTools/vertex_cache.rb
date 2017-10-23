@@ -44,7 +44,7 @@ class VertexCache
   def get_vertex(index)
     i = get_index(index)
     if i < 0 || i >= @vertices.size
-      raise IndexError, 'invalid vertex index'
+      raise IndexError, "invalid vertex index: #{index} (#{i})"
     end
     @vertices[i]
   end
@@ -55,7 +55,7 @@ class VertexCache
   def get_uvw(index)
     i = get_index(index)
     if i < 0 || i >= @texture_data.size
-      raise IndexError, 'invalid vertex texture index'
+      raise IndexError, "invalid vertex texture index: #{index} (#{i})"
     end
     @texture_data[i]
   end
