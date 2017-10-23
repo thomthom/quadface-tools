@@ -5,6 +5,7 @@
 #
 #-------------------------------------------------------------------------------
 
+require 'fileutils'
 
 require 'testup/testcase'
 
@@ -108,6 +109,8 @@ class TC_ObjImporter < TestUp::TestCase
     expected = {
       faces: 6,
       objects: 1,
+      materials: 1,
+      smoothing_groups: 0,
       errors: 0,
     }
     assert_parsed(expected, importer)
@@ -125,6 +128,84 @@ class TC_ObjImporter < TestUp::TestCase
       ]
     }
     assert_imported(expected, model)
+  end
+
+
+  def test_import_parse_non_ascii_encoding_issue_105
+    model = Sketchup.active_model
+    obj_file = get_test_obj('靠枕_01.obj')
+
+    # Mercurial doesn't handle Unicode filenames. :(
+    unless File.exist?(obj_file)
+      master_obj = get_test_obj('encoding.obj')
+      master_mtl = get_test_obj('encoding.mtl')
+      mtl_file = get_test_obj('靠枕_01.mtl')    
+      FileUtils.copy(master_obj, obj_file)
+      FileUtils.copy(master_mtl, mtl_file)
+    end
+
+    options = {
+      units: QFT::ObjImporter::UNIT_INCHES,
+      swap_yz: false,
+    }
+    importer = get_importer(options, parse_only: true)
+
+    importer.load_file(obj_file, false)   
+
+    expected = {
+      faces: 103356,
+      objects: 3,
+      materials: 3,
+      smoothing_groups: 0,
+      errors: 0,
+    }
+    assert_parsed(expected, importer)
+  end
+
+
+  def test_import_parse_model_with_textures_issue_97
+    model = Sketchup.active_model
+    obj_file = get_test_obj('01.obj')
+
+    options = {
+      units: QFT::ObjImporter::UNIT_INCHES,
+      swap_yz: false,
+    }
+    importer = get_importer(options, parse_only: true)
+
+    importer.load_file(obj_file, false)   
+
+    expected = {
+      faces: 2432,
+      objects: 0,
+      materials: 1,
+      smoothing_groups: 0,
+      errors: 0,
+    }
+    assert_parsed(expected, importer)
+  end
+
+
+  def test_import_parse_model_without_textures_issue_97
+    model = Sketchup.active_model
+    obj_file = get_test_obj('02.obj')
+
+    options = {
+      units: QFT::ObjImporter::UNIT_INCHES,
+      swap_yz: false,
+    }
+    importer = get_importer(options, parse_only: true)
+
+    importer.load_file(obj_file, false)   
+
+    expected = {
+      faces: 1216,
+      objects: 0,
+      materials: 1,
+      smoothing_groups: 0,
+      errors: 0,
+    }
+    assert_parsed(expected, importer)
   end
 
 end # class

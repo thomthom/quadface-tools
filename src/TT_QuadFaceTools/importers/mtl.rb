@@ -20,14 +20,14 @@ class MtlParser
     @sketchup_materials = {}
   end
 
-  # @return [Integer]
+  # @return [Array<MtlParser::Material>]
   def loaded_materials
-    @materials.size
+    @materials
   end
 
-  # @return [Integer]
+  # @return [Array<Sketchup::Material>]
   def used_materials
-    @sketchup_materials.size
+    @sketchup_materials
   end
 
   # @param [String] filename
