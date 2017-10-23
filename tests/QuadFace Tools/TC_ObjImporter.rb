@@ -208,4 +208,27 @@ class TC_ObjImporter < TestUp::TestCase
     assert_parsed(expected, importer)
   end
 
+
+  def test_import_parse_usemtl_without_mtllib
+    model = Sketchup.active_model
+    obj_file = get_test_obj('SPSC.obj')
+
+    options = {
+      units: QFT::ObjImporter::UNIT_METERS,
+      swap_yz: true,
+    }
+    importer = get_importer(options, parse_only: true)
+
+    importer.load_file(obj_file, false)   
+
+    expected = {
+      faces: 56736,
+      objects: 12,
+      materials: 27,
+      smoothing_groups: 0,
+      errors: 18, # Duplicate points (Too small polygons)
+    }
+    assert_parsed(expected, importer)
+  end
+
 end # class
