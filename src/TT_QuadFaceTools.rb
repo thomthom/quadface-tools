@@ -27,6 +27,7 @@ module QuadFaceTools
   PATH = File.join(PATH_ROOT, folder_name).freeze
 
   # Resource paths.
+  PATH_CURSORS  = File.join(PATH, 'cursors').freeze
   PATH_ICONS    = File.join(PATH, 'icons').freeze
   PATH_HTML     = File.join(PATH, 'html').freeze
 
