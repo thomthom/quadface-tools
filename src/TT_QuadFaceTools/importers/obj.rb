@@ -126,7 +126,7 @@ class ObjImporter < Sketchup::Importer
     # @see http://www.martinreddy.net/gfx/3d/OBJ.spec
     custom_encodings = nil
     encoding = 'UTF-8'
-    attempts = 0 
+    attempts = 0
     begin
     File.open(filename, "r:#{encoding}:UTF-8") { |file|
       puts "Reading file. External encoding: #{file.external_encoding}"
@@ -143,7 +143,7 @@ class ObjImporter < Sketchup::Importer
           if e.message.include?('invalid byte sequence')
             p line.encoding
             puts line
-          end 
+          end
           raise
         end
         token = data.shift
@@ -199,6 +199,7 @@ class ObjImporter < Sketchup::Importer
             points << point
             if vt
               uvw = vertex_cache.get_uvw(vt)
+              uvw.z = 1.0 if uvw.z = 0.0 # Account for some weird files.
               mapping << point
               mapping << TT::UVQ.normalize(uvw)
             end
@@ -382,6 +383,7 @@ class ObjImporter < Sketchup::Importer
       # internal faces can easily affect exterior faces like this.
       face.reverse! if face_reversed?(points, face)
       if textured?(material) && (2..8).include?(mapping.size)
+        # p ['mapping', material, mapping]
         begin
           face.position_material(material, mapping, true)
           face.position_material(material, mapping, false)
@@ -408,6 +410,7 @@ class ObjImporter < Sketchup::Importer
           uvw = mapping[(i * 2) + 1]
           quad_mapping[vertex] = uvw
         }
+        # p ['quad_mapping', material, quad_mapping]
         begin
           face.uv_set(material, quad_mapping, true)
           face.uv_set(material, quad_mapping, false)
