@@ -519,6 +519,7 @@ class ObjImporter < Sketchup::Importer
   #
   # @return [Nil]
   def process_options(results)
+    return nil if results.nil? # In case Options were cancelled.
     # Save the options for next time.
     results.each { |key, value|
       Sketchup.write_default(IMPORTER_PREF_KEY, key.to_s, value)
