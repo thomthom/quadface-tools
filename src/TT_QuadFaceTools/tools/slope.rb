@@ -80,6 +80,17 @@ module TT::Plugins::QuadFaceTools
         Geom::Vector3d.new(a, b, c).normalize
       end
 
+      def plane_normal2
+        quad_plane = plane
+        points = @faces.first.outer_loop.vertices.map { |v|
+          v.position.project_to_plane(quad_plane)
+        }
+        pt1, pt2, pt3 = points
+        vx = pt1.vector_to(pt2)
+        vy = pt1.vector_to(pt3)
+        vx * vy
+      end
+
       def planar?
         TT::Geom3d.planar_points?(vertices)
       end
@@ -212,15 +223,15 @@ module TT::Plugins::QuadFaceTools
       view.drawing_color = [255, 0, 0]
       view.draw(GL_LINES, normal_segment)
 
-      center = @quad.centroid
-      normal_segment = [center, center.offset(@quad.plane_normal, size * 1.5)]
+      # center = @quad.centroid
+      normal_segment = [center, center.offset(@quad.plane_normal2, size * 1.5)]
       view.line_stipple = ''
       view.line_width = 2
       view.drawing_color = 'orange'
-      view.draw(GL_LINES, normal_segment)
-      normal_segment = [center, center.offset(@quad.plane_normal.reverse, size * 1.5)]
-      view.drawing_color = 'purple'
-      view.draw(GL_LINES, normal_segment)
+      view.draw(GL_LINES, normal_segment) unless @quad.plane_normal2.samedirection?(@quad.normal)
+      # normal_segment = [center, center.offset(@quad.plane_normal.reverse, size * 1.5)]
+      # view.drawing_color = 'purple'
+      # view.draw(GL_LINES, normal_segment)
 
       # High/Low
       view.draw_points([@quad.highest_vertex.position], 5, 2, 'red')
@@ -249,9 +260,11 @@ module TT::Plugins::QuadFaceTools
 
         normals = quads.map { |quad|
           size = quad.edge.length / 2.0
-          center = quad.centroid
+          center = quad.diagonal_center
+          # center = quad.centroid
           # [center, center.offset(quad.normal, size)]
-          [center, center.offset(quad.plane_normal, size)]
+          [center, center.offset(quad.plane_normal2, size)]
+          # [center, center.offset(quad.plane_normal, size)]
         }.flatten
         view.line_stipple = ''
         view.line_width = 2
@@ -285,6 +298,7 @@ module TT::Plugins::QuadFaceTools
         next if processed.include?(face)
         quad = create_quad_slope(face)
         next unless quad
+        next if quad.planar?
         processed.merge(quad.faces)
         quads << quad
       }
