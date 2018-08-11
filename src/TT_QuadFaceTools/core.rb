@@ -97,6 +97,7 @@ module TT::Plugins::QuadFaceTools
   require 'TT_QuadFaceTools/settings'
   require 'TT_QuadFaceTools/tools/offset'
   require 'TT_QuadFaceTools/tools/quad_edge'
+  require 'TT_QuadFaceTools/tools/slope'
 
 
   ### MENU & TOOLBARS ### ------------------------------------------------------
@@ -287,6 +288,12 @@ module TT::Plugins::QuadFaceTools
     cmd.tooltip = 'Flip Triangulation'
     cmd_flip_triangulation = cmd
     @commands[:flip_triangulation] = cmd
+
+    cmd = Command.new( 'Flip by Slope' )  { self.flip_by_slope }
+    cmd.status_bar_text = "Flips the dividing edge by the quad's slope."
+    cmd.tooltip = 'Flip by Slope'
+    cmd_flip_by_slope = cmd
+    @commands[:flip_by_slope] = cmd
 
     cmd = Command.new( 'Triangulate' )  { self.triangulate_selection }
     cmd.small_icon = File.join( PATH_ICONS, 'Triangulate_16.png' )
@@ -510,6 +517,7 @@ module TT::Plugins::QuadFaceTools
     m.add_separator
     m.add_item( cmd_flip_triangulation_tool )
     m.add_item( cmd_flip_triangulation )
+    m.add_item( cmd_flip_by_slope )
     m.add_item( cmd_triangulate_selection )
     m.add_item( cmd_remove_triangulation )
     m.add_item( cmd_quad_edge_tool )
@@ -999,6 +1007,14 @@ module TT::Plugins::QuadFaceTools
     model.commit_operation
     model.selection.add( new_faces )
     TT.debug "self.flip_triangulation: #{Time.now - t}"
+  end
+
+
+  # @since 0.14.0
+  def self.flip_by_slope
+    model = Sketchup.active_model
+    model.select_tool(SlopeInspectTool.new) if model
+    nil
   end
 
 
