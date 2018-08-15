@@ -53,6 +53,12 @@ module TT::Plugins::QuadFaceTools
         f1.outer_loop.vertices << (f2.vertices - f1.vertices).first
       end
 
+      def edges
+        x = @faces.map(&:edges).flatten.uniq
+        x.delete(@edge)
+        x
+      end
+
       def positions
         vertices.map(&:position)
       end
@@ -95,10 +101,21 @@ module TT::Plugins::QuadFaceTools
         TT::Geom3d.planar_points?(vertices)
       end
 
+      Vertex = Struct.new(:entity, :position)
+
       def smooth_slope?
         return true if planar?
+        # origin = diagonal_center
+        # z_axis = plane_normal2
+        # to_plane = Geom::Transformation.new(origin, z_axis)
+
+        # local_vertices = vertices.map { |vertex|
+        #   pt = vertex.position.transform(to_plane)
+        #   Vertex.new(vertex, pt)
+        # }
+
         # Find the vertex with the lowest Z value.
-        sorted = vertices.sort { |a, b|
+        sorted = local_vertices.sort { |a, b|
           a.position.z <=> b.position.z
         }
         lowest = sorted.first
@@ -129,17 +146,52 @@ module TT::Plugins::QuadFaceTools
         all_lowest = sorted.select { |vertex| vertex.position.z == lowest_z }
         if (2..3).include?(all_lowest.size)
           highest = sorted.last
-          return !@edge.vertices.include?(highest)
+          return !@edge.vertices.include?(highest.entity)
         end
 
         # lowest = vertices.min { |a, b| a.position.z <=> b.position.z }
 
         # The logic of slope smoothness must be inverted when the quad is
         # pointing downwards.
-        smoothness = @edge.vertices.include?(lowest)
+        smoothness = @edge.vertices.include?(lowest.entity)
+        !smoothness
+        # normal % Z_AXIS > 0.0 ? !smoothness : smoothness
+
         # plane_normal % Z_AXIS > 0.0 ? !smoothness : smoothness
-        normal % Z_AXIS > 0.0 ? !smoothness : smoothness
         # normal % Z_AXIS > 0.0001 ? !smoothness : smoothness
+
+        # pt1, pt2, pt3, pt4 = positions
+        # x_axis = pt1.vector_to(pt3)
+        # y_axis = pt2.vector_to(pt4)
+        # z_axis = plane_normal2
+        # (x_axis * y_axis % z_axis) > 0.0
+
+
+        # pt1, pt2, pt3, pt4 = positions
+
+        # v1 = pts_normal(pt1, pt2, pt3)
+        # v2 = pts_normal(pt1, pt3, pt4)
+        # z1 = v1 * v2
+
+        # v3 = pts_normal(pt1, pt2, pt4)
+        # v4 = pts_normal(pt2, pt3, pt4)
+        # z2 = v3 * v4
+
+        # (plane_normal2 % z1) > (plane_normal % z2)
+
+
+        # @edge.line[1] % plane_normal2 > 0.0
+
+        sorted = vertices.sort { |a, b|
+          a.position.distance(ORIGIN) <=> b.position.distance(ORIGIN)
+        }
+        origin = sorted.first
+        i = sorted.index(origin)
+        verts = sorted[i..-1] + sorted[0...i]
+        v1 = verts[0].position.vector_to(verts[2].position)
+        v2 = verts[1].position.vector_to(verts[3].position)
+        (v1 % plane_normal2) > (v2 % plane_normal2)
+        # (v1 * v2) % plane_normal2 > 0.0
 
         # x = plane_normal.x.to_l >= 0.0.to_l
         # y = plane_normal.y.to_l >= 0.0.to_l
@@ -147,15 +199,72 @@ module TT::Plugins::QuadFaceTools
         # normal % Z_AXIS >= 0.0 ? !right_to_left : right_to_left
       end
 
+      def pts_normal(pt1, pt2, pt3)
+        x_axis = pt1.vector_to(pt2)
+        y_axis = pt1.vector_to(pt3)
+        x_axis * y_axis
+      end
+
       def highest_vertex
-        vertices.max { |a, b| a.position.z <=> b.position.z }
+        # vertices.max { |a, b| a.position.z <=> b.position.z }
+
+        vertices.min { |a, b| a.position.z <=> b.position.z }
+        sorted = vertices.sort { |a, b|
+          a.position.z <=> b.position.z
+        }.last
+
+        # local_vertices.sort { |a, b|
+        #   a.position.z <=> b.position.z
+        # }.last.entity
       end
 
       def lowest_vertex
-        # vertices.min { |a, b| a.position.z <=> b.position.z }
+        vertices.min { |a, b| a.position.z <=> b.position.z }
         sorted = vertices.sort { |a, b|
           a.position.z <=> b.position.z
         }.first
+
+        # local_vertices.sort { |a, b|
+        #   a.position.z <=> b.position.z
+        # }.first.entity
+      end
+
+      def local_vertices
+        origin = diagonal_center
+        z_axis = plane_normal2
+        to_plane = Geom::Transformation.new(origin, z_axis)
+
+        vertices.map { |vertex|
+          pt = vertex.position.transform(to_plane)
+          Vertex.new(vertex, pt)
+        }
+      end
+
+      def self.find(face1)
+        # TODO: Try to pick real Quad first.
+        return nil unless face1 && face1.edges.size == 3
+        edges = face1.edges.select { |edge| edge.soft? || edge.hidden? }
+        return nil unless edges.size == 1
+        edge = edges.first
+        return nil unless edge.faces.size == 2
+        face2 = (edge.faces - [face1]).first
+        QuadSlope.new(face1, face2, edge)
+      end
+
+      def neighbours
+        processed = Set.new(@faces)
+        quads = []
+        edges.each { |edge|
+          edge.faces.each { |face|
+            next if processed.include?(face)
+            processed.add(face)
+            quad = QuadSlope.find(face)
+            next if quad.nil?
+            processed.merge(quad.faces)
+            quads << quad
+          }
+        }
+        quads
       end
 
     end # class
@@ -206,48 +315,93 @@ module TT::Plugins::QuadFaceTools
       ERROR_REPORTER.handle(exception)
     end
 
+    TEXT_OPTIONS = {
+      font: "Arial",
+      size: 10,
+      bold: true,
+      color: 'white',
+      align: TextAlignCenter,
+    }
+
     # @param [Sketchup::View] view
     def draw(view)
       draw_quads(view)
 
       return unless @quad && @quad.valid?
 
-      # Normal
-      size = @quad.edge.length / 2.0
-      # size = view.pixels_to_model(50, center)
-
-      center = @quad.diagonal_center
-      normal_segment = [center, center.offset(@quad.normal, size)]
-      view.line_stipple = ''
-      view.line_width = 2
-      view.drawing_color = [255, 0, 0]
-      view.draw(GL_LINES, normal_segment)
-
-      # center = @quad.centroid
-      normal_segment = [center, center.offset(@quad.plane_normal2, size * 1.5)]
-      view.line_stipple = ''
-      view.line_width = 2
-      view.drawing_color = 'orange'
-      view.draw(GL_LINES, normal_segment) unless @quad.plane_normal2.samedirection?(@quad.normal)
-      # normal_segment = [center, center.offset(@quad.plane_normal.reverse, size * 1.5)]
-      # view.drawing_color = 'purple'
-      # view.draw(GL_LINES, normal_segment)
-
       # High/Low
-      view.draw_points([@quad.highest_vertex.position], 5, 2, 'red')
-      view.draw_points([@quad.lowest_vertex.position], 5, 2, 'blue')
+      view.draw_points([@quad.highest_vertex.position], 10, 2, 'red')
+      view.draw_points([@quad.lowest_vertex.position], 10, 2, 'blue')
 
       # Quad
-      view.line_stipple = '_'
-      view.line_width = 2
-      view.drawing_color = 'orange'
-      view.draw(GL_LINES, @quad.edge.vertices.map(&:position))
-      triangles = @quad.faces.map { |face| face.vertices.map(&:position) }
-      view.drawing_color = @quad.smooth_slope? ? [0, 255, 0, 64] : [255, 0, 0, 64]
-      view.draw(GL_TRIANGLES, triangles.flatten)
+      color = color = @quad.smooth_slope? ? [0, 255, 0, 64] : [255, 0, 0, 64]
+      draw_quad(view, @quad, color)
+      n1, n2 = quad_normal_segment(view, @quad)
+
+      # p quad.neighbours.size
+      @quad.neighbours.each { |neighbour|
+        color = color = neighbour.smooth_slope? ? [0, 255, 0, 64] : [255, 0, 0, 64]
+        draw_quad(view, neighbour, color)
+
+        points = quad_normal_segment(view, neighbour)
+        position = view.screen_coords(points.last)
+        position.y -= TEXT_OPTIONS[:size] + 5
+        angle = @quad.plane_normal2.angle_between(neighbour.plane_normal2)
+        angle_formatted = Sketchup.format_angle(angle)
+        # sign = @quad.plane_normal2 % neighbour.plane_normal2
+        sign = neighbour.plane_normal2 % @quad.plane_normal2
+
+        distance1 = points.first.distance(n1)
+        distance2 = points.last.distance(n2)
+        dir = '?'
+        dir = if distance1 == distance2
+          'same'
+        else
+          distance1 > distance2 ? 'toward' : 'away'
+        end
+
+        text = "#{angle_formatted}° (#{dir})" #+ "\n#{sign}"
+        view.draw_text(position, text, TEXT_OPTIONS)
+      }
     end
 
     private
+
+    def draw_quad(view, quad, color)
+      # Faces
+      triangles = quad.faces.map { |face| face.vertices.map(&:position) }
+      view.drawing_color = color
+      view.draw(GL_TRIANGLES, triangles.flatten)
+      # Diagonal
+      view.line_stipple = '_'
+      view.line_width = 2
+      view.drawing_color = color
+      view.draw(GL_LINES, quad.edge.vertices.map(&:position))
+      # Edges
+      view.line_stipple = ''
+      view.line_width = 2
+      view.drawing_color = 'purple'
+      vertices = quad.edges.map { |edge| edge.vertices }.flatten
+      # points = vertices.map(&:position)
+      camera_normal = view.camera.direction.reverse
+      points = vertices.map { |vertex|
+        size = view.pixels_to_model(1, vertex.position) * 0.2
+        vertex.position.offset(camera_normal, size)
+      }
+      view.draw(GL_LINES, points)
+      # Normal
+      normal_segment = quad_normal_segment(view, quad)
+      view.line_stipple = ''
+      view.line_width = 2
+      view.drawing_color = 'orange'
+      view.draw(GL_LINES, normal_segment)
+    end
+
+    def quad_normal_segment(view, quad)
+      size = quad.edge.length / 2.0
+      center = quad.diagonal_center
+      [center, center.offset(quad.plane_normal2, size)]
+    end
 
     def draw_quads(view)
       return if @quads.empty?
