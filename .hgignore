@@ -2,11 +2,12 @@ syntax: glob
 
 # File types
 *.skb
+AutoSave_*.skp
 *.sublime-workspace
+Gemfile.lock
 
 # Folders
 archive/
-Test Models/*
 
 # RubyMine
 .idea/workspace.xml
