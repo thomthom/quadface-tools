@@ -18,7 +18,7 @@ module TT::Plugins::QuadFaceTools
     end
 
     def activate
-      @quads = find_quads(Sketchup.active_model.active_entities)
+      @quads = QuadSlope.find_quads(Sketchup.active_model.active_entities)
       update_ui
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
@@ -29,11 +29,9 @@ module TT::Plugins::QuadFaceTools
     end
 
     def onCancel(reason, view)
-      puts "onCancel(#{reason})"
-      # reason == 2 : Undo
       @quads = []
       UI.start_timer(0.0, false) do
-        @quads = find_quads(Sketchup.active_model.active_entities)
+        @quads = QuadSlope.find_quads(Sketchup.active_model.active_entities)
         view.invalidate
       end
     end
@@ -167,46 +165,17 @@ module TT::Plugins::QuadFaceTools
 
     def flip_quads(quads)
       model = Sketchup.active_model
-      model.start_operation('Orient to Slope', true)
-      quads.each { |quad|
-        quad.orient_by_slope
-      }
-      model.commit_operation
+      QuadSlope.flip_quads(quads, model)
       # TODO: Update after commit.
       @quad = nil
-      @quads = find_quads(Sketchup.active_model.active_entities)
+      @quads = QuadSlope.find_quads(model.active_entities)
       nil
-    end
-
-    def find_quads(entities)
-      processed = Set.new
-      quads = []
-      entities.grep(Sketchup::Face) { |face|
-        next if processed.include?(face)
-        quad = create_quad_slope(face)
-        next unless quad
-        next if quad.planar?
-        processed.merge(quad.faces)
-        quads << quad
-      }
-      quads
-    end
-
-    def create_quad_slope(face1)
-      # TODO: Try to pick real Quad first.
-      return nil unless face1 && face1.edges.size == 3
-      edges = face1.edges.select { |edge| edge.soft? || edge.hidden? }
-      return nil unless edges.size == 1
-      edge = edges.first
-      return nil unless edge.faces.size == 2
-      face2 = (edge.faces - [face1]).first
-      QuadSlope.new(face1, face2, edge)
     end
 
     def pick_quad(x, y, view)
       # TODO: Try to pick real Quad first.
       ph = view.pick_helper(x, y, 5)
-      create_quad_slope(ph.picked_face)
+      QuadSlope.create_quad_slope(ph.picked_face)
     end
 
   end # class

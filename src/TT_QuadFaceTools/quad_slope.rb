@@ -45,6 +45,44 @@ module TT::Plugins::QuadFaceTools
       self.new(face1, face2, edge)
     end
 
+    # @param [Sketchup::Entities] entities
+    #
+    # @return [Array<QuadSlope>]
+    def self.find_quads(entities)
+      processed = Set.new
+      quads = []
+      entities.grep(Sketchup::Face) { |face|
+        next if processed.include?(face)
+        quad = create_quad_slope(face)
+        next unless quad
+        next if quad.planar?
+        processed.merge(quad.faces)
+        quads << quad
+      }
+      quads
+    end
+
+    def self.create_quad_slope(face1)
+      # TODO: Try to pick real Quad first.
+      return nil unless face1 && face1.edges.size == 3
+      edges = face1.edges.select { |edge| edge.soft? || edge.hidden? }
+      return nil unless edges.size == 1
+      edge = edges.first
+      return nil unless edge.faces.size == 2
+      face2 = (edge.faces - [face1]).first
+      QuadSlope.new(face1, face2, edge)
+    end
+
+    # @param [Array<QuadSlope>] quads
+    def self.flip_quads(quads, model)
+      Sketchup.status_text = 'Flipping quads by slope...'
+      model.start_operation('Orient to Slope', true)
+      quads.each(&:orient_by_slope)
+      model.commit_operation
+      Sketchup.status_text = ''
+      nil
+    end
+
     # @param [Sketchup::Face] face1
     # @param [Sketchup::Face] face2
     # @param [Sketchup::Edge] edge

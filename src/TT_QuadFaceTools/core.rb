@@ -289,6 +289,12 @@ module TT::Plugins::QuadFaceTools
     cmd_flip_triangulation = cmd
     @commands[:flip_triangulation] = cmd
 
+    cmd = Command.new( 'Flip by Slope Tool' )  { self.flip_by_slope_tool }
+    cmd.status_bar_text = "Visualize the Flip by Slope."
+    cmd.tooltip = 'Flip by Slope Tool'
+    cmd_flip_by_slope_tool = cmd
+    @commands[:flip_by_slope_tool] = cmd
+
     cmd = Command.new( 'Flip by Slope' )  { self.flip_by_slope }
     cmd.status_bar_text = "Flips the dividing edge by the quad's slope."
     cmd.tooltip = 'Flip by Slope'
@@ -536,6 +542,8 @@ module TT::Plugins::QuadFaceTools
     sub_menu.add_item( cmd_color_polygons )
     sub_menu.add_separator
     sub_menu.add_item( cmd_live_mesh_analysis )
+    sub_menu.add_separator
+    sub_menu.add_item( cmd_flip_by_slope_tool )
     m.add_separator
     sub_menu = m.add_submenu( 'Convert' )
     sub_menu.add_item( cmd_convert_connected_mesh_to_quads )
@@ -1011,9 +1019,18 @@ module TT::Plugins::QuadFaceTools
 
 
   # @since 0.14.0
-  def self.flip_by_slope
+  def self.flip_by_slope_tool
     model = Sketchup.active_model
     model.select_tool(SlopeInspectTool.new) if model
+    nil
+  end
+
+
+  # @since 0.14.0
+  def self.flip_by_slope
+    model = Sketchup.active_model || return
+    quads = QuadSlope.find_quads(model.active_entities)
+    QuadSlope.flip_quads(quads, model)
     nil
   end
 
