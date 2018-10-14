@@ -7,6 +7,9 @@
 
 require 'set'
 
+require 'TT_Lib2/edges'
+require 'TT_Lib2/geom3d'
+
 require 'TT_QuadFaceTools/algorithms'
 require 'TT_QuadFaceTools/entities'
 require 'TT_QuadFaceTools/geometry'
@@ -120,6 +123,8 @@ module TT::Plugins::QuadFaceTools
       diagonal.layer = layer
       diagonal.material = material
 
+      @cached_smooth_slope = nil
+
       result
     end
 
@@ -212,6 +217,13 @@ module TT::Plugins::QuadFaceTools
     end
 
     def smooth_slope?
+      @cached_smooth_slope ||= internal_smooth_slope?
+      @cached_smooth_slope
+    end
+
+    private
+
+    def internal_smooth_slope?
       return true if planar?
       return true if neighbours.empty?
       # First two edges much match the one of the existing triangles. This is
@@ -229,8 +241,6 @@ module TT::Plugins::QuadFaceTools
       average2 = average_deviance_from_slope(edges2)
       average1 <= average2
     end
-
-    private
 
     # @param [Array<Sketchup::Edge>] edge_set Set of four edges
     #
