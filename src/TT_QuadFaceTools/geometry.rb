@@ -7,9 +7,26 @@
 
 require 'TT_Lib2/edges'
 
-
 module TT::Plugins::QuadFaceTools
 module Geometry
+
+  # @param [Array<Geom::Vector3d>]
+  #
+  # @return [Geom::Vector3d]
+  def self.average_vector(vectors)
+    vectors.inject(Geom::Vector3d.new) { |s, v| s + v }.normalize
+  end
+
+  # @param [Geom::Point3d] point1
+  # @param [Geom::Point3d] point1
+  # @param [Geom::Point3d] point2
+  #
+  # @return [Geom::Vector3d]
+  def self.triangle_normal(point1, point2, point3)
+    x_axis = point1.vector_to(point2)
+    y_axis = point1.vector_to(point3)
+    (x_axis * y_axis).normalize
+  end
 
   # @param [Geom::Point3d] point
   # @param [Sketchup::Edge] edge
