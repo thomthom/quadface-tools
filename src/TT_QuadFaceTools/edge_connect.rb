@@ -6,15 +6,15 @@
 #-------------------------------------------------------------------------------
 
 module TT::Plugins::QuadFaceTools
-  
+
   # @todo Optimize. Splitting the geometry is very slow!
   #
   # @since 0.3.0
   class EdgeConnect
-    
+
     # @since 0.3.0
     attr_reader( :cut_edges, :segments, :pinch )
-    
+
     # @since 0.3.0
     def initialize(
         cut_edges,
@@ -31,7 +31,7 @@ module TT::Plugins::QuadFaceTools
       collect_quads()
       update_draw_cache()
     end
-    
+
     # @param [Array<Sketchup::Edges>] new_edges
     #
     # @return [Integer]
@@ -42,7 +42,7 @@ module TT::Plugins::QuadFaceTools
       update_draw_cache()
       @cut_edges.size
     end
-    
+
     # @param [Integer] new_segments
     #
     # @return [Integer]
@@ -52,7 +52,7 @@ module TT::Plugins::QuadFaceTools
       update_draw_cache()
       @segments
     end
-    
+
     # @param [Integer] new_pinch ( -100..100 )
     #
     # @return [Integer]
@@ -62,32 +62,32 @@ module TT::Plugins::QuadFaceTools
       update_draw_cache()
       @pinch
     end
-    
+
     # @since 0.3.0
     def draw( view )
       unless @preview_lines.empty?
         splits = @preview_lines.flatten
         splits2d = splits.map { |pt| view.screen_coords( pt ) }
-        
+
         view.line_stipple = ''
         view.line_width = 2
         view.drawing_color = [ 0, 128, 0 ]
         view.draw( GL_LINES, splits )
-        
+
         view.line_stipple = '-'
         view.line_width = 1
         view.draw2d( GL_LINES, splits2d )
       end
     end
-    
+
     # @return [Array<Sketchup::Edge>]
     # @since 0.3.0
     def connect!
       split_quads( @quads, @cut_edges, @segments, @pinch )
     end
-    
+
     private
-    
+
     # @return [Integer] Number of quads found.
     # @since 0.3.0
     def collect_quads
@@ -118,9 +118,9 @@ module TT::Plugins::QuadFaceTools
       end
       @preview_lines = splits
     end
-    
-    # @param [<Array<Geom::Point3d,Geom::Point3d>] line
-    # @param [Array<Array<Float,Float>>] ratios
+
+    # @param [Array(Geom::Point3d, Geom::Point3d)] line
+    # @param [Array<Array(Float, Float)>] ratios
     #
     # @return [Array<Geom::Point3d>]
     # @since 0.3.0
@@ -132,7 +132,7 @@ module TT::Plugins::QuadFaceTools
       end
       points
     end
-    
+
     # @param [Integer] splits
     # @param [Integer] pinch -100..100
     #
@@ -141,7 +141,7 @@ module TT::Plugins::QuadFaceTools
     def split_ratios( splits, pinch = 0 )
       segments = splits + 1
       pinch_ratio = pinch / 100.0
-      
+
       if pinch_ratio > 0.0 && splits > 1
         segment_length = 1.0 / segments
         r = segment_length * pinch_ratio
@@ -154,7 +154,7 @@ module TT::Plugins::QuadFaceTools
         start = ( 1.0 - pinch_length ) / 2
         start += length
       end
-      
+
       results = []
       splits.times { |i|
         x = start + ( length * i )
@@ -163,7 +163,7 @@ module TT::Plugins::QuadFaceTools
       }
       results
     end
-    
+
     # @param [Array<QuadFace>] quads
     # @param [Array<Sketchup::Edge>] cut_edges
     # @param [Integer] splits
@@ -180,16 +180,16 @@ module TT::Plugins::QuadFaceTools
           :polygons => []
         }
         props = result[ quad ]
-        
+
         # Get selected edges in the order of the outer loop.
         selected = ( quad.outer_loop & cut_edges )
-        
+
         # Map edges to sets of points for each split
         split_set = selected.map { |edge|
           line = quad.edge_positions( edge )
           split_edge( line, ratios )
         }
-        
+
         # Map one half of the split to the next edge. This ensures T and X splits
         # are calculated.
         half_split = ( splits / 2.0 ).ceil # Round up to include centre
@@ -200,15 +200,15 @@ module TT::Plugins::QuadFaceTools
           half_split.times { |i|
             props[ :splits ] << [ set[i], next_set[-(i+1)] ]
           }
-          
+
           # Work out the bordering polygons.
           edge = selected[ index ]
           next_edge = selected[ next_index ]
           polygon = []
-          
+
           line1 = quad.edge_positions( edge )
           line2 = quad.edge_positions( next_edge )
-          
+
           if quad.opposite_edge( edge ) == next_edge
             # Across
             polygon = [
@@ -240,13 +240,13 @@ module TT::Plugins::QuadFaceTools
               ]
             end
           end
-          
+
           props[ :polygons ] << polygon
         }
       end
       result
     end
-    
+
     # @param [Array<QuadFace>] quads
     # @param [Array<Sketchup::Edge>] cut_edges
     # @param [Integer] splits
@@ -261,7 +261,7 @@ module TT::Plugins::QuadFaceTools
       progress = TT::Progressbar.new( result, 'Splitting Quads' )
       for quadface, data in result
         lines = data[ :splits ]
-        
+
         # Determine the shape of the split
         set_size = ( splits / 2.0 ).ceil
         set_count = lines.size / set_size
@@ -269,14 +269,14 @@ module TT::Plugins::QuadFaceTools
         # 3 = T junction
         # 4 = X junction
         odd = splits % 2 == 1
-        
+
         # Cache properties
         material = quadface.material
         back_material = quadface.back_material
 
         # Erase original
         quadface.erase!
-        
+
         # <debug>
         #lines.each_with_index { |line, index|
         #  pt1, pt2 = line
@@ -284,7 +284,7 @@ module TT::Plugins::QuadFaceTools
         #  entities.add_text( "#{index.to_s} (2)", pt2, [2,2,2] )
         #}
         # </debug>
-        
+
         # Edges
         # These are created first so they can later be selected.
         for line in lines
@@ -294,7 +294,7 @@ module TT::Plugins::QuadFaceTools
 
         # Collect all faces.
         faces = []
-        
+
         # Face Strips
         (0...set_count).each { |x|
           (0...set_size-1).each { |y|
@@ -304,7 +304,7 @@ module TT::Plugins::QuadFaceTools
             faces << fill_face( entities, pts )
           }
         }
-        
+
         # Fill edges and centre holes
         # Faces ( 2 edges )
         if set_count == 2
@@ -370,9 +370,9 @@ module TT::Plugins::QuadFaceTools
               }
             end # planar_points?
           end
-          
+
         end
-        
+
         # Bordering polygons
         for polygon in data[ :polygons ]
           # <debug>
@@ -400,19 +400,19 @@ module TT::Plugins::QuadFaceTools
           face.material = material
           face.back_material = back_material
         end
-        
+
         progress.next
       end
       new_edges
     end
-    
+
     private
-    
+
     # Acts like #add_face, but doesn't have the overhead of returning QuadFaces.
     #
     # @see #add_face
     #
-    # @param [Sketchup::Entities] entities 
+    # @param [Sketchup::Entities] entities
     # @param [Array<Geom::Point3d>] points
     #
     # @return [Nil]
@@ -428,7 +428,7 @@ module TT::Plugins::QuadFaceTools
         entities.add_face( points )
       end
     end
-    
+
   end # class EdgeConnect
 
 end # module

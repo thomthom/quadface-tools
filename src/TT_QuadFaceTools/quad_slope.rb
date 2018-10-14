@@ -17,7 +17,8 @@ module TT::Plugins::QuadFaceTools
   # it can operate on Sandbox Tools' quads.
   #
   # It would be nice to merge this into QuadFace eventually. Though this require
-  # some refactoring.
+  # some refactoring. There is also VirtualQuadFace which looks to be somewhat
+  # similar in purpose.
   class QuadSlope
 
     include Algorithms

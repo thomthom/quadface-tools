@@ -6,10 +6,10 @@
 #-------------------------------------------------------------------------------
 
 module TT::Plugins::QuadFaceTools
-  
+
   # @since 0.4.0
   class UV_UnwrapGridTool
-    
+
     # @since 0.4.0
     def initialize
       @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
@@ -17,7 +17,7 @@ module TT::Plugins::QuadFaceTools
       @ip_mouse = Sketchup::InputPoint.new
       @provider = EntitiesProvider.new
     end
-    
+
     # @since 0.4.0
     def activate
       if @uv_grid.mapping
@@ -33,21 +33,21 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def resume( view )
       view.invalidate
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def deactivate( view )
       view.invalidate
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def onLButtonDown( flags, x, y, view )
       if @group
@@ -57,7 +57,7 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def onMouseMove( flags, x, y, view )
       if @group
@@ -72,7 +72,7 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def onCancel( reason, view )
       if @group
@@ -85,14 +85,14 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.5.0
     def draw( view )
       @ip_mouse.draw( view ) if @ip_mouse.display?
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @param [Array<Hash>] grid
     #
     # @return [Nil]
@@ -196,25 +196,25 @@ module TT::Plugins::QuadFaceTools
       @group = group
       nil
     end
-  
+
   end # class UV_UnwrapGridTool
-  
-  
+
+
   # @since 0.4.0
   class UV_CopyTool
-    
+
     @@clipboard = nil
-    
+
     # @since 0.4.0
     def self.clipboard
       @@clipboard
     end
-    
+
     # @since 0.4.0
     def initialize
       @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
     end
-    
+
     # @since 0.4.0
     def activate
       if @uv_grid.mapping
@@ -230,21 +230,21 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def resume( view )
       view.invalidate
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def deactivate( view )
       view.invalidate
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @param [Array<Hash>] grid
     #
     # @return [Nil]
@@ -269,18 +269,18 @@ module TT::Plugins::QuadFaceTools
       @@clipboard = uv_mapping
       nil
     end
-  
+
   end # class UV_TransferTool
-  
-  
+
+
   # @since 0.4.0
   class UV_PasteTool
-    
+
     # @since 0.4.0
     def initialize
       @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
     end
-    
+
     # @since 0.4.0
     def activate
       if @uv_grid.mapping
@@ -296,21 +296,21 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def resume( view )
       view.invalidate
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def deactivate( view )
       view.invalidate
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @param [Array<Hash>] grid
     #
     # @return [Nil]
@@ -349,45 +349,45 @@ module TT::Plugins::QuadFaceTools
       Sketchup.active_model.commit_operation
       nil
     end
-  
+
   end # class UV_TransferTool
-  
-  
+
+
   # @since 0.4.0
   class UV_MapTool
-    
+
     CLR_U_AXIS = Sketchup::Color.new( 192, 0, 0 )
     CLR_V_AXIS = Sketchup::Color.new( 0, 128, 0 )
-    
+
     # @since 0.4.0
     def initialize
       @ip_mouse = Sketchup::InputPoint.new
-      
+
       @u_axis = nil # Array<Vertex>
       @v_axis = nil
       @u_origin = nil # Integer
       @v_origin = nil
-      
+
       @u_scale = nil # Float OR Length
       @v_scale = nil
-      
+
       @u_handle = nil # Point3D
       @v_handle = nil
       @u_handle_active = false
       @v_handle_active = false
       @u_handle_mouse = false
       @v_handle_mouse = false
-      
+
       @uv_grid = UV_GridTool.new( self, Sketchup.active_model.selection )
     end
-    
+
     # @since 0.4.0
     def enableVCB?
       return true
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def activate
       #puts 'UVMapTool'
@@ -396,13 +396,13 @@ module TT::Plugins::QuadFaceTools
       @scale_proportional = PLUGIN.settings[ :uv_scale_proportional ]
       @u_scale = PLUGIN.settings[ :uv_u_scale ]
       @v_scale = PLUGIN.settings[ :uv_v_scale ]
-      
-      #p @u_scale 
+
+      #p @u_scale
       #p @v_scale
-        
+
       if @uv_grid.mapping
         #puts '> Mapping...'
-        
+
         # Validate the picked 2D grid.
         if @uv_grid.get_mapping_grid( @uv_grid.mapping )
           @grid_valid = true
@@ -410,15 +410,15 @@ module TT::Plugins::QuadFaceTools
           @grid_valid = false
           UI.messagebox( 'Could not map mesh to a 2D grid. Mapping will not be continuous.' )
         end
-        
+
         calculate_axes()
         @u_handle = point_on_axis( @u_origin, @u_axis, @u_scale )
         @v_handle = point_on_axis( @v_origin, @v_axis, @v_scale )
-        
+
         TT::Model.start_operation( 'UV Map Quads' )
         map_mesh()
         Sketchup.active_model.commit_operation
-        
+
         update_ui()
       else
         #puts '> No Grid'
@@ -427,7 +427,7 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def resume( view )
       update_ui()
@@ -435,7 +435,7 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def deactivate( view )
       PLUGIN.settings[ :uv_draw_uv_grid ] = @draw_uv_grid
@@ -448,12 +448,12 @@ module TT::Plugins::QuadFaceTools
       else
         puts 'QuadFace Tool - Warning! Tried to save scale with nil values.'
       end
-      
+
       view.invalidate
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def onLButtonDown( flags, x, y, view )
       if ip = pick_on_axis( @u_axis, x, y, view )
@@ -469,7 +469,7 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def onLButtonUp( flags, x, y, view )
       if @u_handle_active || @v_handle_active
@@ -479,7 +479,7 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def onMouseMove( flags, x, y, view )
       if ip_u = pick_on_axis( @u_axis, x, y, view )
@@ -489,7 +489,7 @@ module TT::Plugins::QuadFaceTools
       else
         @ip_mouse.clear
       end
-      
+
       if flags & MK_LBUTTON == MK_LBUTTON
         # Modify the U or V scale.
         if ip_u
@@ -514,7 +514,7 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def onCancel( reason, view )
       if reason == 0 # ESC
@@ -526,7 +526,7 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def onUserText( text, view )
       if TT::Locale.decimal_separator == '.'
@@ -567,23 +567,23 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def draw( view )
       @uv_grid.draw( view ) if @draw_uv_grid
-      
+
       view.line_stipple = ''
-      
+
       unless @u_axis.empty?
         # Illustrate axis.
         view.line_width = 3
         view.drawing_color = CLR_U_AXIS
         pts = @u_axis.map { |v| v.position }
         view.draw( GL_LINE_STRIP, pts )
-        
+
         # Indicate start of axis.
         view.draw_points( pts[0,1], 8, 4, CLR_U_AXIS )
-        
+
         # Axis handle grip
         pt = @u_handle
         if pt
@@ -594,17 +594,17 @@ module TT::Plugins::QuadFaceTools
           view.draw_points( [pt], 10, square, CLR_U_AXIS )
         end
       end
-      
+
       unless @v_axis.empty?
         # Illustrate axis.
         view.line_width = 3
         view.drawing_color = CLR_V_AXIS
         pts = @v_axis.map { |v| v.position }
         view.draw( GL_LINE_STRIP, pts )
-        
+
         # Indicate start of axis.
         view.draw_points( pts[0,1], 8, 4, CLR_V_AXIS )
-        
+
         # Axis handle grip
         pt = @v_handle
         if pt
@@ -615,19 +615,19 @@ module TT::Plugins::QuadFaceTools
           view.draw_points( [pt], 10, square, CLR_V_AXIS )
         end
       end
-      
+
       # InputPoint indicating interaction with the axis.
       @ip_mouse.draw( view ) if @ip_mouse.display?
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def getMenu( context_menu )
       m = context_menu.add_item( 'Continuous Mapping' ) {
         @continuous = !@continuous
         # Check if mesh can be mapped continously
-        if @continuous && !@grid_valid 
+        if @continuous && !@grid_valid
           UI.messagebox( 'This mesh cannot be mapped to a 2D grid and continuous mapping is therefore not possible.' )
         end
         TT::Model.start_operation( 'Toggle Continuous Mapping' )
@@ -639,19 +639,19 @@ module TT::Plugins::QuadFaceTools
         grid_valid = ( @grid_valid ) ? MF_ENABLED : MF_GRAYED
         continuous | grid_valid
       }
-      
+
       #m = context_menu.add_item( 'Skew and Distort' ) { puts '02' }
       #context_menu.set_validation_proc( m ) { MF_CHECKED | MF_GRAYED }
-      
+
       m = context_menu.add_item( 'Scale Proportionally' ) {
-        @scale_proportional = !@scale_proportional 
+        @scale_proportional = !@scale_proportional
       }
       context_menu.set_validation_proc( m ) {
         ( @scale_proportional ) ? MF_CHECKED : MF_UNCHECKED
       }
-      
+
       context_menu.add_separator
-      
+
       context_menu.add_item( 'Use Material Size' ) {
         material = Sketchup.active_model.materials.current
         if material && material.texture
@@ -666,7 +666,7 @@ module TT::Plugins::QuadFaceTools
           Sketchup.active_model.active_view.invalidate
         end
       }
-      
+
       context_menu.add_item( 'Flip U and V Scale' ) {
         @u_scale, @v_scale = [ @v_scale, @u_scale ]
         @u_handle = point_on_axis( @u_origin, @u_axis, @u_scale )
@@ -677,11 +677,11 @@ module TT::Plugins::QuadFaceTools
         update_ui()
         Sketchup.active_model.active_view.invalidate
       }
-      
+
       context_menu.add_separator
-      
+
       m = context_menu.add_item( 'Show UV Grid' ) {
-        @draw_uv_grid = !@draw_uv_grid 
+        @draw_uv_grid = !@draw_uv_grid
         Sketchup.active_model.active_view.invalidate
       }
       context_menu.set_validation_proc( m ) {
@@ -690,7 +690,7 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @return [Nil]
     # @since 0.4.0
     def update_ui
@@ -708,7 +708,7 @@ module TT::Plugins::QuadFaceTools
       Sketchup.vcb_value = "#{u}#{list_separator} #{v}"
       nil
     end
-    
+
     # @note Taken from TT_Lib2 temporarily as 2.5 is bugged.
     #
     # @param [Numeric] float
@@ -724,7 +724,7 @@ module TT::Plugins::QuadFaceTools
       num.tr!( '.', TT::Locale.decimal_separator )
       num
     end
-    
+
     # @param [Array<Sketchup::Vertex>] axis
     # @param [Integer] x
     # @param [Integer] y
@@ -748,7 +748,7 @@ module TT::Plugins::QuadFaceTools
         return nil
       end
     end
-    
+
     # @param [Geom::Point3d] point
     # @param [Array<Sketchup::Vertex>] axis
     # @param [Integer] origin Index of origin vertex in axis
@@ -768,7 +768,7 @@ module TT::Plugins::QuadFaceTools
       end
       return nil
     end
-    
+
     # @param [Geom::Point3d] point
     # @param [Array<Sketchup::Vertex>] axis
     # @param [Integer] origin Index of origin vertex in axis
@@ -790,7 +790,7 @@ module TT::Plugins::QuadFaceTools
       end
       return nil
     end
-    
+
     # @param [Sketchup::InputPoint] ip
     #
     # @return [Nil]
@@ -816,7 +816,7 @@ module TT::Plugins::QuadFaceTools
       map_mesh()
       update_ui()
     end
-    
+
     # @param [Sketchup::InputPoint] ip
     #
     # @return [Nil]
@@ -842,25 +842,25 @@ module TT::Plugins::QuadFaceTools
       map_mesh()
       update_ui()
     end
-    
+
     # @return [Nil]
     # @since 0.4.0
     def calculate_axes
       origin = @uv_grid.origin
       u_edge = @uv_grid.u_edge
       v_edge = @uv_grid.v_edge
-      
+
       axes = get_axes( @uv_grid.mapping )
       #Sketchup.active_model.selection.add( axes.x )
       #Sketchup.active_model.selection.add( axes.y )
       @u_axis = get_axis( axes.x, origin, u_edge )
       @v_axis = get_axis( axes.y, origin, v_edge )
-      
+
       @u_origin = @u_axis.index( origin )
       @v_origin = @v_axis.index( origin )
       nil
     end
-    
+
     # @return [Nil]
     # @since 0.4.0
     def map_mesh
@@ -879,7 +879,7 @@ module TT::Plugins::QuadFaceTools
       end
       nil
     end
-    
+
     # @param [Integer] origin_index Index of the vertex representing the origin
     # @param [Array<Sketchup::Vertex>] axis
     # @param [Length,Float] length
@@ -916,7 +916,7 @@ module TT::Plugins::QuadFaceTools
       end
       nil
     end
-    
+
     # @param [Integer] origin_index Index of the vertex representing the origin
     # @param [Array<Sketchup::Vertex>] axis
     # @param [Float] scale
@@ -966,7 +966,7 @@ module TT::Plugins::QuadFaceTools
       end
       mapping
     end
-    
+
     # @param [Array<Sketchup::Edge>] axis Unsorted array of edges.
     # @param [Sketchup::Vertex] origin A vertex from one of the edges in +axis+.
     # @param [Sketchup::Edge] edge Connected to +origin+.
@@ -995,7 +995,7 @@ module TT::Plugins::QuadFaceTools
       end
       vertices
     end
-    
+
     # @param [Array<Hash>] mapping_set
     #
     # @return [Array<Array<Sketchup::Edge>,Array<Sketchup::Edge>]
@@ -1041,10 +1041,10 @@ module TT::Plugins::QuadFaceTools
       end
       [ u_axis.uniq, v_axis.uniq ]
     end
-    
+
   end # class UV_MapTool
-  
-  
+
+
   # Tool class used to pick the origin, u and v direction for the UV mapping
   # of a mesh. Once that is picked a second tool is pushed to the tool stack
   # and takes over the processing.
@@ -1057,41 +1057,41 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.4.0
   class UV_GridTool
-    
+
     CLR_MOUSE   = Sketchup::Color.new( 255, 64, 0 )
     CLR_PICKED  = Sketchup::Color.new( 64, 64, 255 )
     CLR_VALID   = Sketchup::Color.new( 0, 192, 0 )
-    
+
     CLR_MATRIX = [
       Sketchup::Color.new( 255, 64, 0, 40 ),
       Sketchup::Color.new( 0, 164, 0, 40 ),
       Sketchup::Color.new( 0, 0, 192, 40 )
     ]
-    
+
     attr_reader( :mapping, :contraints )
     attr_reader( :origin, :u_edge, :v_edge )
-    
+
     # @param [Sketchup::Tool] parent_tool
     # @param [Enumerable] contraints Set of faces to contrain mapping to.
     #
     # @since 0.4.0
     def initialize( parent_tool, contraints = [] )
       @child_tool = parent_tool
-      
+
       @origin = nil
       @u_edge = nil
       @v_edge = nil
-      
+
       @ip_mouse = Sketchup::InputPoint.new
       @mouse_origin = nil
       @mouse_u = nil
       @mouse_v = nil
-      
+
       @valid_pick = nil
-      
+
       @preview_quads = [ [], [], [] ]
       @mapping = nil
-      
+
       @contraints = {}
       for face in contraints
         next unless face.is_a?( Sketchup::Face )
@@ -1100,10 +1100,10 @@ module TT::Plugins::QuadFaceTools
           @contraints[ edge ] = edge
         end
       end
-      
+
       @provider = EntitiesProvider.new
     end
-    
+
     # @since 0.4.0
     def activate
       #puts 'UV_Grid'
@@ -1111,7 +1111,7 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def resume( view )
       update_ui()
@@ -1119,14 +1119,14 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def deactivate( view )
       view.invalidate
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def onCancel( reason, view )
       # 0: the user canceled the current operation by hitting the escape key.
@@ -1153,7 +1153,7 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def onLButtonDown( flags, x, y, view )
       if state_pick_origin?
@@ -1194,14 +1194,14 @@ module TT::Plugins::QuadFaceTools
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def onMouseMove( flags, x, y, view )
       @ip_mouse.pick( view, x, y )
-      
+
       @mouse_edge = nil
       @mouse_origin = nil
-      
+
       if state_pick_origin?
         if edge = @ip_mouse.edge and in_current_context?( edge )
           if QuadFace.entity_in_quad?( edge )
@@ -1242,23 +1242,23 @@ module TT::Plugins::QuadFaceTools
         if edge and in_current_context?( edge ) && QuadFace.entity_in_quad?( edge )
           pts = edge.vertices.map { |v| v.position }
           unless QuadFace.dividing_edge?( edge )
-            @mouse_edge = edge 
+            @mouse_edge = edge
           end
         end
       end
-      
+
       view.tooltip = @ip_mouse.tooltip
       view.invalidate
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.4.0
     def draw( view )
       @ip_mouse.draw( view ) if @ip_mouse.display? # <debug/>
-      
+
       view.line_stipple = ''
-      
+
       for i in ( 0..2 )
         polygons = @preview_quads[ i ]
         unless polygons.empty?
@@ -1266,7 +1266,7 @@ module TT::Plugins::QuadFaceTools
           view.draw( GL_TRIANGLES, polygons )
         end
       end
-      
+
       if @mouse_edge
         view.drawing_color = CLR_MOUSE
         view.line_width = 3
@@ -1276,7 +1276,7 @@ module TT::Plugins::QuadFaceTools
         view.line_width = 1
         view.draw_points( @mouse_origin.position, 8, TT::POINT_FILLED_SQUARE, CLR_MOUSE )
       end
-      
+
       if @u_edge
         view.drawing_color = CLR_PICKED
         view.line_width = 3
@@ -1291,7 +1291,7 @@ module TT::Plugins::QuadFaceTools
         view.line_width = 1
         view.draw_points( @origin.position, 8, TT::POINT_FILLED_SQUARE, CLR_PICKED )
       end
-      
+
       if @valid_pick
         points = @valid_pick.map { |e|
           e.vertices.map { |v| v.position }
@@ -1300,11 +1300,11 @@ module TT::Plugins::QuadFaceTools
         view.line_width = 3
         view.draw( GL_LINES, points )
       end
-    
+
     rescue Exception => exception
       ERROR_REPORTER.handle(exception)
     end
-    
+
     # @since 0.5.0
     def in_current_context?( entity )
       unless @contraints.empty?
@@ -1312,8 +1312,8 @@ module TT::Plugins::QuadFaceTools
       end
       entity.parent.entities == Sketchup.active_model.active_entities
     end
-    
-    
+
+
     # @since 0.4.0
     def update_ui
       if state_pick_origin?
@@ -1324,22 +1324,22 @@ module TT::Plugins::QuadFaceTools
         Sketchup.status_text = %{Pick an edge for V direction.}
       end
     end
-    
+
     # @since 0.4.0
     def state_pick_origin?
       @origin.nil? && @u_edge.nil? && @v_edge.nil?
     end
-    
+
     # @since 0.4.0
     def state_pick_u?
       @origin && @u_edge.nil? && @v_edge.nil?
     end
-    
+
     # @since 0.4.0
     def state_pick_v?
       @origin && @u_edge && @v_edge.nil?
     end
-    
+
     # Tries to build a 2D grid from the quads. Such a grid can be used to
     # transfer mapping from one mesh to another.
     #
@@ -1359,7 +1359,7 @@ module TT::Plugins::QuadFaceTools
       end
       grid
     end
-    
+
     # Maps each quad induvidually without any regard to continuity between the
     # quads.
     #
@@ -1408,7 +1408,7 @@ module TT::Plugins::QuadFaceTools
       end
       true
     end
-    
+
     # Maps the set of quads based on relative ratios, keeping continutity
     # between the quads.
     #
@@ -1456,13 +1456,13 @@ module TT::Plugins::QuadFaceTools
       end
       true
     end
-    
+
     # Maps the set of quads based on absolute length along the U and V axes,
     # keeping continutity between the quads.
     #
     # @param [Array<Hash>] mapping_set
-    # @param [Length] u_scale
-    # @param [Length] v_scale
+    # @param [Hash] u_mapping
+    # @param [Hash] v_mapping
     #
     # @return [Boolean]
     # @since 0.4.0
@@ -1505,7 +1505,7 @@ module TT::Plugins::QuadFaceTools
       end
       true
     end
-    
+
     # Traverse the connected mesh of the picked origin and attempts to map it
     # to a 2D grid.
     #
@@ -1524,19 +1524,19 @@ module TT::Plugins::QuadFaceTools
         :v2_edge => origin_quad.opposite_edge( @v_edge ),
         :coordinate => [ 0, 0 ]
       }
-      
+
       quads = {} # face => QuadFace
       stack = [ origin ]
       stack_negative = []
       mapped = []
       provider = EntitiesProvider.new
-      
+
       # (!) Progressbar ( Status update )
       until stack.empty?
         #TT.debug 'Stack Shift'
         data = stack.shift
         quad = data[ :quad ]
-        coordinate = data[ :coordinate ] 
+        coordinate = data[ :coordinate ]
         invalid = false
         # Contrain quad mapping if contraint is present
         unless @contraints.empty?
@@ -1595,7 +1595,7 @@ module TT::Plugins::QuadFaceTools
       end
       mapped
     end
-    
+
     # Determines the next quad based on the source.
     #
     # @param [Hash] data Origin dataset connected to +common_edge+.
@@ -1609,7 +1609,7 @@ module TT::Plugins::QuadFaceTools
         !quad.faces.any? { |face| processed[ face ] }
       }
       return false unless quadface
-      
+
       origin = data[ :origin ]
       quad = data[ :quad ]
       u = data[ :u_edge ]
@@ -1617,7 +1617,7 @@ module TT::Plugins::QuadFaceTools
       u2 = data[ :u2_edge ]
       v2 = data[ :v2_edge ]
       x, y = data[ :coordinate ]
-      
+
       if common_edge == u || common_edge == u2
         # Shares U Edge
         next_x = x
@@ -1645,7 +1645,7 @@ module TT::Plugins::QuadFaceTools
           e != common_edge && TT::Edges.common_vertex( e, u )
         }
       end
-      
+
       next_u2 = quadface.opposite_edge( next_u )
       next_v2 = quadface.opposite_edge( next_v )
       next_origin = TT::Edges.common_vertex( next_u, next_v )
@@ -1660,7 +1660,7 @@ module TT::Plugins::QuadFaceTools
         :coordinate => [ next_x, next_y ]
       }
     end
-    
+
     # @param [Hash] data
     #
     # @return [Array<Sketchup::Vertex>]
@@ -1677,7 +1677,7 @@ module TT::Plugins::QuadFaceTools
       vertices << u2.other_vertex( vertices[2] )
       vertices
     end
-    
+
   end # class UV_GridTool
-  
+
 end # module

@@ -6,11 +6,11 @@
 #-------------------------------------------------------------------------------
 
 module TT::Plugins::QuadFaceTools
-  
+
   # (!) Refactor this into a class that search for connected quads. That way
   #     reusable methods can be made without having to pass a long list of
   #     arguments in order to make the methods aware of the current processing.
-  
+
   # @return [<Array<QuadFace>]
   # @since 0.1.0
   def self.convert_connected_mesh_to_quads
@@ -62,7 +62,7 @@ module TT::Plugins::QuadFaceTools
       # Convert geometry to QuadFace
       quadface = provider.convert_to_quad( face1, face2, shared_edges[0] )
     end
-    
+
     tagged = []
     stack = [ quadface ]
     # <debug>
@@ -78,25 +78,25 @@ module TT::Plugins::QuadFaceTools
         break
       end
       # </debug>
-      
-      
+
+
       quad = stack.shift
       next if ( tagged & quad.faces ).size > 0
-      
+
       j+=1 # <debug/>
-      
+
       Sketchup.status_text = "Working... (#{j} QuadFaces found.)"
       TT::SketchUp.refresh
-      
+
       tagged.concat( quad.faces )
       #quad.material = 'pink' # <debug/>
       stack.concat( self.find_connected_quadfaces( quad ) )
-      
+
       # <debug>
       #result = UI.messagebox( "Quad #{j} (#{i})", MB_OKCANCEL )
       #break if result == 2
       # </debug>
-      
+
       #quad.material = 'yellow' # <debug/>
     end
     puts "Iterations: #{j} (#{i})"
@@ -111,7 +111,7 @@ module TT::Plugins::QuadFaceTools
     #raise
     TT.debug "self.convert_connected_mesh_to_quads: #{Time.now - t}"
   end
-  
+
   # @param [QuadFace] quadface_origin
   #
   # @return [Array<QuadFace>]
@@ -121,7 +121,7 @@ module TT::Plugins::QuadFaceTools
     quadfaces = [] # Confirmed
     tagged = quadface_origin.faces # Faces processed.
     provider = EntitiesProvider.new
-    
+
     # Find confirmed quadfaces connected each vertex. (Native or QuadFace)
     for vertex in quadface_origin.vertices
       for face in vertex.faces
@@ -145,13 +145,13 @@ module TT::Plugins::QuadFaceTools
 
     # Find faces neigbouring the origin face.
     neighbours = quadface_origin.vertices.map { |v| v.faces }.flatten - quadface_origin.faces
-    
+
     # If any confirmed Quadfaces, start traversing around the origin looking
     # for more.
     i=0 # <debug/>
     stack = quadfaces.dup
-    
-    # In case there is no confirmed quads around the origin, look for best 
+
+    # In case there is no confirmed quads around the origin, look for best
     # possible solution.
     if stack.empty?
 
@@ -167,22 +167,22 @@ module TT::Plugins::QuadFaceTools
         break if triangle
       end
       return [] unless triangle
-      
+
       #triangle.material = 'cyan'
-      
+
       # Find a solution.
       edges = triangle.edges - quadface_origin.edges
       face1, face2 = edges.map { |e| ( e.faces - [triangle] )[0] }
-      
+
       #face1.material = 'orange'
       #face2.material = 'orange'
       #return []
-      
+
       solution = self.find_optimal_quad_solution(
         quadface_origin, quadfaces, tagged, neighbours, triangle, face1, face2 )
-        
+
       #TT.debug "Guess Solutions: #{solution.size}"
-      
+
       for virtual_face in solution
         # All virtual quads are triangulated - if they where native
         # quads, with four vertices, there would be no need for this.
@@ -197,10 +197,10 @@ module TT::Plugins::QuadFaceTools
         quadfaces << new_quadface
         stack << new_quadface
       end
-    
+
     end # stack.empty?
-    
-    
+
+
     # Traverse around the origin from the known quads.
     until stack.empty?
       quadface = stack.shift
@@ -217,7 +217,7 @@ module TT::Plugins::QuadFaceTools
             # Shares only a vertex with origin.
             # 'face' has two possible matchces - attempting to find the best
             # fit solution.
-            
+
             # Find possible candidates for the opposite triangle.
             # The faces found here are just two faces connected to the
             # triangle we're trying to find a match for.
@@ -225,17 +225,17 @@ module TT::Plugins::QuadFaceTools
             # fit the criterias (triangle, not used etc.).
             edges = face.edges - quadface.edges
             face1, face2 = edges.map { |e| ( e.faces - [face] )[0] }
-            
+
             #face1.material = 'red' # <debug/>
             #face2.material = 'red' # <debug/>
-            
+
             # Recursive method that looks for the solution which yields the
             # most quadfaces and leaves the least number of neighbouring faces.
             #TT.debug '----------'
             solution = self.find_optimal_quad_solution(
                 quadface_origin, quadfaces, tagged, neighbours, face, face1, face2 )
             #TT.debug "Best Solution: #{solution.size}"
-            
+
             # The solution is an array of VirtualQuadFaces. These must be
             # converted into real QuadFaces and their data added to the
             # current working set.
@@ -275,8 +275,8 @@ module TT::Plugins::QuadFaceTools
     end # until stack.empty?
     quadfaces
   end
-  
-  
+
+
   # @param [QuadFace] origin
   # @param [Array<QuadFace>] existing
   # @param [Array<Sketchup::Face>] tagged
@@ -289,7 +289,7 @@ module TT::Plugins::QuadFaceTools
   # @since 0.1.0
   def self.find_optimal_quad_solution( origin, existing, tagged, neighbours, source, face1, face2, nn=0 )
     # (!) Argument `nn` is just a debug flag.
-    
+
     # Validate the properties of the possible faces.
     face1_valid = (
       face1 &&
@@ -303,7 +303,7 @@ module TT::Plugins::QuadFaceTools
       !tagged.include?( face2 ) &&
       !QuadFace.is?( face2 )
     )
-    
+
 =begin
     sel = Sketchup.active_model.selection
     cache = sel.to_a
@@ -316,10 +316,10 @@ module TT::Plugins::QuadFaceTools
     sel.add( cache )
     return [] if result == 2
 =end
-    
+
     #tab = '  ' * nn
     #TT.debug "#{tab}find_optimal_quad_solution(#{nn})"
-    
+
     # Find possible soution for each face. This is recursive methods.
     s1 = s2 = []
     if face1_valid
@@ -332,12 +332,12 @@ module TT::Plugins::QuadFaceTools
       s2 = self.find_possible_quads( origin, existing, tagged, neighbours, source, face2, nn )
       #face2.material = [64,64,64] if s2.empty?
     end
-    
+
     #tab = '  ' * nn
     #TT.debug "#{tab}find_optimal_quad_solution(#{nn})"
     #TT.debug "#{tab}> s1: #{s1.size}"
     #TT.debug "#{tab}> s2: #{s2.size}"
-    
+
     # Is both solutions yield the same amount of quads, pick the one that uses
     # the most of the origin quadface's neighbouring faces.
     if s1.size == s2.size
@@ -367,9 +367,9 @@ module TT::Plugins::QuadFaceTools
       ( s1.size > s2.size ) ? s1 : s2
     end
   end
-  
-  
-  # @param [QuadFace] origin
+
+
+  # @param [QuadFace] quadface_origin
   # @param [Array<QuadFace>] existing
   # @param [Array<Sketchup::Face>] tagged
   # @param [Array<Sketchup::Face>] neighbours
@@ -381,12 +381,12 @@ module TT::Plugins::QuadFaceTools
   def self.find_possible_quads( quadface_origin, existing, tagged, neighbours, face1, face2, nn=0 )
     tagged = tagged.dup # Ensure a local copy.
     start = VirtualQuadFace.new( face1, face2 )
-    
+
     #start.material = 'Plum'
-    
+
     tagged << face1
     tagged << face2
-    
+
     quadfaces = [ start ]
     stack = [ start ]
     until stack.empty?
@@ -400,20 +400,20 @@ module TT::Plugins::QuadFaceTools
           next unless neighbours.include?( face )
           next if tagged.include?( face )
           next unless face.vertices.size == 3
-          
+
           unless ( quadface_origin.edges & face.edges ).size == 1
             # Shares only a vertex with origin.
-            
+
             edges = face.edges - quadface.edges
             f1, f2 = edges.map { |e| ( e.faces - [face] )[0] }
-            
+
             #next
             solution = self.find_optimal_quad_solution(
               quadface_origin, existing+quadfaces, tagged, neighbours, face, f1, f2, nn+1 )
-              
+
             #tab = '  ' * nn
             #TT.debug "#{tab}find_possible_quads(#{nn}): #{solution.size}"
-              
+
             # Add data to current data set.
             quadfaces.concat( solution )
             stack.concat( solution )
@@ -440,7 +440,7 @@ module TT::Plugins::QuadFaceTools
     end # until
     quadfaces
     valid = self.valid_solution?( quadface_origin, quadfaces + existing )
-    
+
 =begin
     sel = Sketchup.active_model.selection
     cache = sel.to_a
@@ -448,20 +448,20 @@ module TT::Plugins::QuadFaceTools
     faces = quadfaces.map { |qf| qf.faces }.flatten
     sel.add( faces )
     sel.add( face1.edges )
-    
+
     existing.each { |qf| qf.material = 'cyan' }
-    
+
     result = UI.messagebox( "#{face1} (#{nn})\nExisting: #{existing.size}\nPossible Solution (#{quadfaces.size})\nValid: #{valid}", MB_OK )
     sel.clear
     sel.add( cache )
 =end
-    
+
     #str =  (valid) ? "find_possible_quads: #{quadfaces.size}" : "find_possible_quads: INVALID (#{quadfaces.size})"
     #TT.debug "#{('  ')*nn} #{str}"
     valid ? quadfaces : []
   end
-  
-  
+
+
   # @param [QuadFace] quadface_origin
   # @param [Array<QuadFace>] solution
   #
@@ -471,7 +471,7 @@ module TT::Plugins::QuadFaceTools
    # TT.debug 'self.valid_solution?'
     if solution.size > 8
       #TT.debug "> INVALID solution - size: #{solution.size}"
-      return false 
+      return false
     end
     for vertex in quadface_origin.vertices
       faces = solution.select { |quadface|
@@ -484,5 +484,5 @@ module TT::Plugins::QuadFaceTools
     end
     true
   end
-  
+
 end # module

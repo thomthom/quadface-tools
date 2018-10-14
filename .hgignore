@@ -13,5 +13,9 @@ archive/
 .idea/workspace.xml
 *Thumbs.db
 
+# YARD
+.yardoc
+doc/
+
 # Files
 tests/QuadFace Tools/TC_ObjImporter/*_01.*

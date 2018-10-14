@@ -6,9 +6,9 @@
 #-------------------------------------------------------------------------------
 
 module TT::Plugins::QuadFaceTools
-  
+
   # Custom Exceptions
-  
+
   # @since 0.2.0
   class InvalidQuadFace < StandardError; end
 
@@ -27,7 +27,7 @@ module TT::Plugins::QuadFaceTools
     def back_material
       @faces[0].back_material
     end
-    
+
     # @param [Sketchup::Material] new_material
     #
     # @return [Sketchup::Material]
@@ -52,7 +52,7 @@ module TT::Plugins::QuadFaceTools
     def include?( face )
       @faces.include?( face )
     end
-    
+
     # @return [String]
     # @since 0.8.0
     def inspect
@@ -66,7 +66,7 @@ module TT::Plugins::QuadFaceTools
     def material
       @faces[0].material
     end
-    
+
     # @param [Sketchup::Material] new_material
     #
     # @return [Sketchup::Material]
@@ -114,10 +114,10 @@ module TT::Plugins::QuadFaceTools
       end
       self
     end
-    
+
   end # class Entity
 
-  
+
   # Wrapper class for making handling of quad faces easier. Since a quad face
   # might be triangulated, this class allows the possibly multiple native
   # SketchUp entities to be treated as one object.
@@ -128,8 +128,8 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.1.0
   class QuadFace < Entity
-    
-    # @param [Sketchup::Entity] entity
+
+    # @param [Sketchup::Entity] edge
     #
     # @return [Boolean]
     # @since 0.4.0
@@ -139,12 +139,12 @@ module TT::Plugins::QuadFaceTools
       return false if edge.casts_shadows?
       true
     end
-    
+
     # Evaluates if the entity is a face that forms part of a QuadFace.
     #
-    # @see {QuadFace}
+    # @see QuadFace
     #
-    # @param [Sketchup::Entity] entity
+    # @param [Sketchup::Entity] edge
     #
     # @return [Boolean]
     # @since 0.1.0
@@ -155,7 +155,7 @@ module TT::Plugins::QuadFaceTools
       return false unless edge.faces.all? { |face| face.vertices.size == 3 }
       edge.faces.all? { |face| self.is?( face ) }
     end
-    
+
     # Evaluates if the edge is part of a QuadFace.
     #
     # @param [Sketchup::Edge,Sketchup::Vertex] entity
@@ -165,7 +165,7 @@ module TT::Plugins::QuadFaceTools
     def self.entity_in_quad?( entity )
       entity.faces.any? { |face| self.is?( face ) }
     end
-    
+
     # @param [Array<Sketchup::Vertex>] vertices
     #
     # @return [QuadFace,Nil]
@@ -182,12 +182,12 @@ module TT::Plugins::QuadFaceTools
       return nil unless quad.vertices.all? { |v| vertices.include?( v ) }
       quad
     end
-    
+
     # Evaluates if the entity is a face that forms part of a QuadFace.
     #
-    # @see {QuadFace}
+    # @see QuadFace
     #
-    # @param [Sketchup::Entity] entity
+    # @param [Sketchup::Entity] face
     #
     # @return [Boolean]
     # @since 0.1.0
@@ -210,8 +210,13 @@ module TT::Plugins::QuadFaceTools
       end
       true
     end
-    
-    # @param [Sketchup::Entity] entity
+
+    # @overload valid_geometry?(face)
+    #   @param [Sketchup::Face] face
+    ''
+    # @overload valid_geometry?(face1, face2)
+    #   @param [Sketchup::Face] face1
+    #   @param [Sketchup::Face] face2
     #
     # @return [Boolean]
     # @since 0.1.0
@@ -238,7 +243,7 @@ module TT::Plugins::QuadFaceTools
       end
       true
     end
-    
+
     # @param [Sketchup::Edge] edge
     #
     # @return [Sketchup::Edge]
@@ -249,7 +254,7 @@ module TT::Plugins::QuadFaceTools
       end
       edge
     end
-    
+
     # @param [Sketchup::Edge] edge
     #
     # @return [Sketchup::Edge]
@@ -260,7 +265,7 @@ module TT::Plugins::QuadFaceTools
       edge.casts_shadows = false
       edge
     end
-    
+
     # @param [Sketchup::Edge] edge
     #
     # @return [Sketchup::Edge]
@@ -273,7 +278,7 @@ module TT::Plugins::QuadFaceTools
       end
       edge
     end
-    
+
     # @param [Sketchup::Edge] edge
     #
     # @return [Sketchup::Edge]
@@ -284,7 +289,7 @@ module TT::Plugins::QuadFaceTools
       edge.hidden = false
       edge
     end
-    
+
     # @note as of Version 0.6.0 this method does not validate the input entites.
     #   It is assumed they are all valid in order to maintain performance.
     #   Usually QuadFace.is? has been used to verify the entity anyway, so it
@@ -331,8 +336,8 @@ module TT::Plugins::QuadFaceTools
     def centroid
       TT::Geom3d.average_point(positions)
     end
-    
-    # @param [#edges] quadface
+
+    # @param [#edges] entity
     #
     # @return [Sketchup::Edge,Nil]
     # @since 0.1.0
@@ -343,7 +348,7 @@ module TT::Plugins::QuadFaceTools
       other_edges = entity.edges
       edges.find { |edge| other_edges.include?( edge ) }
     end
-    
+
     # Finds the quads connected to the quad's edges.
     #
     # @param [Array<Sketchup::Entity>] contraints
@@ -368,7 +373,7 @@ module TT::Plugins::QuadFaceTools
       end
       connected
     end
-    
+
     # @return [Boolean]
     # @since 0.1.0
     def detriangulate!
@@ -393,7 +398,7 @@ module TT::Plugins::QuadFaceTools
         false
       end
     end
-    
+
     # @return [Sketchup::Edge,Nil]
     # @since 0.3.0
     def divider
@@ -404,8 +409,8 @@ module TT::Plugins::QuadFaceTools
         ( face1.edges & face2.edges )[0]
       end
     end
-    
-    # @param [Sketchup::Edge]
+
+    # @param [Sketchup::Edge] edge
     #
     # @return [Boolean]
     # @since 0.1.0
@@ -415,7 +420,7 @@ module TT::Plugins::QuadFaceTools
         return edge.reversed_in?( face )
       end
     end
-    
+
     # Returns the edge positions in the same order as the outer loop of the quad.
     #
     # @param [Sketchup::Edge] edge
@@ -425,7 +430,7 @@ module TT::Plugins::QuadFaceTools
     def edge_positions( edge )
       edge_vertices( edge ).map { |vertex| vertex.position }
     end
-    
+
     # Returns the edge vertices in the same order as the outer loop of the quad.
     #
     # @param [Sketchup::Edge] edge
@@ -439,7 +444,7 @@ module TT::Plugins::QuadFaceTools
         edge.vertices
       end
     end
-    
+
     # @return [Array<Sketchup::Edge>]
     # @since 0.1.0
     def edges
@@ -453,7 +458,7 @@ module TT::Plugins::QuadFaceTools
       end
       result
     end
-    
+
     # @since 0.3.0
     def erase!
       if triangulated?
@@ -462,7 +467,7 @@ module TT::Plugins::QuadFaceTools
         @faces[0].erase!
       end
     end
-    
+
     # @return [Boolean]
     # @since 0.3.0
     def flip_edge
@@ -488,7 +493,7 @@ module TT::Plugins::QuadFaceTools
           uv_back = uv_get( false )
         end
         # Reorder points
-        p1 = i1 
+        p1 = i1
         p2 = ( p1 + 1 ) % 4
         p3 = ( p2 + 1 ) % 4
         p4 = ( p3 + 1 ) % 4
@@ -520,7 +525,7 @@ module TT::Plugins::QuadFaceTools
         false
       end
     end
-    
+
     # @return [Geom::PolygonMesh]
     # @since 0.1.0
     def mesh
@@ -537,7 +542,7 @@ module TT::Plugins::QuadFaceTools
         pm1
       end
     end
-        
+
     # @return [Sketchup::Edge,nil]
     # @since 0.5.0
     def next_edge( edge )
@@ -547,7 +552,7 @@ module TT::Plugins::QuadFaceTools
       next_index = ( index + 1 ) % 4
       loop[ next_index ]
     end
-    
+
     # @return [QuadFace,Nil]
     # @since 0.1.0
     def next_face( edge )
@@ -558,7 +563,7 @@ module TT::Plugins::QuadFaceTools
       QuadFace.new( quadfaces[0] )
     end
     alias :next_quad :next_face
-    
+
     # @return [Sketchup::Edge]
     # @since 0.1.0
     def opposite_edge( edge )
@@ -570,7 +575,7 @@ module TT::Plugins::QuadFaceTools
       other_index = ( index + 2 ) % 4
       edges[ other_index ]
     end
-    
+
     # @return [Array<Sketchup::Edge>]
     # @since 0.1.0
     def outer_loop
@@ -584,25 +589,25 @@ module TT::Plugins::QuadFaceTools
         sorted
       end
     end
-    
+
     # @return [Boolean]
     # @since 0.2.0
     def planar?
       @faces.size == 1 || TT::Geom3d.planar_points?( vertices() )
     end
-    
+
     # @return [Array<Geom::Point3d>]
     # @since 0.4.0
     def positions
       vertices.map { |vertex| vertex.position }
     end
-    
+
     # @return [Boolean]
     # @since 0.1.0
     def triangulated?
       @faces.size > 1
     end
-    
+
     # @return [Boolean]
     # @since 0.1.0
     def triangulate!
@@ -666,7 +671,7 @@ module TT::Plugins::QuadFaceTools
       mapping
     end
 
-    # @param [Sketchup::Material]
+    # @param [Sketchup::Material] new_material
     # @param [Hash{Sketchup::Vertex => Geom::Point3d}] mapping
     # @param [Boolean] front
     #
@@ -687,7 +692,7 @@ module TT::Plugins::QuadFaceTools
       end
       true
     end
-    
+
     # @return [Boolean]
     # @since 0.2.0
     def valid?
@@ -708,7 +713,7 @@ module TT::Plugins::QuadFaceTools
         edges.all? { |e| !QuadFace.divider_props?( e ) }
       end
     end
-    
+
     # @return [Array<Sketchup::Vertices>]
     # @since 0.1.0
     def vertices
@@ -716,9 +721,9 @@ module TT::Plugins::QuadFaceTools
       # form a loop.
       TT::Edges.sort_vertices( outer_loop() ).uniq
     end
-    
+
     private
-    
+
     # @param [Sketchup::Face] face
     #
     # @return [Sketchup::Face]
@@ -731,7 +736,7 @@ module TT::Plugins::QuadFaceTools
       return nil unless dividing_edge.faces.size == 2
       dividing_edge.faces.find { |f| f != face }
     end
-    
+
     # @param [Sketchup::Face] face
     #
     # @return [Boolean] for native quad
@@ -753,14 +758,15 @@ module TT::Plugins::QuadFaceTools
         true # Native Quad
       end
     end
-  
+
   end # class Quadface
-  
-  
+
+
   # @since 0.1.0
   class VirtualQuadFace < QuadFace
-  
-    # @param [Sketchup::Face] face
+
+    # @param [Sketchup::Face] triangle1
+    # @param [Sketchup::Face] triangle2
     #
     # @since 0.1.0
     def initialize( triangle1, triangle2 )
@@ -769,7 +775,7 @@ module TT::Plugins::QuadFaceTools
       end
       @faces = [ triangle1, triangle2 ]
     end
-    
+
     # @return [Array<Sketchup::Edge>]
     # @since 0.1.0
     def edges
@@ -777,18 +783,19 @@ module TT::Plugins::QuadFaceTools
       divider = triangle1.edges & triangle2.edges
       ( triangle1.edges + triangle2.edges ) - divider
     end
-    
+
   end # class VirtualQuadFace
-  
-  
+
+
   # @since 0.7.0
   class Surface < Entity
 
     attr_reader :faces
-    
-    # @param [Sketchup::Entity] face
+
+    # @param [Sketchup::Entity] entities
+    # @param [Boolean] sketchup_surface
     #
-    # @return [Array<Sketchup::Entity,Surface>]
+    # @return [Array<Sketchup::Entity, Surface>]
     # @since 0.7.0
     def self.get( entities, sketchup_surface = false  )
       cache = {}
@@ -807,7 +814,7 @@ module TT::Plugins::QuadFaceTools
       end
       surfaces
     end
-    
+
     # @param [Sketchup::Face] face
     #
     # @since 0.7.0
@@ -815,13 +822,13 @@ module TT::Plugins::QuadFaceTools
       @sketchup_surface = sketchup_surface
       @faces = get_surface( face )
     end
-    
+
     # @return [Array<Sketchup::Edge>]
     # @since 0.7.0
     def edges
       @faces.map { |face| border_edges( face.edges ) }.flatten.uniq
     end
-    
+
     # @since 0.7.0
     def erase!
       if triangulated?
@@ -835,7 +842,7 @@ module TT::Plugins::QuadFaceTools
         entities.erase_entities( @faces )
       end
     end
-    
+
     # @return [Array<Array<Sketchup::Edge>>]
     # @since 0.7.0
     def loops
@@ -845,7 +852,7 @@ module TT::Plugins::QuadFaceTools
       loop = TT::Edges.sort_edges( edges )
       ( loop ) ? [ loop ] : nil
     end
-    
+
     # @param [Sketchup::Edge] source_edge
     # @param [Integer] offset
     #
@@ -858,13 +865,13 @@ module TT::Plugins::QuadFaceTools
       new_index = ( index + offset ) % sorted_edges.size
       sorted_edges[ new_index ]
     end
-    
+
     # @return [Array<Sketchup::Edge>]
     # @since 0.7.0
     def outer_loop
       TT::Edges.sort( edges )
     end
-    
+
     # @param [Sketchup::Edge] source_edge
     # @param [Integer] offset
     #
@@ -877,13 +884,13 @@ module TT::Plugins::QuadFaceTools
       new_index = ( index - offset ) % sorted_edges.size
       sorted_edges[ new_index ]
     end
-    
+
     # @return [Boolean]
     # @since 0.7.0
     def triangulated?
       @faces.size > 1
     end
-    
+
     # @return [Array<Sketchup::Vertex>]
     # @since 0.7.0
     def vertices
@@ -891,10 +898,10 @@ module TT::Plugins::QuadFaceTools
       v.pop
       v
     end
-    
+
     private
-    
-    # @param [Sketchup::Edge]
+
+    # @param [Array<Sketchup::Edge>] edges
     #
     # @return [Array<Sketchup::Edge>]
     # @since 0.7.0
@@ -905,8 +912,8 @@ module TT::Plugins::QuadFaceTools
         edges.reject { |edge| QuadFace.divider_props?( edge ) }
       end
     end
-    
-    # @param [Sketchup::Face]
+
+    # @param [Sketchup::Face] face
     #
     # @return [Array<Sketchup::Face>]
     # @since 0.7.0
@@ -926,8 +933,8 @@ module TT::Plugins::QuadFaceTools
       end
       surface.keys
     end
-    
-    # @param [Sketchup::Edge]
+
+    # @param [Array<Sketchup::Edge>] edges
     #
     # @return [Array<Sketchup::Edge>]
     # @since 0.7.0
@@ -938,10 +945,10 @@ module TT::Plugins::QuadFaceTools
         edges.select { |edge| QuadFace.divider_props?( edge ) }
       end
     end
-    
+
   end # class Surface
-  
-  
+
+
   # Manages QuadFace entities in an collection of native SketchUp entities.
   #
   # The internal lookup table of Sketchup::Face => QuadFace is build progressivly
@@ -958,12 +965,12 @@ module TT::Plugins::QuadFaceTools
   #
   # @since 0.6.0
   class EntitiesProvider
-    
+
     include Enumerable
-    
+
     # @since 0.6.0
     attr_reader( :model, :parent )
-    
+
     # @param [Enumerable] entities
     # @param [Sketchup::Entities] parent
     #
@@ -973,7 +980,7 @@ module TT::Plugins::QuadFaceTools
       #     Then make [] and get() the same.
       #     Make QuadFaces link to an EntitiesProvider so its methods return
       #     quads from the EntitiesProvider.
-      
+
       # To quickly access entities by class this Hash is used.
       @types = {
         Sketchup::Edge => {},
@@ -1005,7 +1012,7 @@ module TT::Plugins::QuadFaceTools
         @model = parent.model
       end
     end
-    
+
     # @since 0.6.0
     def initialize_copy( source )
       # .dup and .clone calls this.
@@ -1016,7 +1023,7 @@ module TT::Plugins::QuadFaceTools
         @types[ klass ] = entities.dup
       end
     end
-    
+
     # Define proxy object that pass the call through to the parent
     # Sketchup::Entities object.
     [
@@ -1044,7 +1051,7 @@ module TT::Plugins::QuadFaceTools
     ].each { |method|
       define_method( method ) { |*args| parent.send( method, *args ) }
     }
-  
+
     # Returns the entity from the EntitiesProvider. Any Sketchup::Face
     # entity that makes up a QuadFace will be returned as a QuadFace class.
     #
@@ -1079,7 +1086,7 @@ module TT::Plugins::QuadFaceTools
         args.map { |entity| get_entity( entity ) }
       end
     end
-    
+
     # @overload add( entity )
     #   @param [Sketchup::Entity,QuadFace] entity
     # @overload add( entity1, entity2, ... )
@@ -1116,7 +1123,7 @@ module TT::Plugins::QuadFaceTools
       end # for
     end
     alias :<< :add
-    
+
     # Add a QuadFace to the parent Sketchup::Entities collection.
     #
     # @overload add_quad( points )
@@ -1176,7 +1183,7 @@ module TT::Plugins::QuadFaceTools
         QuadFace.new( face1 )
       end
     end
-    
+
     # @since 0.8.0
     def add_surface( points )
       entities = parent
@@ -1237,7 +1244,7 @@ module TT::Plugins::QuadFaceTools
     end
     alias :to_a :all
     alias :to_ary :to_a
-    
+
     # Processes the given set of entities give to #new and builds the cache
     # with native entities and QuadFace entities.
     #
@@ -1253,7 +1260,7 @@ module TT::Plugins::QuadFaceTools
       end
       nil
     end
-    
+
     # @since 0.6.0
     def clear
       @types = {
@@ -1265,7 +1272,7 @@ module TT::Plugins::QuadFaceTools
       @faces_to_quads = {}
       nil
     end
-    
+
     # Returns all QuadFace entities from entity#faces.
     #
     # @param [#faces] entity
@@ -1279,7 +1286,7 @@ module TT::Plugins::QuadFaceTools
       end
       quads
     end
-    
+
     # @overload convert_to_quad( native_quad )
     #   @param [Sketchup::Face] native_quad
     #
@@ -1316,7 +1323,7 @@ module TT::Plugins::QuadFaceTools
         raise ArgumentError, 'Incorrect number of arguments.'
       end
     end
-    
+
     # Traverses the given set of entities given to #new. Discovers and cache
     # QuadFaces on the fly.
     #
@@ -1353,7 +1360,7 @@ module TT::Plugins::QuadFaceTools
         end
       end
     end
-    
+
     # Returns all the edges for the cached entities.
     #
     # Use #analyse prior to this when full set if required.
@@ -1363,13 +1370,13 @@ module TT::Plugins::QuadFaceTools
     def edges
       @types[ Sketchup::Edge ].keys
     end
-    
+
     # @return [Boolean]
     # @since 0.6.0
     def empty?
       all.empty?
     end
-    
+
     # Returns all cached faces and QuadFaces.
     #
     # Use #analyse prior to this when full set if required.
@@ -1379,10 +1386,10 @@ module TT::Plugins::QuadFaceTools
     def faces
       @types[ QuadFace ].keys + @types[ Sketchup::Face ].keys
     end
-    
+
     # Selects a loop of edges. Loop can be grown in steps.
     #
-    # Currently using the Blender method - with exception of edges with no faces. 
+    # Currently using the Blender method - with exception of edges with no faces.
     #
     #
     # Blender
@@ -1403,7 +1410,7 @@ module TT::Plugins::QuadFaceTools
     #   - has vertices with valence 2
     #
     #
-    # In Maya, an edge loop has the following properties: 
+    # In Maya, an edge loop has the following properties:
     # * The vertices that connect the edges must have a valency equal to four.
     #   Valency refers to the number of edges connected to a particular vertex.
     # * The criteria for connecting the sequence is that the next edge in the
@@ -1417,7 +1424,8 @@ module TT::Plugins::QuadFaceTools
     #
     # @todo Optimize is possible. Method is very slow!
     #
-    # @param [Sketchup::Edge]
+    # @param [Sketchup::Edge] origin_edge
+    # @param [Boolean] step
     #
     # @return [Array<Sketchup::Edge>]
     # @since 0.6.0
@@ -1468,7 +1476,7 @@ module TT::Plugins::QuadFaceTools
       end # until
       loop.keys
     end
-    
+
     # @param [Sketchup::Edge] origin_edge
     # @param [Boolean] step
     #
@@ -1499,7 +1507,7 @@ module TT::Plugins::QuadFaceTools
       end
       selected_edges
     end
-    
+
     # @param [QuadFace] quad1
     # @param [QuadFace] quad2
     # @param [Boolean] step
@@ -1535,7 +1543,7 @@ module TT::Plugins::QuadFaceTools
       end
       loop
     end
-    
+
     # @param [QuadFace] quad
     # @param [Sketchup::Edge] edge
     #
@@ -1547,7 +1555,7 @@ module TT::Plugins::QuadFaceTools
       entities.concat( find_face_loop( quad, quad2 ) ) if quad2
       entities
     end
-    
+
     # Returns the entity from the EntitiesProvider. Any Sketchup::Face
     # entity that makes up a QuadFace will be returned as a QuadFace class.
     #
@@ -1582,7 +1590,7 @@ module TT::Plugins::QuadFaceTools
         args.map { |entity| get_entity( entity, true ) }
       end
     end
-    
+
     # Returns an array of all cached entities of the given class.
     #
     # Use #analyse prior to this when full set if required.
@@ -1595,7 +1603,7 @@ module TT::Plugins::QuadFaceTools
       @types[ klass ] ||= {}
       @types[ klass ].keys
     end
-    
+
     # @return [String]
     # @since 0.6.0
     def include?( entity )
@@ -1606,14 +1614,14 @@ module TT::Plugins::QuadFaceTools
         @faces_to_quads.include?( entity )
       end
     end
-    
+
     # @return [String]
     # @since 0.6.0
     def inspect
       hex_id = TT.object_id_hex( self )
       "#<#{self.class.name}:#{hex_id}>"
     end
-    
+
     # Returns a boolean indicating whether the edge is the diagonal of a
     # triangulated QuadFace.
     #
@@ -1630,14 +1638,14 @@ module TT::Plugins::QuadFaceTools
       edges = ( face1.edges | face2.edges ) - [ edge ]
       edges.all? { |e| !QuadFace.divider_props?( e ) }
     end
-    
+
     # @return [Integer]
     # @since 0.6.0
     def length
       all.length
     end
     alias :size :length
-    
+
     # Returns all cached native entities.
     #
     # Use #analyse prior to this when full set is required.
@@ -1655,7 +1663,7 @@ module TT::Plugins::QuadFaceTools
       end
       entities
     end
-    
+
     # Returns all native faces for the cached entities.
     #
     # Use #analyse prior to this when full set if required.
@@ -1665,7 +1673,7 @@ module TT::Plugins::QuadFaceTools
     def native_faces
       @faces_to_quads.keys + @types[ Sketchup::Face ].keys
     end
-    
+
     # Returns all cached QuadFaces.
     #
     # Use #analyse prior to this when full set if required.
@@ -1675,7 +1683,7 @@ module TT::Plugins::QuadFaceTools
     def quads
       @types[ QuadFace ].keys
     end
-    
+
     # Returns all the native faces for the cached QuadFaces.
     #
     # Use #analyse prior to this when full set if required.
@@ -1685,9 +1693,9 @@ module TT::Plugins::QuadFaceTools
     def quad_faces
       @faces_to_quads.keys
     end
-    
+
     private
-    
+
     # @param [Sketchup::Entity] entity
     #
     # @return [Sketchup::Entity]
@@ -1706,7 +1714,7 @@ module TT::Plugins::QuadFaceTools
       end
       entity
     end
-    
+
     # @param [Sketchup::Entity] entity
     # @param [Boolean] add_to_cache
     #
@@ -1726,7 +1734,7 @@ module TT::Plugins::QuadFaceTools
         entity
       end
     end
-    
+
   end # class EntitiesProvider
-  
+
 end # module

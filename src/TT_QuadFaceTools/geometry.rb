@@ -10,7 +10,7 @@ require 'TT_Lib2/edges'
 module TT::Plugins::QuadFaceTools
 module Geometry
 
-  # @param [Array<Geom::Vector3d>]
+  # @param [Array<Geom::Vector3d>] vectors
   #
   # @return [Geom::Vector3d]
   def self.average_vector(vectors)
@@ -18,8 +18,8 @@ module Geometry
   end
 
   # @param [Geom::Point3d] point1
-  # @param [Geom::Point3d] point1
   # @param [Geom::Point3d] point2
+  # @param [Geom::Point3d] point3
   #
   # @return [Geom::Vector3d]
   def self.triangle_normal(point1, point2, point3)

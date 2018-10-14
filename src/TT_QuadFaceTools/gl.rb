@@ -6,13 +6,13 @@
 #-------------------------------------------------------------------------------
 
 module TT::Plugins::QuadFaceTools
-  
+
   # @since 0.3.0
   class GL_Rect
-    
+
     # @since 0.3.0
     attr_accessor( :left, :top, :width, :height )
-    
+
     # @since 0.3.0
     def initialize( left, top, width, height )
       @left = left
@@ -20,17 +20,17 @@ module TT::Plugins::QuadFaceTools
       @width = width
       @height = height
     end
-    
+
     # @since 0.3.0
     def bottom
       @top + @height
     end
-    
+
     # @since 0.3.0
     def right
       @left + @width
     end
-    
+
     # @since 0.3.0
     def points
       [
@@ -40,52 +40,52 @@ module TT::Plugins::QuadFaceTools
         Geom::Point3d.new( @left, @top + @height, 0 )
       ]
     end
-    
+
     # @since 0.3.0
     def inside?( left, top )
       left >= @left && left <= right && top >= @top && top <= bottom
     end
-    
+
   end # class GL_Rect
-  
-  
+
+
   # @since 0.7.0
   class GL_Control
-    
+
     # @since 0.7.0
     attr_accessor( :parent )
     attr_accessor( :left, :top, :width, :height )
     attr_accessor( :border_color, :background_color )
     attr_accessor( :tooltip )
-    
+
     # @since 0.7.0
     def initialize
       @parent = nil
-      
+
       @left = 0
       @top = 0
       @width = 50
       @height = 50
-      
+
       @tooltip = nil
-      
+
       @focus = false
       @can_have_focus = false
-      
+
       @border_color = Sketchup::Color.new( 32, 32, 32 )
       @background_color = Sketchup::Color.new( 128, 128, 128 )
     end
-    
+
     # @since 0.7.0
     def can_have_focus?
       @can_have_focus
     end
-    
+
     # @since 0.7.0
     def has_focus?
       @focus == true
     end
-    
+
     # @since 0.7.0
     def set_focus
       if @can_have_focus
@@ -96,28 +96,28 @@ module TT::Plugins::QuadFaceTools
         false
       end
     end
-    
+
     # @since 0.7.0
     def draw( view )
       window_rect = rect( true )
-      
+
       view.line_stipple = ''
       view.line_width = 1
-      
+
       view.drawing_color = @background_color
       view.draw2d( GL_QUADS, window_rect )
-      
+
       view.drawing_color = @border_color
       view.draw2d( GL_LINE_LOOP, window_rect )
     end
-    
+
     # @return [Boolean]
     # @since 0.7.0
     def inside?( x, y )
       pt1, pt2, pt3, pt4 = rect( true )
       x >= pt1.x && x <= pt2.x && y >= pt1.y && y <= pt3.y
     end
-    
+
     # @return [Boolean]
     # @since 0.7.0
     def place( left, top, width, height )
@@ -126,29 +126,29 @@ module TT::Plugins::QuadFaceTools
       @width = width
       @height = height
     end
-    
+
     # @since 0.3.0
     def bottom
       @top + @height
     end
-    
+
     # @since 0.3.0
     def right
       @left + @width
     end
-    
+
     # @since 0.7.0
     def move( x, y )
       @left += x
       @top += y
     end
-    
+
     # @since 0.7.0
     def position( x, y )
       @left = x
       @top = y
     end
-    
+
     # pt4 --- pt3
     #  |       |
     #  |       |
@@ -175,7 +175,7 @@ module TT::Plugins::QuadFaceTools
         Geom::Point3d.new( offset_x + @left, offset_y + @top + @height, 0 )
       ]
     end
-    
+
     #   +---- x2,y2
     #   |       |
     #   |       |
@@ -202,7 +202,7 @@ module TT::Plugins::QuadFaceTools
         offset_y + @top + @height
       ]
     end
-    
+
     # @return [GL_Control]
     # @since 0.7.0
     def window
@@ -214,7 +214,7 @@ module TT::Plugins::QuadFaceTools
         control = control.parent
       end
     end
-    
+
     # @since 0.7.0
     def onLButtonDown( flags, x, y, view )
       if inside?( x, y )
@@ -224,12 +224,12 @@ module TT::Plugins::QuadFaceTools
         false
       end
     end
-    
+
     # @since 0.7.0
     def onLButtonUp( flags, x, y, view )
       inside?( x, y )
     end
-    
+
     # @since 0.7.0
     def onMouseMove( flags, x, y, view )
       if inside?( x, y )
@@ -239,29 +239,29 @@ module TT::Plugins::QuadFaceTools
         false
       end
     end
-    
+
     # @since 0.7.0
     def blur
       @focus = false
     end
-    
+
   end # class GL_Control
-  
-  
+
+
   # @since 0.7.0
   class GL_Container < GL_Control
-    
+
     # @since 0.7.0
     attr_reader( :children )
-    
+
     # @since 0.7.0
     def initialize( left, top, width, height )
       super()
       place( left, top, width, height )
       @children = []
     end
-    
-    # @param [GL_Control]
+
+    # @param [GL_Control] control
     # @since 0.7.0
     def add_control( control )
       if control.parent
@@ -270,13 +270,13 @@ module TT::Plugins::QuadFaceTools
       @children << control
       control.parent = self
     end
-    
-    # @param [GL_Control]
+
+    # @param [GL_Control] control
     # @since 0.7.0
     def remove_control( control )
       @children.delete( control )
     end
-    
+
     # @since 0.7.0
     def draw( view )
       super( view )
@@ -284,7 +284,7 @@ module TT::Plugins::QuadFaceTools
         control.draw( view )
       end
     end
-    
+
     # @since 0.7.0
     def onLButtonDown( flags, x, y, view )
       for control in @children
@@ -292,7 +292,7 @@ module TT::Plugins::QuadFaceTools
       end
       super
     end
-    
+
     # @since 0.7.0
     def onLButtonUp( flags, x, y, view )
       for control in @children
@@ -300,7 +300,7 @@ module TT::Plugins::QuadFaceTools
       end
       super
     end
-    
+
     # @since 0.7.0
     def onMouseMove( flags, x, y, view )
       for control in @children
@@ -308,7 +308,7 @@ module TT::Plugins::QuadFaceTools
       end
       super
     end
-    
+
     # @since 0.7.0
     def blur
       super
@@ -316,7 +316,7 @@ module TT::Plugins::QuadFaceTools
         control.blur()
       end
     end
-    
+
     # @since 0.7.0
     def active_control
       for control in @children
@@ -327,18 +327,18 @@ module TT::Plugins::QuadFaceTools
       end
       nil
     end
-    
+
   end # class GL_Container
-  
-  
+
+
   # @since 0.3.0
   class GL_Textbox < GL_Control
-    
+
     # @since 0.3.0
     attr_accessor( :label )
     attr_accessor( :text )
     attr_accessor( :focus_color )
-    
+
     # @since 0.3.0
     def initialize
       super()
@@ -348,45 +348,45 @@ module TT::Plugins::QuadFaceTools
       @focus_color = Sketchup::Color.new( 255, 255, 255 )
       @can_have_focus = true
     end
-    
+
     # @since 0.7.0
     def set_focus
       super
       Sketchup.vcb_label = @label
       Sketchup.vcb_value = @text
     end
-    
+
     # @since 0.3.0
     def draw( view )
       window_rect = rect( true )
       x1, y1, x2, y2 = window_rect
-      
+
       view.line_stipple = ''
       view.line_width = 1
-      
+
       view.drawing_color = ( @focus ) ? @focus_color : @background_color
       view.draw2d( GL_QUADS, window_rect )
-      
+
       view.drawing_color = @border_color
       view.draw2d( GL_LINE_LOOP, window_rect )
-      
+
       x = x1.x + 5
       y = x1.y + 1
       pt = Geom::Point3d.new( x, y, 0 )
       view.drawing_color = @text_color
       view.draw_text( pt, @text )
     end
-    
+
   end # class GL_Textbox
-  
-  
+
+
   # @since 0.3.0
   class GL_Button < GL_Control
-    
+
     # @since 0.3.0
     attr_accessor( :label )
     attr_accessor( :color_hover, :color_pressed )
-    
+
     # @since 0.3.0
     def initialize( label = '', &block )
       super()
@@ -395,11 +395,11 @@ module TT::Plugins::QuadFaceTools
       @background_color = Sketchup::Color.new( 0, 0, 0, 30 )
       @color_hover = Sketchup::Color.new( 0, 0, 0, 80 )
       @color_pressed = Sketchup::Color.new( 255, 160, 0, 160 )
-      
+
       @pressed = false
       @mouseover = false
     end
-    
+
     # @since 0.3.0
     def onLButtonDown( flags, x, y, view )
       if inside?( x, y )
@@ -410,7 +410,7 @@ module TT::Plugins::QuadFaceTools
         false
       end
     end
-    
+
     # @since 0.3.0
     def onLButtonUp( flags, x, y, view )
       if inside?( x, y )
@@ -426,7 +426,7 @@ module TT::Plugins::QuadFaceTools
         false
       end
     end
-    
+
     # @since 0.3.0
     def onMouseMove( flags, x, y, view )
       new_state = inside?( x, y )
@@ -441,14 +441,14 @@ module TT::Plugins::QuadFaceTools
         end
       end
     end
-    
+
     # @since 0.3.0
     def draw( view )
       window_rect = rect( true )
-      
+
       view.line_stipple = ''
       view.line_width = 1
-      
+
       if @pressed
         view.drawing_color = @color_pressed
       elsif @mouseover
@@ -457,17 +457,17 @@ module TT::Plugins::QuadFaceTools
         view.drawing_color = @background_color
       end
       view.draw2d( GL_QUADS, window_rect )
-      
+
       view.drawing_color = @border_color
       view.draw2d( GL_LINE_LOOP, window_rect )
     end
-    
+
   end # class GL_Button
-  
-  
+
+
   # @since 0.7.0
   class GL_Titlebar < GL_Control
-    
+
     # @since 0.7.0
     def initialize
       super()
@@ -475,7 +475,7 @@ module TT::Plugins::QuadFaceTools
       @mouseover = false
       @last = nil
     end
-    
+
     # @since 0.7.0
     def onLButtonDown( flags, x, y, view )
       if inside?( x, y )
@@ -487,7 +487,7 @@ module TT::Plugins::QuadFaceTools
         false
       end
     end
-    
+
     # @since 0.7.0
     def onLButtonUp( flags, x, y, view )
       if inside?( x, y )
@@ -503,7 +503,7 @@ module TT::Plugins::QuadFaceTools
         false
       end
     end
-    
+
     # @since 0.7.0
     def onMouseMove( flags, x, y, view )
       mouse = Geom::Point3d.new( x, y, 0 )
@@ -518,7 +518,7 @@ module TT::Plugins::QuadFaceTools
         inside?( x, y )
       end
     end
-    
+
   end # class GL_Titlebar
-  
+
 end # module

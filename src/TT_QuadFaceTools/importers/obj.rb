@@ -344,7 +344,7 @@ class ObjImporter < Sketchup::Importer
     end
   end
 
-  # @param [Hash{Integer => Array<Sketchup::Face, QuadFace>}]
+  # @param [Hash{Integer => Array<Sketchup::Face, QuadFace>}] smoothing_groups
   #
   # @return [Nil]
   def apply_smoothing_groups(smoothing_groups)
@@ -515,7 +515,7 @@ class ObjImporter < Sketchup::Importer
     options
   end
 
-  # @param [Hash{Symbol => Object}]
+  # @param [Hash{Symbol => Object}] results
   #
   # @return [Nil]
   def process_options(results)

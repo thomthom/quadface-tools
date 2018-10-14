@@ -1,0 +1,4 @@
+--no-private
+--title "QuadFace Tools"
+src/**/*.rb -
+LICENSE

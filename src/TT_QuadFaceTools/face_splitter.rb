@@ -92,7 +92,7 @@ class FaceSplitter
     nil
   end
 
-  # @param [Array<EdgeSplits>]
+  # @param [Array<EdgeSplits>] edge_splits
   #
   # @return [Array<FaceSplits>]
   def compute_face_splits(edge_splits)
@@ -152,7 +152,7 @@ class FaceSplitter
     new_faces
   end
 
-  # @param [QuadFace]
+  # @param [QuadFace] quad
   # @param [Array<Sketchup::Vertex, Sketchup::Edge>] source
   # @param [Boolean] front
   #
