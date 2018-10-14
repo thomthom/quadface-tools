@@ -52,14 +52,6 @@ module TT::Plugins::QuadFaceTools
         f1.outer_loop.vertices << (f2.vertices - f1.vertices).first
       end
 
-      def sort_edges(edges, loop)
-        e1, e2 = *edges
-        v1 = loop.vertices.first
-        v2 = (e1.vertices & e2.vertices).first
-        start_edge = v1.common_edge(v2)
-        edges.index(start_edge) == 0 ? edges : edges.reverse
-      end
-
       def edges
         unsorted_edges = @faces.map(&:edges).flatten.uniq - [@edge]
         TT::Edges.sort(unsorted_edges)
@@ -79,21 +71,9 @@ module TT::Plugins::QuadFaceTools
       end
 
       def normal
-        f1, f2 = @faces
-        Geom.linear_combination(0.5, f1.normal, 0.5, f2.normal)
-      end
-
-      def plane
-        Geom.fit_plane_to_points(positions)
-      end
-
-      def plane_normal
-        a, b, c, d = plane
-        # NOTE: Might return a vector in the wrong direction.
-        Geom::Vector3d.new(a, b, c).normalize
-      end
-
-      def plane_normal2
+        # Geom.fit_plane_to_points might return a plane which faces the opposite
+        # direction of the average normal of the quad. So instead the vertices
+        # are projected to the average plane and a normal generated from that.
         quad_plane = plane
         points = @faces.first.outer_loop.vertices.map { |v|
           v.position.project_to_plane(quad_plane)
@@ -104,57 +84,40 @@ module TT::Plugins::QuadFaceTools
         (vx * vy).normalize
       end
 
-      def planar?
-        TT::Geom3d.planar_points?(vertices)
+      def plane
+        Geom.fit_plane_to_points(vertices)
       end
 
-      Vertex = Struct.new(:entity, :position)
-
-      def sum(enumerable)
-        enumerable.inject(0) { |sum, x| sum + x }
+      def planar?
+        TT::Geom3d.planar_points?(vertices)
       end
 
       def other_face(edge)
         other_faces = edge.faces - @faces
         return nil unless other_faces.size == 1
         other_face = other_faces.first
-        QuadSlope.find(other_face) #| other_face
-      end
-
-      def average_vector(vectors)
-        vectors.inject(Geom::Vector3d.new) { |s, v| s + v }.normalize
-      end
-
-      def rotate(enumerable, n = 1)
-        enumerable.map.with_index { |x, i|
-          i2 = (i + n) % enumerable.size
-          enumerable[i2]
-        }
+        QuadSlope.find(other_face) #| other_face # TODO: Support native faces
       end
 
       def average_deviance(edge_set, debug = false)
         return 0.0 if edge_set.empty?
         raise "Expected < 4 edges, got #{edge_set.size}" if edge_set.size > 4
 
-        puts if debug
-        puts 'average_deviance' if debug
         deviances = edge_set.each_slice(2).map { |slice|
           raise "Expected 2 edges, got #{slice.size}" unless slice.size == 2
           other_faces = slice.map { |edge| other_face(edge) }.compact << self
-          vectors = other_faces.map(&:plane_normal2)
+          vectors = other_faces.map(&:normal)
           average_vector = average_vector(vectors)
           next 0.0 unless average_vector.valid?
 
           vertices = slice.map(&:vertices).flatten.uniq
           points = vertices.map(&:position)
           raise "Expected 3 points, got #{points.size}" unless points.size == 3
-          triangle_normal = pts_normal(*points)
+          triangle_normal = points_normal(*points)
           # Must ensure triangle normal is in the same direction as the quad's
           # normal.
-          triangle_normal.reverse! if triangle_normal % plane_normal2 < 0.0
-          a = triangle_normal.angle_between(average_vector)
-          p ['vectors', a.radians, triangle_normal, average_vector, vectors] if debug
-          a
+          triangle_normal.reverse! if triangle_normal % normal < 0.0
+          triangle_normal.angle_between(average_vector)
         }
         sum(deviances) / 2.0
       end
@@ -171,28 +134,38 @@ module TT::Plugins::QuadFaceTools
         # Second set is rotated by one, representing flipped triangles.
         edges2 = rotate(edges1)
 
-        puts if debug
-        puts 'smooth_slope?' if debug
-        # puts ['start', start_edge, start_edge.entityID, start_index] if debug
-        puts ['edges', edges1.map(&:entityID)] if debug
-
         raise "Expected 4 edges, got #{edges1.size}" unless edges1.size == 4
         raise "Expected 4 edges, got #{edges2.size}" unless edges2.size == 4
 
         average1 = average_deviance(edges1, debug)
         average2 = average_deviance(edges2, debug)
 
-        puts if debug
-        p [average1, average2] if debug
-        p [average1.radians, average2.radians] if debug
-
         average1 <= average2
       end
 
-      def pts_normal(pt1, pt2, pt3)
+      # TODO: Move to Geometry
+      def average_vector(vectors)
+        vectors.inject(Geom::Vector3d.new) { |s, v| s + v }.normalize
+      end
+
+      # TODO: Move to Geometry
+      def points_normal(pt1, pt2, pt3)
         x_axis = pt1.vector_to(pt2)
         y_axis = pt1.vector_to(pt3)
         (x_axis * y_axis).normalize
+      end
+
+      # TODO:Move to EnumerableHelper
+      def sum(enumerable)
+        enumerable.inject(0) { |sum, x| sum + x }
+      end
+
+      # TODO:Move to EnumerableHelper
+      def rotate(enumerable, n = 1)
+        enumerable.map.with_index { |x, i|
+          i2 = (i + n) % enumerable.size
+          enumerable[i2]
+        }
       end
 
       def self.find(face1)
@@ -285,11 +258,10 @@ module TT::Plugins::QuadFaceTools
       return unless @quad && @quad.valid?
 
       # Quad
-      color = color = @quad.smooth_slope?(true) ? [0, 255, 0, 64] : [255, 0, 0, 64]
+      color = color = @quad.smooth_slope?(false) ? [0, 255, 0, 64] : [255, 0, 0, 64]
       draw_quad(view, @quad, color)
       n1, n2 = quad_normal_segment(view, @quad)
 
-      # p quad.neighbours.size
       @quad.neighbours.each { |neighbour|
         color = color = neighbour.smooth_slope? ? [0, 255, 0, 64] : [255, 0, 0, 64]
         draw_quad(view, neighbour, color)
@@ -297,10 +269,9 @@ module TT::Plugins::QuadFaceTools
         points = quad_normal_segment(view, neighbour)
         position = view.screen_coords(points.last)
         position.y -= TEXT_OPTIONS[:size] + 5
-        angle = @quad.plane_normal2.angle_between(neighbour.plane_normal2)
+        angle = @quad.normal.angle_between(neighbour.normal)
         angle_formatted = Sketchup.format_angle(angle)
-        # sign = @quad.plane_normal2 % neighbour.plane_normal2
-        sign = neighbour.plane_normal2 % @quad.plane_normal2
+        sign = neighbour.normal % @quad.normal
 
         distance1 = points.first.distance(n1)
         distance2 = points.last.distance(n2)
@@ -351,7 +322,7 @@ module TT::Plugins::QuadFaceTools
     def quad_normal_segment(view, quad)
       size = quad.edge.length / 2.0
       center = quad.diagonal_center
-      [center, center.offset(quad.plane_normal2, size)]
+      [center, center.offset(quad.normal, size)]
     end
 
     def draw_quads(view)
@@ -366,10 +337,7 @@ module TT::Plugins::QuadFaceTools
         normals = quads.map { |quad|
           size = quad.edge.length / 2.0
           center = quad.diagonal_center
-          # center = quad.centroid
-          # [center, center.offset(quad.normal, size)]
-          [center, center.offset(quad.plane_normal2, size)]
-          # [center, center.offset(quad.plane_normal, size)]
+          [center, center.offset(quad.normal, size)]
         }.flatten
         view.line_stipple = ''
         view.line_width = 2
