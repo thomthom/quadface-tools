@@ -67,7 +67,7 @@ module TT::Plugins::QuadFaceTools
     def draw(view)
       draw_quads(view)
 
-      return unless @quad && @quad.valid?
+      return unless @debug && @quad && @quad.valid?
 
       # Quad
       color = color = @quad.smooth_slope? ? [0, 255, 0, 64] : [255, 0, 0, 64]
