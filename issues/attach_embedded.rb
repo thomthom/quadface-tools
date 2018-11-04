@@ -4,6 +4,9 @@ require 'fileutils'
 require 'json'
 require 'uri'
 
+# https://confluence.atlassian.com/bitbucket/export-or-import-issue-data-330797432.html
+# https://confluence.atlassian.com/bitbucket/issue-import-export-data-format-330796872.html
+
 URL_REGEX = /https:[^ \n\r]+/
 EMBEDDED_URLS_REGEX = %r{https://bitbucket.org/repo/[^ \n\r)]+}
 EMBEDDED_IMAGE_REGEX = %r{!\[([^\]]+)\]\((https:\/\/bitbucket.org\/repo\/[^ \n\r)]+)\)}
