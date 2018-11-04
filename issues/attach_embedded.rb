@@ -19,63 +19,93 @@ TARGET_ATTACHEMENTS = File.join(PATCHED_PATH, 'attachments').freeze
 Attachment = Struct.new(:path, :issue, :user, :filename)
 
 
+module Issues
+
+  # @param [Integer] issue_id
+  # @param [String] user The BitBucket username
+  # @param [String] content The content string. Will be modified if it contains
+  #                         embedded images from BitBucket.
+  # @return [Array<Attachment>]
+  def self.embedded_images_to_attachments(issue_id, user, content)
+    return [] if content.nil?
+    content_urls = content.scan(EMBEDDED_URLS_REGEX)
+
+    embedded_images = content.scan(EMBEDDED_IMAGE_REGEX)
+    unless embedded_images.size == content_urls.size
+      puts "More embedded URLs than embedded image codes #{content_urls.size} vs #{embedded_images.size}".red
+      exit 1
+    end
+    return [] if embedded_images.empty?
+
+    attachments = []
+    embedded_images.each { |filename, url|
+      puts "Issue #{issue_id}: #{filename} - #{url}".yellow
+      next unless IMAGE_EXTENSIONS.include?(File.extname(url))
+      puts "> Converting embedded image to attached image..."
+
+      # Decode the URI into a normal filename.
+      embedded_filename = File.basename(url)
+      encoded_filename = embedded_filename.match(/\d+\-(.*)/).captures.first
+      filename = URI.decode(encoded_filename)
+
+      # Generate a hash similar to BitBucket. Use the original embedded filename
+      # as it includes a hash-prefix that should ensure this hash stays unique.
+      filename_hash = Digest::MD5.hexdigest(embedded_filename)
+
+      # Now we have all the data for creating a new attachment.
+      path = File.join('attachments', filename_hash)
+      attachment = Attachment.new(path, issue_id, user, filename)
+      # puts JSON.pretty_generate(attachment.to_h)
+
+      # Copy embedded image to attachments directory.
+      source = File.join(EMBEDDED_PATH, embedded_filename)
+      target = File.join(TARGET_ATTACHEMENTS, filename_hash)
+      FileUtils.copy(source, target, verbose: false)
+
+      # Convert original URI to attachment reference.
+      embed_code = "![#{filename}](#{url})"
+      replacement = "(See attachment: #{filename})"
+      if content.gsub!(embed_code, replacement).nil?
+        warn "WARN: Unable to replace #{filename}".red
+      end
+
+      attachments << attachment
+    }
+    attachments
+  end
+
+end # module
+
+
 # Load JSON database
 db_filename = File.join(ARCHIVE_PATH, 'db-1.0.json')
 db = JSON.parse(File.read(db_filename))
 
-# Patch embedded images in issues.
+existing_attachments = db['attachments'].size
+
+# Convert embedded images in issues into attachments.
+puts 'Processing issues...'.blue
 db['issues'].each { |issue|
+  issue_id = issue['id']
+  user = issue['reporter']
   content = issue['content']
-  next if content.nil?
-  content_urls = content.scan(EMBEDDED_URLS_REGEX)
 
-  embedded_images = content.scan(EMBEDDED_IMAGE_REGEX)
-  next if embedded_images.empty?
+  attachments = Issues.embedded_images_to_attachments(issue_id, user, content)
 
-  unless embedded_images.size == content_urls.size
-    puts "More embedded URLs than embedded image codes #{content_urls.size} vs #{embedded_images.size}".red
-    exit 1
-  end
-
-  embedded_images.each { |filename, url|
-    puts "#{filename} - #{url}".yellow
-    next unless IMAGE_EXTENSIONS.include?(File.extname(url))
-    puts "> Converting embedded image to attached image..."
-
-    # Decode the URI into a normal filename.
-    embedded_filename = File.basename(url)
-    encoded_filename = embedded_filename.match(/\d+\-(.*)/).captures.first
-    filename = URI.decode(encoded_filename)
-
-    # Generate a hash similar to BitBucket. Use the original embedded filename
-    # as it includes a hash-prefix that should ensure this hash stays unique.
-    filename_hash = Digest::MD5.hexdigest(embedded_filename)
-
-    # Now we have all the data for creating a new attachment.
-    path = File.join('attachments', filename_hash)
-    id = issue['id']
-    user = issue['reporter']
-
-    attachment = Attachment.new(path, id, user, filename)
-    # puts JSON.pretty_generate(attachment.to_h)
-
-    db['attachments'] << attachment.to_h
-
-    # Copy embedded image to attachments directory.
-    source = File.join(EMBEDDED_PATH, embedded_filename)
-    target = File.join(TARGET_ATTACHEMENTS, filename_hash)
-    FileUtils.copy(source, target, verbose: false)
-
-    # Convert original URI to attachment reference.
-    embed_code = "![#{filename}](#{url})"
-    replacement = "[See attachment: #{filename}]"
-    if content.gsub!(embed_code, replacement).nil?
-      puts "WARN: Unable to replace #{filename}".red
-    end
-  }
+  db['attachments'].concat(attachments.map(&:to_h))
 }
 
-# TODO: Convert embedded images in comment into attachments.
+# Convert embedded images in comment into attachments.
+puts 'Processing issue comments...'.blue
+db['comments'].each { |comment|
+  issue_id = comment['issue']
+  user = comment['user']
+  content = comment['content']
+
+  attachments = Issues.embedded_images_to_attachments(issue_id, user, content)
+
+  db['attachments'].concat(attachments.map(&:to_h))
+}
 
 # Ensure the target directory for patched issues exists.
 FileUtils.mkdir_p(PATCHED_PATH)
