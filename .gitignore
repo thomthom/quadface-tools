@@ -1,0 +1,19 @@
+# File types
+*.skb
+AutoSave_*.skp
+*.sublime-workspace
+Gemfile.lock
+
+# Folders
+archive/
+
+# RubyMine
+.idea/workspace.xml
+*Thumbs.db
+
+# YARD
+.yardoc
+doc/
+
+# Files
+tests/QuadFace Tools/TC_ObjImporter/*_01.*
