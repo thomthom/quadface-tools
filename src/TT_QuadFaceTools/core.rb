@@ -96,6 +96,7 @@ module TT::Plugins::QuadFaceTools
   require File.join( PATH, 'exporter_obj.rb' )
   require 'TT_QuadFaceTools/command'
   require 'TT_QuadFaceTools/importers/obj'
+  require 'TT_QuadFaceTools/services/obj'
   require 'TT_QuadFaceTools/settings'
   require 'TT_QuadFaceTools/tools/offset'
   require 'TT_QuadFaceTools/tools/quad_edge'
@@ -108,6 +109,7 @@ module TT::Plugins::QuadFaceTools
 
     # Importers
     Sketchup.register_importer(ObjImporter.new)
+    Sketchup.register_importer(ObjRawImporter.new)
 
     # TODO: Add a CommandManager class - in preparation to a UI manager.
     # It's getting awefully crowded in the toolbar and menus.
