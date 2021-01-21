@@ -220,11 +220,19 @@ class ObjRawImporter < Sketchup::Importer
               pts = points
             end
             pts.each_slice(3) { |triangle|
-              v1 = triangle[0].vector_to(triangle[1])
-              v2 = triangle[0].vector_to(triangle[2])
-              v3 = v1 * v2
-              triangles.concat(triangle)
-              normals.concat([v3, v3, v3])
+              begin
+                v1 = triangle[0].vector_to(triangle[1])
+                v2 = triangle[0].vector_to(triangle[2])
+                v3 = v1 * v2
+                triangles.concat(triangle)
+                normals.concat([v3, v3, v3])
+              rescue => error
+                puts error.message
+                puts "Line #{file.lineno}: #{line}"
+                p triangle
+                stats.errors += 1
+                next
+              end
             }
             # face = create_face(entities, points, material, mapping)
             # if face.nil?

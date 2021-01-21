@@ -23,6 +23,14 @@ module TT::Plugins::QuadFaceTools
       @meshes = []
     end
 
+    def start(view)
+      start_observing_app
+    end
+
+    def stop(view)
+      stop_observing_app
+    end
+
     def add_mesh(triangles, normals)
       raise "#{triangles.size} vs #{normals.size}" unless triangles.size == normals.size
       @meshes << [triangles, normals]
@@ -38,6 +46,27 @@ module TT::Plugins::QuadFaceTools
       @meshes.each { |triangles, normals|
         view.draw(GL_TRIANGLES, triangles, normals: normals)
       }
+    end
+
+    def onNewModel(model)
+      reset
+    end
+
+    def onOpenModel(model)
+      reset
+    end
+
+    private
+
+    def start_observing_app
+      return unless Sketchup.platform == :platform_win
+      Sketchup.remove_observer(self)
+      Sketchup.add_observer(self)
+    end
+
+    def stop_observing_app
+      return unless Sketchup.platform == :platform_win
+      Sketchup.remove_observer(self)
     end
 
   end

@@ -670,6 +670,10 @@ module TT::Plugins::QuadFaceTools
       toolbar.restore
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
     end
+
+    if defined?(Sketchup::ModelService)
+      HologramService.service
+    end
   end
 
 
