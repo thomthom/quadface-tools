@@ -1,0 +1,95 @@
+mdl 1.3;
+import ::adobe::mtl::standard;
+import ::adobe::util::*;
+import ::tex::gamma_mode;
+
+export material Материал_спереди(*)
+ = ::adobe::mtl::standard(
+	baseColor: adobe::util::color_texture( texture_2d("baseColor", ::tex::gamma_srgb) ),
+	baseColor : color(0.800000, 0.800000, 0.800000),
+	interiorColor : color(0.803922, 0.803922, 0.803922),
+	roughness : float(0.000000),
+	translucence : float(0.000000),
+	indexOfRefraction : float(1.000000),
+	metallic : float(0.000000),
+	density : float(0.000000),
+	glow : float(0.000000),
+	opacity : float(1.000000),
+	heightScale : float(1.000000)
+);
+
+export material Материал_справа(*)
+ = ::adobe::mtl::standard(
+	baseColor: adobe::util::color_texture( texture_2d("baseColor", ::tex::gamma_srgb) ),
+	baseColor : color(0.800000, 0.800000, 0.800000),
+	interiorColor : color(0.803922, 0.803922, 0.803922),
+	roughness : float(0.000000),
+	translucence : float(0.000000),
+	indexOfRefraction : float(1.000000),
+	metallic : float(0.000000),
+	density : float(0.000000),
+	glow : float(0.000000),
+	opacity : float(1.000000),
+	heightScale : float(1.000000)
+);
+
+export material Материал_сзади(*)
+ = ::adobe::mtl::standard(
+	baseColor: adobe::util::color_texture( texture_2d("baseColor", ::tex::gamma_srgb) ),
+	baseColor : color(0.800000, 0.800000, 0.800000),
+	interiorColor : color(0.803922, 0.803922, 0.803922),
+	roughness : float(0.000000),
+	translucence : float(0.000000),
+	indexOfRefraction : float(1.000000),
+	metallic : float(0.000000),
+	density : float(0.000000),
+	glow : float(0.000000),
+	opacity : float(1.000000),
+	heightScale : float(1.000000)
+);
+
+export material Материал_слева(*)
+ = ::adobe::mtl::standard(
+	baseColor: adobe::util::color_texture( texture_2d("baseColor", ::tex::gamma_srgb) ),
+	baseColor : color(0.800000, 0.800000, 0.800000),
+	interiorColor : color(0.803922, 0.803922, 0.803922),
+	roughness : float(0.000000),
+	translucence : float(0.000000),
+	indexOfRefraction : float(1.000000),
+	metallic : float(0.000000),
+	density : float(0.000000),
+	glow : float(0.000000),
+	opacity : float(1.000000),
+	heightScale : float(1.000000)
+);
+
+export material Материал_сверху(*)
+ = ::adobe::mtl::standard(
+	baseColor: adobe::util::color_texture( texture_2d("baseColor", ::tex::gamma_srgb) ),
+	baseColor : color(0.800000, 0.800000, 0.800000),
+	interiorColor : color(0.803922, 0.803922, 0.803922),
+	roughness : float(0.000000),
+	translucence : float(0.000000),
+	indexOfRefraction : float(1.000000),
+	metallic : float(0.000000),
+	density : float(0.000000),
+	glow : float(0.000000),
+	opacity : float(1.000000),
+	heightScale : float(1.000000)
+);
+
+export material Материал_снизу(*)
+ = ::adobe::mtl::standard(
+	baseColor: adobe::util::color_texture( texture_2d("baseColor", ::tex::gamma_srgb) ),
+	baseColor : color(0.800000, 0.800000, 0.800000),
+	interiorColor : color(0.803922, 0.803922, 0.803922),
+	roughness : float(0.000000),
+	translucence : float(0.000000),
+	indexOfRefraction : float(1.000000),
+	metallic : float(0.000000),
+	density : float(0.000000),
+	glow : float(0.000000),
+	opacity : float(1.000000),
+	heightScale : float(1.000000)
+);
+

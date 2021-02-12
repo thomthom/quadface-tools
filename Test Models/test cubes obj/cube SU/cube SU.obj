@@ -1,0 +1,33 @@
+# Exported with QuadFace Tools (0.14.0)
+# SketchUp Pro 20.0.373
+# Model name: Untitled
+# Units: Millimeters
+
+mtllib cube_SU.mtl
+
+s off
+
+o Группа#1-Entity11896
+
+v 1000.0 0.0 -1000.0
+v 0.0 0.0 -1000.0
+v 0.0 1000.0 -1000.0
+v 1000.0 1000.0 -1000.0
+
+
+usemtl FrontColor
+
+f 1 2 3 4
+
+v 1000.0 0.0 0.0
+v 1000.0 1000.0 0.0
+
+f 5 1 4 6
+
+v 0.0 0.0 0.0
+v 0.0 1000.0 0.0
+
+f 2 7 8 3
+f 7 5 6 8
+f 5 7 2 1
+f 8 6 4 3
