@@ -501,8 +501,6 @@ module TT::Plugins::QuadFaceTools
     m.add_item( cmd_select_ring )
     m.add_item( cmd_select_loop )
     m.add_separator
-    m.add_item( cmd_offset_loop_tool )
-    m.add_separator
     m.add_item( cmd_region_to_loop )
     m.add_item( cmd_loop_to_region )
     m.add_separator
