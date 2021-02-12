@@ -1,7 +1,7 @@
 #inherit_from: .rubocop_todo.yml
 
 AllCops:
-  TargetRubyVersion: 2.1 # 2.0 not supported any more.
+  TargetRubyVersion: 2.5 # 2.0 not supported any more.
 
 # Too noisy...
 Metrics/AbcSize:
