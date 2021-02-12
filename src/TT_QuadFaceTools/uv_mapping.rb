@@ -394,8 +394,12 @@ module TT::Plugins::QuadFaceTools
       @draw_uv_grid = PLUGIN.settings[ :uv_draw_uv_grid ]
       @continuous = PLUGIN.settings[ :uv_continuous ]
       @scale_proportional = PLUGIN.settings[ :uv_scale_proportional ]
-      @u_scale = PLUGIN.settings[ :uv_u_scale ]
-      @v_scale = PLUGIN.settings[ :uv_v_scale ]
+
+      # Account for bug in TT_Lib's Settings that might cause it to return
+      # nil instead of a numeric value.
+      u = v = PLUGIN.settings[:uv_scale_absolute] ? 500.mm : 0
+      @u_scale = PLUGIN.settings[ :uv_u_scale ] || u
+      @v_scale = PLUGIN.settings[ :uv_v_scale ] || v
 
       #p @u_scale
       #p @v_scale
@@ -442,11 +446,22 @@ module TT::Plugins::QuadFaceTools
       PLUGIN.settings[ :uv_continuous ] = @continuous
       PLUGIN.settings[ :uv_scale_proportional ] = @scale_proportional
       PLUGIN.settings[ :uv_scale_absolute ] = @u_scale.is_a?( Length )
+
+      # KLUDGE: Real fix is to prevent divide by zero.
+      @u_scale = nil if @u_scale == Float::INFINITY
+      @v_scale = nil if @v_scale == Float::INFINITY
       if @u_scale && @v_scale # (!) HOTFIX - uncaught error sets the scale to nil.
         PLUGIN.settings[ :uv_u_scale ] = @u_scale
         PLUGIN.settings[ :uv_v_scale ] = @v_scale
       else
         puts 'QuadFace Tool - Warning! Tried to save scale with nil values.'
+        if PLUGIN.settings[:uv_scale_absolute]
+          PLUGIN.settings[:uv_u_scale] = 500.mm
+          PLUGIN.settings[:uv_v_scale] = 500.mm
+        else
+          PLUGIN.settings[:uv_u_scale] = 1.0
+          PLUGIN.settings[:uv_v_scale] = 1.0
+        end
       end
 
       view.invalidate
@@ -574,7 +589,7 @@ module TT::Plugins::QuadFaceTools
 
       view.line_stipple = ''
 
-      unless @u_axis.empty?
+      unless @u_axis.nil? || @u_axis.empty?
         # Illustrate axis.
         view.line_width = 3
         view.drawing_color = CLR_U_AXIS
@@ -595,7 +610,7 @@ module TT::Plugins::QuadFaceTools
         end
       end
 
-      unless @v_axis.empty?
+      unless @v_axis.nil? || @v_axis.empty?
         # Illustrate axis.
         view.line_width = 3
         view.drawing_color = CLR_V_AXIS
