@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -9,85 +7,69 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="24"
-   height="24"
-   id="svg2985"
-   version="1.1"
-   inkscape:version="0.48.2 r9819"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
    sodipodi:docname="Unsmooth_24.svg"
-   inkscape:export-filename="C:\Users\Thomas\Documents\My Dropbox\SketchUp\Plugins\ThomThom\QuadFace Tools\TT_QuadFaceTools\Icons\Unsmooth_24.png"
-   inkscape:export-xdpi="90"
-   inkscape:export-ydpi="90">
-  <defs
-     id="defs2987" />
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="22.197802"
-     inkscape:cx="-3.3564362"
-     inkscape:cy="8"
-     inkscape:current-layer="layer1"
-     showgrid="true"
-     inkscape:grid-bbox="true"
-     inkscape:document-units="px"
-     inkscape:window-width="1920"
-     inkscape:window-height="1018"
-     inkscape:window-x="1912"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1">
-    <inkscape:grid
-       type="xygrid"
-       id="grid3761"
-       empspacing="5"
-       visible="true"
-       enabled="true"
-       snapvisiblegridlinesonly="true" />
-  </sodipodi:namedview>
-  <metadata
-     id="metadata2990">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g
-     id="layer1"
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     transform="translate(0,8)">
-    <rect
-       style="fill:#dcdcdc;fill-opacity:1;stroke:#505050;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       id="rect3763"
-       width="22"
-       height="22"
-       x="0.49999997"
-       y="-6.500001"
-       inkscape:export-xdpi="90"
-       inkscape:export-ydpi="90" />
-    <path
-       style="fill:none;stroke:#505050;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
-       d="M 11.5,-5.9999999 11.5,15"
-       id="path2996"
-       inkscape:connector-curvature="0"
-       inkscape:export-filename="C:\Users\Thomas\Documents\My Dropbox\SketchUp\Plugins\ThomThom\QuadFace Tools\Resources\Icons\rect3763.png"
-       inkscape:export-xdpi="90"
-       inkscape:export-ydpi="90" />
-    <path
-       style="fill:none;stroke:#505050;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
-       d="M 22,4.5 0.99999998,4.5"
-       id="path2996-1"
-       inkscape:connector-curvature="0"
-       inkscape:export-filename="C:\Users\Thomas\Documents\My Dropbox\SketchUp\Plugins\ThomThom\QuadFace Tools\Resources\Icons\rect3763.png"
-       inkscape:export-xdpi="90"
-       inkscape:export-ydpi="90" />
-  </g>
-</svg>
+   id="svg4061"
+   style="fill-rule:evenodd;clip-rule:evenodd;stroke-miterlimit:1.5;"
+   xml:space="preserve"
+   version="1.1"
+   viewBox="0 0 32 32"
+   height="100%"
+   width="100%"><metadata
+   id="metadata4067"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs4065" /><sodipodi:namedview
+   inkscape:current-layer="svg4061"
+   inkscape:window-maximized="1"
+   inkscape:window-y="-8"
+   inkscape:window-x="-8"
+   inkscape:cy="16"
+   inkscape:cx="16"
+   inkscape:zoom="30.3125"
+   showgrid="true"
+   id="namedview4063"
+   inkscape:window-height="1137"
+   inkscape:window-width="1920"
+   inkscape:pageshadow="2"
+   inkscape:pageopacity="0"
+   guidetolerance="10"
+   gridtolerance="10"
+   objecttolerance="10"
+   borderopacity="1"
+   bordercolor="#666666"
+   pagecolor="#ffffff"><inkscape:grid
+     id="grid4630"
+     type="xygrid" /></sodipodi:namedview>
+    
+<g
+   id="g1005"
+   transform="matrix(0.985657,0,0,0.99713,0.58379797,-0.4559804)"
+   style="clip-rule:evenodd;fill-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:1.5"><rect
+     id="rect1003"
+     style="fill:#ebebeb"
+     height="22.063"
+     width="22.32"
+     y="5.4720001"
+     x="4.48" /></g><g
+   style="clip-rule:evenodd;fill-rule:evenodd;stroke-width:1.00869;stroke-linejoin:round;stroke-miterlimit:1.5;stroke-dasharray:none"
+   id="g1021"
+   transform="matrix(0.9859105,0,0,0.99688774,0.08035897,-0.952192)"><rect
+     id="rect1019"
+     style="fill:none;stroke:#5c5c5c;stroke-width:1.00869;stroke-linejoin:miter;stroke-miterlimit:1.5;stroke-dasharray:none"
+     height="22.063"
+     width="22.32"
+     y="5.4720001"
+     x="4.48" /></g><g
+   style="clip-rule:evenodd;fill:none;fill-rule:evenodd;stroke:#5c5c5c;stroke-width:1.00874;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:1.5;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+   id="g1025"
+   transform="matrix(0.98561892,0,0,0.99709183,0.0844273,-0.9521045)"><path
+     id="path1023"
+     style="fill:none;stroke:#5c5c5c;stroke-width:1.00874;stroke-linecap:butt;stroke-miterlimit:1.5;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+     d="M 4.48,16.503 H 26.801" /></g><g
+   style="clip-rule:evenodd;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#5c5c5c;stroke-width:1.00868;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:1.5;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+   id="g1029"
+   transform="matrix(0.98567107,0,0,0.99714454,0.08611882,-0.95637493)"><path
+     id="path1027"
+     style="fill:none;fill-opacity:1;stroke:#5c5c5c;stroke-width:1.00868;stroke-linecap:butt;stroke-miterlimit:1.5;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+     d="M 15.641,5.472 V 27.535" /></g></svg>

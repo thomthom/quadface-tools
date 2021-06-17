@@ -1,123 +1,36 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
-<svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="16px"
-   height="16px"
-   id="svg2985"
-   version="1.1"
-   inkscape:version="0.48.2 r9819"
-   sodipodi:docname="BuildEnds_16.svg"
-   inkscape:export-filename="C:\Users\thm.ARC\Dropbox\SketchUp\Plugins\ThomThom\QuadFace Tools\TT_QuadFaceTools\Icons\BuildEnds_16.png"
-   inkscape:export-xdpi="90"
-   inkscape:export-ydpi="90">
-  <defs
-     id="defs2987" />
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="20.970135"
-     inkscape:cx="0.41778862"
-     inkscape:cy="8"
-     inkscape:current-layer="layer1"
-     showgrid="true"
-     inkscape:grid-bbox="true"
-     inkscape:document-units="px"
-     inkscape:window-width="1600"
-     inkscape:window-height="1138"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1">
-    <inkscape:grid
-       type="xygrid"
-       id="grid3761" />
-  </sodipodi:namedview>
-  <metadata
-     id="metadata2990">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g
-     id="layer1"
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer">
-    <rect
-       style="fill:#dcdcdc;fill-opacity:1;stroke:#505050;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       id="rect3763-7"
-       width="7.9999995"
-       height="14"
-       x="0.49999991"
-       y="1.5" />
-    <path
-       style="fill:none;stroke:#505050;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:1.9;display:inline"
-       d="m 1,5.5 7.0000002,0"
-       id="path3769-1-5-5-0"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc" />
-    <path
-       style="fill:none;stroke:#505050;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:1.9;display:inline"
-       d="m 1,11.5 7.0000002,0"
-       id="path3769-1-5-5-0-1"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc" />
-    <path
-       style="fill:#91c5ff;fill-opacity:1;stroke:#005ec8;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:1.9;display:inline"
-       d="m 10.5,9 0,3"
-       id="path3769-1-5-5"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc" />
-    <rect
-       style="fill:#91c5ff;fill-opacity:1;stroke:#005ec8;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       id="rect3763"
-       width="9"
-       height="14"
-       x="5.5"
-       y="1.5" />
-    <path
-       style="fill:none;stroke:#005ec8;stroke-width:1;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:1.9;display:inline"
-       d="m 5.6,5.5 4.8,0"
-       id="path3769-1-5-5-4"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc" />
-    <path
-       style="color:#000000;fill:none;stroke:#005ec8;stroke-width:0.99999994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-       d="m 10.5,12 0,-7"
-       id="path2998"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc" />
-    <path
-       style="color:#000000;fill:none;stroke:#005ec8;stroke-width:1px;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-       d="m 10.4,11.5 -4.8,0"
-       id="path3001"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cc" />
-    <path
-       style="color:#000000;fill:none;stroke:#005ec8;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-       d="M 14,15 10.5,11.5"
-       id="path3003"
-       inkscape:connector-curvature="0" />
-    <path
-       style="color:#000000;fill:none;stroke:#005ec8;stroke-width:0.99999994px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-       d="M 14,2 10.5,5.5"
-       id="path3003-1"
-       inkscape:connector-curvature="0" />
-  </g>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-36,-110)">
+        <g id="BuildEnds_16" transform="matrix(0.75,0,0,0.75,36,110)">
+            <rect x="0" y="0" width="32" height="32" style="fill:none;"/>
+            <g transform="matrix(0.748328,0,0,0.833654,2.47304,1.99487)">
+                <rect x="5.604" y="5.604" width="7.127" height="20.792" style="fill:rgb(235,235,235);"/>
+            </g>
+            <g transform="matrix(0.878156,0,0,0.897781,2.15353,1.6355)">
+                <rect x="12.731" y="5.604" width="13.665" height="20.792" style="fill:rgb(145,197,255);"/>
+            </g>
+            <g transform="matrix(0.753935,0,0,0.897781,2.44162,1.41298)">
+                <path d="M12.678,12.535L5.604,12.535" style="fill:none;stroke:rgb(92,92,92);stroke-width:1.61px;"/>
+            </g>
+            <g transform="matrix(0.897781,0,0,0.897781,1.6355,1.6355)">
+                <path d="M17.485,13.03L24.911,5.604" style="fill:none;stroke:rgb(25,133,255);stroke-width:1.5px;"/>
+            </g>
+            <g transform="matrix(0.897781,0,0,0.897781,1.6355,1.6355)">
+                <path d="M17.485,17.485L24.911,24.911" style="fill:none;stroke:rgb(25,133,255);stroke-width:1.5px;"/>
+            </g>
+            <g transform="matrix(0.748328,0,0,0.897781,2.47304,0.524689)">
+                <path d="M5.604,19.465L12.731,19.465" style="fill:none;stroke:rgb(92,92,92);stroke-width:1.63px;"/>
+            </g>
+            <g transform="matrix(0.897781,0,0,0.897781,0.968834,0.968834)">
+                <rect x="5.604" y="5.604" width="20.792" height="20.792" style="fill:none;stroke:rgb(92,92,92);stroke-width:1.49px;stroke-linecap:round;"/>
+            </g>
+            <g transform="matrix(0.9758,0,0,0.961908,-0.422912,-0.0572015)">
+                <path d="M26.395,5.604L12.731,5.604L12.731,26.396L26.395,26.396L26.395,5.604ZM25.015,7.004L25.015,24.996C25.015,24.996 14.111,24.996 14.111,24.996C14.111,24.996 14.111,7.004 14.111,7.004L25.015,7.004Z" style="fill:rgb(25,133,255);"/>
+            </g>
+            <g transform="matrix(0.78064,0,0,0.76949,2.72834,3.02111)">
+                <rect x="12.731" y="12.535" width="6.832" height="6.931" style="fill:none;stroke:rgb(25,133,255);stroke-width:1.74px;"/>
+            </g>
+        </g>
+    </g>
 </svg>

@@ -1,80 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
-<svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="16px"
-   height="16px"
-   id="svg2985"
-   version="1.1"
-   inkscape:version="0.48.2 r9819"
-   sodipodi:docname="Smooth_16.svg"
-   inkscape:export-filename="C:\Users\Thomas\Documents\My Dropbox\SketchUp\Plugins\ThomThom\QuadFace Tools\TT_QuadFaceTools\Icons\Smooth_16.png"
-   inkscape:export-xdpi="90"
-   inkscape:export-ydpi="90">
-  <defs
-     id="defs2987" />
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="22.197802"
-     inkscape:cx="-12.193565"
-     inkscape:cy="8"
-     inkscape:current-layer="layer1"
-     showgrid="true"
-     inkscape:grid-bbox="true"
-     inkscape:document-units="px"
-     inkscape:window-width="1920"
-     inkscape:window-height="1018"
-     inkscape:window-x="1912"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1">
-    <inkscape:grid
-       type="xygrid"
-       id="grid3761" />
-  </sodipodi:namedview>
-  <metadata
-     id="metadata2990">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g
-     id="layer1"
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer">
-    <rect
-       style="fill:#dcdcdc;fill-opacity:1;stroke:#505050;stroke-width:0.99999987999999995;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       id="rect3763"
-       width="14"
-       height="14"
-       x="0.49999997"
-       y="1.499999" />
-    <path
-       style="fill:none;stroke:#505050;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:1, 1;stroke-dashoffset:0"
-       d="m 7.5,2 0,13"
-       id="path2996"
-       inkscape:connector-curvature="0" />
-    <path
-       style="fill:none;stroke:#505050;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:1, 1;stroke-dashoffset:0"
-       d="M 14,8.5 1,8.5"
-       id="path2996-1"
-       inkscape:connector-curvature="0" />
-  </g>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-miterlimit:1.5;">
+    <g transform="matrix(0.75,0,0,0.75,0,0)">
+        <g id="Smooth_16">
+            <g transform="matrix(0.198095,0,0,0.198095,2.12692,2.12692)">
+                <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:rgb(235,235,235);"/>
+            </g>
+            <g transform="matrix(0.213333,0,0,0.213333,1.11104,1.11104)">
+                <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:none;stroke:rgb(92,92,92);stroke-width:6.25px;"/>
+            </g>
+            <g transform="matrix(0.208001,0,0,0.214401,1.46665,1.03987)">
+                <path d="M89.102,69.776L95.513,69.776L95.513,63.558L89.102,63.558L89.102,69.776ZM25,69.775L31.408,69.775L31.408,63.559L25,63.559L25,69.775ZM76.263,69.775L82.67,69.775L82.67,63.559L76.263,63.559L76.263,69.775ZM101.923,69.776C105.676,69.776 108.038,69.775 108.333,69.775L108.333,63.559C108.038,63.559 105.676,63.558 101.923,63.558L101.923,69.776ZM37.816,69.775L44.223,69.775L44.223,63.559L37.816,63.559L37.816,69.775ZM50.631,69.775L57.039,69.775L57.039,63.559L50.631,63.559L50.631,69.775ZM63.447,69.775L69.855,69.775L69.855,63.559L63.447,63.559L63.447,69.775Z" style="fill:rgb(92,92,92);"/>
+            </g>
+            <g transform="matrix(0.210113,0,0,0.208001,1.32573,1.46665)">
+                <path d="M63.494,101.923L63.494,108.333L69.84,108.333L69.84,101.923L63.494,101.923ZM63.493,89.125L63.493,95.537L69.841,95.537L69.841,89.125L63.493,89.125ZM63.493,76.3L63.493,82.712L69.841,82.712L69.841,76.3L63.493,76.3ZM63.493,63.475L63.493,69.887L69.841,69.887L69.841,63.475L63.493,63.475ZM63.493,50.65L63.493,57.062L69.841,57.062L69.841,50.65L63.493,50.65ZM63.493,37.825L63.493,44.237L69.841,44.237L69.841,37.825L63.493,37.825ZM69.84,25L63.494,25C63.494,25 63.493,27.811 63.493,31.412L69.841,31.412C69.841,27.811 69.84,25 69.84,25Z" style="fill:rgb(92,92,92);"/>
+            </g>
+        </g>
+    </g>
 </svg>

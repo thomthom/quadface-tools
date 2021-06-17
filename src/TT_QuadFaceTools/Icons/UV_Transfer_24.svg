@@ -1,110 +1,45 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
-<svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="24"
-   height="24"
-   id="svg2985"
-   version="1.1"
-   inkscape:version="0.48.1 "
-   sodipodi:docname="UV_Transfer_24.svg"
-   inkscape:export-filename="C:\Users\thm.ARC\Dropbox\SketchUp\Plugins\ThomThom\QuadFace Tools\TT_QuadFaceTools\Icons\UV_Transfer_24.png"
-   inkscape:export-xdpi="90"
-   inkscape:export-ydpi="90">
-  <defs
-     id="defs2987" />
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="22.197802"
-     inkscape:cx="6.8287129"
-     inkscape:cy="8"
-     inkscape:current-layer="layer1"
-     showgrid="true"
-     inkscape:grid-bbox="true"
-     inkscape:document-units="px"
-     inkscape:window-width="1600"
-     inkscape:window-height="1138"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1">
-    <inkscape:grid
-       type="xygrid"
-       id="grid3761"
-       empspacing="5"
-       visible="true"
-       enabled="true"
-       snapvisiblegridlinesonly="true" />
-  </sodipodi:namedview>
-  <metadata
-     id="metadata2990">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g
-     id="layer1"
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     transform="translate(0,8)">
-    <rect
-       style="fill:#ffffff;fill-opacity:1;stroke:#808080;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       id="rect3763-7"
-       width="13.000001"
-       height="13.000001"
-       x="0.5"
-       y="-7.500001" />
-    <rect
-       style="fill:#000000;fill-opacity:0.78431373;stroke:none"
-       id="rect3763-1-4"
-       width="7"
-       height="7"
-       x="7"
-       y="-8" />
-    <rect
-       style="fill:#000000;fill-opacity:0.78431373;stroke:none"
-       id="rect3763"
-       width="7"
-       height="7"
-       x="0"
-       y="-1" />
-    <rect
-       style="fill:#ffffff;fill-opacity:1;stroke:#1986ff;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       id="rect3763-7-8"
-       width="13.000001"
-       height="13.000001"
-       x="10.5"
-       y="2.499999" />
-    <rect
-       style="fill:#1984ff;fill-opacity:0.78431374;stroke:none"
-       id="rect3763-1-4-0"
-       width="7"
-       height="7"
-       x="17"
-       y="2" />
-    <rect
-       style="fill:#1984ff;fill-opacity:0.78431374;stroke:none"
-       id="rect3763-9"
-       width="7"
-       height="7"
-       x="10"
-       y="9" />
-  </g>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-292,-144)">
+        <g id="UV_Transfer_24" transform="matrix(1,0,0,1,292,144)">
+            <rect x="0" y="0" width="32" height="32" style="fill:none;"/>
+            <g transform="matrix(0.148571,0,0,0.148571,1.59519,1.59519)">
+                <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:rgb(235,235,235);"/>
+            </g>
+            <g transform="matrix(0.148571,0,0,0.168252,1.59519,0.283123)">
+                <path d="M22.917,66.667L110.417,66.667" style="fill:none;stroke:rgb(92,92,92);stroke-width:6.3px;"/>
+            </g>
+            <g transform="matrix(0.160141,0,0,0.148571,0.823862,1.59519)">
+                <path d="M66.667,22.917L66.667,110.417" style="fill:none;stroke:rgb(92,92,92);stroke-width:6.47px;"/>
+            </g>
+            <g transform="matrix(0.16,0,0,0.16,0.83328,0.83328)">
+                <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:none;stroke:rgb(92,92,92);stroke-width:6.25px;stroke-linecap:butt;stroke-linejoin:miter;"/>
+            </g>
+            <g transform="matrix(0.137143,0,0,0.137143,1.8571,2.8571)">
+                <rect x="22.917" y="66.667" width="43.75" height="43.75" style="fill:rgb(60,60,60);"/>
+            </g>
+            <g transform="matrix(0.137143,0,0,0.137143,2.8571,1.8571)">
+                <rect x="66.667" y="22.917" width="43.75" height="43.75" style="fill:rgb(60,60,60);"/>
+            </g>
+            <g transform="matrix(0.148571,0,0,0.148571,10.5952,10.5952)">
+                <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:white;"/>
+            </g>
+            <g transform="matrix(0.16,0,0,0.16,9.83328,9.83328)">
+                <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:none;stroke:rgb(25,133,255);stroke-width:6.25px;stroke-linecap:butt;stroke-linejoin:miter;"/>
+            </g>
+            <g transform="matrix(0.147429,0,0,0.142367,10.6214,11.0088)">
+                <path d="M22.917,66.667L110.417,66.667" style="fill:none;stroke:rgb(25,133,255);stroke-width:6.9px;"/>
+            </g>
+            <g transform="matrix(0.142367,0,0,0.148571,11.0088,10.5952)">
+                <path d="M66.667,22.917L66.667,110.417" style="fill:none;stroke:rgb(25,133,255);stroke-width:6.87px;"/>
+            </g>
+            <g transform="matrix(0.137143,0,0,0.137143,10.8571,11.8571)">
+                <rect x="22.917" y="66.667" width="43.75" height="43.75" style="fill:rgb(145,197,255);"/>
+            </g>
+            <g transform="matrix(0.137143,0,0,0.137143,11.8571,10.8571)">
+                <rect x="66.667" y="22.917" width="43.75" height="43.75" style="fill:rgb(145,197,255);"/>
+            </g>
+        </g>
+    </g>
 </svg>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg width="100%" height="100%" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-miterlimit:1.5;">
-    <g transform="matrix(1,0,0,1,-228,-108)">
-        <g id="SelectRing_16" transform="matrix(0.75,0,0,0.75,228,108)">
+    <g transform="matrix(1,0,0,1,-228,-180)">
+        <g id="ShrinkRing_16" transform="matrix(0.75,0,0,0.75,228,180)">
             <rect x="0" y="0" width="32" height="32" style="fill:none;"/>
             <g transform="matrix(0.868868,0,0,0.481356,-164.862,-37.487)">
                 <rect x="197.416" y="122.197" width="21.484" height="2.77" style="fill:rgb(235,235,235);"/>
@@ -21,6 +21,14 @@
             </g>
             <g transform="matrix(0.93093,0,0,0.962711,-177.781,-110.307)">
                 <rect x="197.416" y="122.197" width="21.484" height="2.77" style="fill:rgb(235,235,235);stroke:rgb(56,138,46);stroke-width:1.41px;"/>
+            </g>
+            <g id="minus_s" transform="matrix(1,0,0,1,-1.33333,-1.33333)">
+                <g transform="matrix(6.66667,0,0,1.90476,-998.667,-81.5238)">
+                    <rect x="153" y="54" width="1" height="3.5" style="fill:rgb(26,26,26);"/>
+                </g>
+                <g transform="matrix(1,-1.77636e-15,-1.77636e-15,1.33333,-125.333,-50)">
+                    <path d="M148,56L152,56" style="fill:none;stroke:white;stroke-width:1.13px;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:2;"/>
+                </g>
             </g>
         </g>
     </g>

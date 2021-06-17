@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg width="100%" height="100%" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-miterlimit:2;">
-    <g transform="matrix(1,0,0,1,-192,-72)">
-        <g id="SelectLoop_24" transform="matrix(1,0,0,1,192,72)">
+    <g transform="matrix(1,0,0,1,-96,-2)">
+        <g id="GrowLoop_24" transform="matrix(1,0,0,1,96,2)">
             <rect x="0" y="0" width="32" height="32" style="fill:none;"/>
+            <g transform="matrix(1,0,0,1,-174,-181)">
+                <rect x="194" y="201" width="8" height="8"/>
+            </g>
             <g id="rect3784" transform="matrix(1.09091,0,0,1,2.90909,11)">
                 <rect x="1" y="2" width="22" height="3" style="fill:rgb(235,235,235);"/>
             </g>
@@ -18,6 +21,14 @@
             </g>
             <g transform="matrix(1,0,0,1,-80.5,-67)">
                 <path d="M101,79.5L101,83.5" style="fill:none;stroke:rgb(56,138,46);stroke-width:1px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,-180,-180)">
+                <rect x="201" y="203" width="6" height="2"/>
+                <rect x="201" y="203" width="6" height="2" style="fill:white;"/>
+            </g>
+            <g transform="matrix(6.12323e-17,-1,1,6.12323e-17,-180,228)">
+                <rect x="201" y="203" width="6" height="2"/>
+                <path d="M207,203L201,203L201,205L207,205L207,203ZM202,204L206,204L202,204Z" style="fill:white;"/>
             </g>
         </g>
     </g>

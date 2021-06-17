@@ -1,163 +1,27 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
-<svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="24"
-   height="24"
-   id="svg2985"
-   version="1.1"
-   inkscape:version="0.48.0 r9654"
-   sodipodi:docname="SelectionGrow_24.svg"
-   inkscape:export-filename="C:\Users\Thomas\Sketchup Plugins\QuadFace Tools\TT_QuadFaceTools\Icons\SelectionGrow_24.png"
-   inkscape:export-xdpi="90"
-   inkscape:export-ydpi="90">
-  <defs
-     id="defs2987">
-    <marker
-       inkscape:stockid="TriangleOutM"
-       orient="auto"
-       refY="0"
-       refX="0"
-       id="TriangleOutM"
-       style="overflow:visible">
-      <path
-         id="path3952"
-         d="m 5.77,0 -8.65,5 0,-10 8.65,5 z"
-         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;marker-start:none"
-         transform="scale(0.4,0.4)"
-         inkscape:connector-curvature="0" />
-    </marker>
-    <marker
-       inkscape:stockid="TriangleOutS"
-       orient="auto"
-       refY="0"
-       refX="0"
-       id="TriangleOutS"
-       style="overflow:visible">
-      <path
-         id="path3955"
-         d="m 5.77,0 -8.65,5 0,-10 8.65,5 z"
-         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;marker-start:none"
-         transform="scale(0.2,0.2)"
-         inkscape:connector-curvature="0" />
-    </marker>
-    <marker
-       inkscape:stockid="Arrow1Lend"
-       orient="auto"
-       refY="0"
-       refX="0"
-       id="Arrow1Lend"
-       style="overflow:visible">
-      <path
-         id="path3809"
-         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
-         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;marker-start:none"
-         transform="matrix(-0.8,0,0,-0.8,-10,0)"
-         inkscape:connector-curvature="0" />
-    </marker>
-    <marker
-       inkscape:stockid="TriangleOutL"
-       orient="auto"
-       refY="0"
-       refX="0"
-       id="TriangleOutL"
-       style="overflow:visible">
-      <path
-         id="path3949"
-         d="m 5.77,0 -8.65,5 0,-10 8.65,5 z"
-         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;marker-start:none"
-         transform="scale(0.8,0.8)"
-         inkscape:connector-curvature="0" />
-    </marker>
-  </defs>
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="22.197802"
-     inkscape:cx="8.2546833"
-     inkscape:cy="8"
-     inkscape:current-layer="layer1"
-     showgrid="true"
-     inkscape:grid-bbox="true"
-     inkscape:document-units="px"
-     inkscape:window-width="1920"
-     inkscape:window-height="1018"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1">
-    <inkscape:grid
-       type="xygrid"
-       id="grid2993"
-       empspacing="5"
-       visible="true"
-       enabled="true"
-       snapvisiblegridlinesonly="true" />
-  </sodipodi:namedview>
-  <metadata
-     id="metadata2990">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g
-     id="layer1"
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     transform="translate(0,8)">
-    <rect
-       style="fill:#86b36e;fill-opacity:1;fill-rule:evenodd;stroke:#24351b;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       id="rect2995"
-       width="23"
-       height="23"
-       x="0.49999997"
-       y="-7.5" />
-    <rect
-       style="fill:#dcdcdc;fill-opacity:1;fill-rule:evenodd;stroke:#282828;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       id="rect2995-1"
-       width="12"
-       height="12"
-       x="0.5"
-       y="3.499999" />
-    <rect
-       style="fill:none;stroke:#ffffff;stroke-width:0.99999994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:0.25098039;stroke-dasharray:none"
-       id="rect2995-1-7"
-       width="14"
-       height="14"
-       x="-0.5"
-       y="2.4999986" />
-    <g
-       id="g5440"
-       transform="matrix(-1,0,0,-1,34,1)"
-       style="fill:#1b2814;fill-opacity:1;stroke:#1b2814;stroke-opacity:1">
-      <path
-         sodipodi:nodetypes="cc"
-         inkscape:connector-curvature="0"
-         id="path3801-6"
-         d="m 14,5 6,-6"
-         style="fill:#1b2814;fill-opacity:1;stroke:#1b2814;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:none" />
-      <path
-         sodipodi:nodetypes="cccc"
-         inkscape:connector-curvature="0"
-         id="path5377-9"
-         d="m 13,6 0,-5 5,5 z"
-         style="color:#000000;fill:#1b2814;fill-opacity:1;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;">
+    <g transform="matrix(1,0,0,1,-192,0)">
+        <g id="SelectionGrow_24" transform="matrix(1,0,0,1,192,0)">
+            <rect x="0" y="0" width="32" height="32" style="fill:none;"/>
+            <g transform="matrix(3.78616,0,0,3.37124,-746.046,-18.7294)">
+                <rect x="198.366" y="7.039" width="5.811" height="6.526" style="fill:rgb(134,179,110);"/>
+            </g>
+            <g transform="matrix(0.913429,0,-2.77556e-17,0.917431,-174.993,2.36492)">
+                <rect x="197.052" y="15.952" width="10.948" height="10.9" style="fill:rgb(235,235,235);"/>
+            </g>
+            <g id="path3801-6" transform="matrix(-0.7875,-0.120833,-0.120833,-0.7875,33.6292,15.6292)">
+                <path d="M14,5L20,-1" style="fill:none;fill-rule:nonzero;stroke:rgb(34,51,26);stroke-width:1.65px;"/>
+            </g>
+            <g id="path5377-9" transform="matrix(-1,4.31408e-32,4.62223e-32,-1,37,14)">
+                <path d="M13,6L13,1L18,6L13,6Z" style="fill:rgb(34,51,26);fill-rule:nonzero;"/>
+            </g>
+            <g transform="matrix(0.262857,0,0,0.262857,-1.5239,-1.5239)">
+                <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:none;stroke:rgb(34,51,26);stroke-width:3.8px;stroke-miterlimit:1.5;"/>
+            </g>
+            <g transform="matrix(1.00477,0,0,1.00917,-193.493,0.40141)">
+                <rect x="197.052" y="15.952" width="10.948" height="10.9" style="fill:none;stroke:rgb(34,51,26);stroke-width:0.99px;stroke-miterlimit:1.5;"/>
+            </g>
+        </g>
     </g>
-  </g>
 </svg>

@@ -1,148 +1,32 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
-<svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="24"
-   height="24"
-   id="svg2985"
-   version="1.1"
-   inkscape:version="0.48.2 r9819"
-   sodipodi:docname="SelectLoop_24.svg"
-   inkscape:export-filename="C:\Users\thm.ARC\Dropbox\Plugins\Main Home Computer Extra\QuadFace Tools\TT_QuadFaceTools\Icons\SelectLoop_24.png"
-   inkscape:export-xdpi="90"
-   inkscape:export-ydpi="90">
-  <defs
-     id="defs2987" />
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="22.197802"
-     inkscape:cx="3.6712866"
-     inkscape:cy="8"
-     inkscape:current-layer="layer1"
-     showgrid="true"
-     inkscape:grid-bbox="true"
-     inkscape:document-units="px"
-     inkscape:window-width="1920"
-     inkscape:window-height="1018"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1">
-    <inkscape:grid
-       type="xygrid"
-       id="grid2995"
-       empspacing="5"
-       visible="true"
-       enabled="true"
-       snapvisiblegridlinesonly="true" />
-  </sodipodi:namedview>
-  <metadata
-     id="metadata2990">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g
-     id="layer1"
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     transform="translate(0,8)">
-    <rect
-       style="fill:#ffffff;fill-opacity:1;stroke:#388a2e;stroke-width:0;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       id="rect3784"
-       width="22"
-       height="3"
-       x="1.0000001"
-       y="2" />
-    <path
-       style="fill:#388a2e;fill-opacity:1;stroke:#5c5c5c;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 1.0000001,2.5 23,2.5"
-       id="path2994"
-       inkscape:connector-curvature="0" />
-    <path
-       style="fill:#388a2e;fill-opacity:1;stroke:#5c5c5c;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 1.0000001,4.5 23,4.5"
-       id="path2994-1"
-       inkscape:connector-curvature="0" />
-    <path
-       style="fill:#388a2e;fill-opacity:1;stroke:#5c5c5c;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 7.5,2.2 7.5,5"
-       id="path2994-1-7"
-       inkscape:connector-curvature="0" />
-    <path
-       style="fill:#388a2e;fill-opacity:1;stroke:#5c5c5c;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 16.5,2.2 0,2.8"
-       id="path2994-1-7-8"
-       inkscape:connector-curvature="0" />
-    <path
-       style="color:#000000;fill:none;stroke:#1980ff;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-       d="m 12,7.5 7.5,0 0,3.5"
-       id="path3799"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="ccc" />
-    <path
-       style="color:#000000;fill:#1980ff;fill-opacity:1;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-       d="m 16,10 7,0 -3.5,4 z"
-       id="path3801"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cccc" />
-  </g>
-  <g
-     inkscape:groupmode="layer"
-     id="layer11"
-     inkscape:label="Blend"
-     style="display:none">
-    <rect
-       transform="translate(0,8)"
-       style="fill:#ffffff;fill-opacity:0.25098039;stroke:none;display:inline"
-       id="rect3787-3"
-       width="22"
-       height="3"
-       x="1"
-       y="2" />
-  </g>
-  <g
-     inkscape:groupmode="layer"
-     id="layer12"
-     inkscape:label="Symbol Plus"
-     style="display:none">
-    <path
-       transform="translate(0,8)"
-       style="fill:#000000;fill-opacity:1;stroke:#ffffff;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;display:inline"
-       d="m 14.5,9.5 3,0 0,-3 3,0 0,3 3,0 0,3 -3,0 0,3 -3,0 0,-3 -3,0 z"
-       id="path3762"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="ccccccccccccc" />
-  </g>
-  <g
-     inkscape:groupmode="layer"
-     id="layer13"
-     inkscape:label="Symbol Minus"
-     style="display:none">
-    <rect
-       transform="translate(0,8)"
-       style="fill:#000000;fill-opacity:1;stroke:#ffffff;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;display:inline"
-       id="rect3784-4"
-       width="9"
-       height="3"
-       x="14.5"
-       y="9.5" />
-  </g>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;">
+    <g transform="matrix(1,0,0,1,-96,-74)">
+        <g id="InsertLoop_24" transform="matrix(1,0,0,1,96,74)">
+            <rect x="0" y="0" width="32" height="32" style="fill:none;"/>
+            <g id="insert_l">
+                <g id="path3801" transform="matrix(1.42857,0,0,1.25,-4.85714,6.5)">
+                    <path d="M16,10L23,10L19.5,14L16,10Z" style="fill:rgb(25,133,255);fill-rule:nonzero;"/>
+                </g>
+                <g id="path3799" transform="matrix(0.933333,0,0,1.27662,4.8,5.42532)">
+                    <path d="M12,7.5L19.5,7.5L19.5,11" style="fill:none;fill-rule:nonzero;stroke:rgb(25,133,255);stroke-width:1.79px;"/>
+                </g>
+            </g>
+            <g id="rect3784" transform="matrix(1.09091,0,0,1,2.90909,4)">
+                <rect x="1" y="2" width="22" height="3" style="fill:rgb(235,235,235);"/>
+            </g>
+            <g transform="matrix(1.04348,0,0,1,-100.87,-71.5)">
+                <path d="M100.5,77L123.5,77" style="fill:none;stroke:rgb(92,92,92);stroke-width:0.98px;stroke-miterlimit:2;"/>
+            </g>
+            <g transform="matrix(1.04348,0,0,1,-100.87,-67.5)">
+                <path d="M100.5,77L123.5,77" style="fill:none;stroke:rgb(92,92,92);stroke-width:0.98px;stroke-miterlimit:2;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,-89.5,-74)">
+                <path d="M101,79.5L101,83.5" style="fill:none;stroke:rgb(92,92,92);stroke-width:1px;stroke-miterlimit:2;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,-80.5,-74)">
+                <path d="M101,79.5L101,83.5" style="fill:none;stroke:rgb(92,92,92);stroke-width:1px;stroke-miterlimit:2;"/>
+            </g>
+        </g>
+    </g>
 </svg>
