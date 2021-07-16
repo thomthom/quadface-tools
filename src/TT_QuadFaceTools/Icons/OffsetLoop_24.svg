@@ -13,26 +13,32 @@
             <g id="rect3784" transform="matrix(1.09091,0,0,1,2.90909,21)">
                 <rect x="1" y="2" width="22" height="3" style="fill:rgb(235,235,235);"/>
             </g>
-            <g id="path2994-1" transform="matrix(1.09091,0,0,0.990909,2.90909,22.0409)">
-                <path d="M1,4.5L23,4.5" style="fill:none;fill-rule:nonzero;stroke:rgb(56,138,46);stroke-width:0.96px;stroke-linejoin:miter;"/>
+            <g transform="matrix(1.04348,0,0,1,-100.87,-54.5)">
+                <path d="M100.5,77L123.5,77" style="fill:none;stroke:rgb(56,138,46);stroke-width:0.98px;stroke-linejoin:miter;stroke-miterlimit:2;"/>
             </g>
-            <g id="path2994-11" serif:id="path2994-1" transform="matrix(1.09091,0,0,0.990909,2.90909,18.0409)">
-                <path d="M1,4.5L23,4.5" style="fill:none;fill-rule:nonzero;stroke:rgb(56,138,46);stroke-width:0.96px;stroke-linejoin:miter;"/>
+            <g transform="matrix(1.04348,0,0,1,-100.87,-50.5)">
+                <path d="M100.5,77L123.5,77" style="fill:none;stroke:rgb(56,138,46);stroke-width:0.98px;stroke-linejoin:miter;stroke-miterlimit:2;"/>
             </g>
-            <g transform="matrix(1,0,0,0.8,-96,-111.9)">
-                <rect x="107.5" y="168" width="9" height="5" style="fill:none;stroke:rgb(56,138,46);stroke-width:1.1px;stroke-linejoin:miter;stroke-miterlimit:2;"/>
+            <g transform="matrix(1,0,0,1,-89.5,-57)">
+                <path d="M101,79.5L101,83.5" style="fill:none;stroke:rgb(56,138,46);stroke-width:1px;stroke-linejoin:miter;stroke-miterlimit:2;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,-80.5,-57)">
+                <path d="M101,79.5L101,83.5" style="fill:none;stroke:rgb(56,138,46);stroke-width:1px;stroke-linejoin:miter;stroke-miterlimit:2;"/>
             </g>
             <g id="rect37841" serif:id="rect3784" transform="matrix(1.09091,0,0,1,2.90909,4)">
                 <rect x="1" y="2" width="22" height="3" style="fill:rgb(235,235,235);"/>
             </g>
-            <g transform="matrix(1.125,0,0,1,-110,-179.5)">
-                <rect x="108" y="185" width="8" height="4" style="fill:none;stroke:rgb(92,92,92);stroke-width:0.94px;stroke-linejoin:miter;stroke-miterlimit:2;"/>
+            <g transform="matrix(1.04348,0,0,1,-100.87,-71.5)">
+                <path d="M100.5,77L123.5,77" style="fill:none;stroke:rgb(92,92,92);stroke-width:0.98px;stroke-linejoin:miter;stroke-miterlimit:2;"/>
             </g>
-            <g id="path2994-12" serif:id="path2994-1" transform="matrix(1.09091,0,0,0.990909,2.90909,5.04091)">
-                <path d="M1,4.5L23,4.5" style="fill:none;fill-rule:nonzero;stroke:rgb(92,92,92);stroke-width:0.96px;stroke-linejoin:miter;"/>
+            <g transform="matrix(1.04348,0,0,1,-100.87,-67.5)">
+                <path d="M100.5,77L123.5,77" style="fill:none;stroke:rgb(92,92,92);stroke-width:0.98px;stroke-linejoin:miter;stroke-miterlimit:2;"/>
             </g>
-            <g id="path2994-13" serif:id="path2994-1" transform="matrix(1.09091,0,0,0.990909,2.90909,1.04091)">
-                <path d="M1,4.5L23,4.5" style="fill:none;fill-rule:nonzero;stroke:rgb(92,92,92);stroke-width:0.96px;stroke-linejoin:miter;"/>
+            <g transform="matrix(1,0,0,1,-89.5,-74)">
+                <path d="M101,79.5L101,83.5" style="fill:none;stroke:rgb(92,92,92);stroke-width:1px;stroke-linejoin:miter;stroke-miterlimit:2;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,-80.5,-74)">
+                <path d="M101,79.5L101,83.5" style="fill:none;stroke:rgb(92,92,92);stroke-width:1px;stroke-linejoin:miter;stroke-miterlimit:2;"/>
             </g>
         </g>
     </g>

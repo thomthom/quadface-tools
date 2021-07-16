@@ -1,38 +1,34 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg width="100%" height="100%" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-miterlimit:10;">
-    <g transform="matrix(1,0,0,1,-96,-254)">
-        <g id="Select_24" transform="matrix(1,0,0,1,96,254)">
-            <rect x="0" y="0" width="32" height="32" style="fill:none;"/>
-            <clipPath id="_clip1">
-                <rect x="0" y="0" width="32" height="32"/>
-            </clipPath>
-            <g clip-path="url(#_clip1)">
+    <g>
+        <g id="Select_24">
+            <g>
                 <g transform="matrix(1.8,0,0,1.6798,-256.7,-430.428)">
                     <path d="M150.747,267.377L149,269L149,261L154,267L151.676,267.006L152.813,270.189L151.871,270.525L150.747,267.377Z"/>
                 </g>
                 <g transform="matrix(1.8,0,0,1.6798,-256.7,-430.428)">
-                    <path d="M150.642,267.824L151.725,270.855L153.135,270.352L152.034,267.269C152.034,267.269 154.549,267.263 154.549,267.263L148.754,260.308L148.754,269.578L150.642,267.824Z" style="fill:none;stroke:white;stroke-width:0.57px;"/>
+                    <path d="M150.642,267.824L151.725,270.855L153.135,270.352L152.034,267.269L154.549,267.263L148.754,260.308L148.754,269.578L150.642,267.824Z" style="fill:none;stroke:white;stroke-width:0.57px;"/>
                 </g>
-                <g id="bluebox_l">
-                    <g transform="matrix(1,0,0,1,0,-38)">
-                        <rect x="23" y="56" width="4" height="4" style="fill:rgb(145,197,255);"/>
-                    </g>
-                    <g transform="matrix(1,0,0,1,0,-38)">
-                        <rect x="23" y="61" width="4" height="4" style="fill:rgb(145,197,255);"/>
-                    </g>
-                    <g transform="matrix(1,0,0,1,0,-38)">
-                        <rect x="18" y="61" width="4" height="4" style="fill:rgb(145,197,255);"/>
-                    </g>
-                    <g transform="matrix(1.25,0,0,1.25,-6.25,-52.5)">
-                        <rect x="23" y="56" width="4" height="4" style="fill:none;stroke:rgb(25,133,255);stroke-width:0.8px;"/>
-                    </g>
-                    <g transform="matrix(1.25,0,0,1.25,-6.25,-53.75)">
-                        <rect x="23" y="61" width="4" height="4" style="fill:none;stroke:rgb(25,133,255);stroke-width:0.8px;"/>
-                    </g>
-                    <g transform="matrix(1.25,0,0,1.25,-5,-53.75)">
-                        <rect x="18" y="61" width="4" height="4" style="fill:none;stroke:rgb(25,133,255);stroke-width:0.8px;"/>
-                    </g>
+            </g>
+            <g id="bluebox_l">
+                <g transform="matrix(1,0,0,1,0,-38)">
+                    <rect x="23" y="56" width="4" height="4" style="fill:rgb(145,197,255);"/>
+                </g>
+                <g transform="matrix(1,0,0,1,0,-38)">
+                    <rect x="23" y="61" width="4" height="4" style="fill:rgb(145,197,255);"/>
+                </g>
+                <g transform="matrix(1,0,0,1,0,-38)">
+                    <rect x="18" y="61" width="4" height="4" style="fill:rgb(145,197,255);"/>
+                </g>
+                <g transform="matrix(1.25,0,0,1.25,-6.25,-52.5)">
+                    <rect x="23" y="56" width="4" height="4" style="fill:none;stroke:rgb(25,133,255);stroke-width:0.8px;"/>
+                </g>
+                <g transform="matrix(1.25,0,0,1.25,-6.25,-53.75)">
+                    <rect x="23" y="61" width="4" height="4" style="fill:none;stroke:rgb(25,133,255);stroke-width:0.8px;"/>
+                </g>
+                <g transform="matrix(1.25,0,0,1.25,-5,-53.75)">
+                    <rect x="18" y="61" width="4" height="4" style="fill:none;stroke:rgb(25,133,255);stroke-width:0.8px;"/>
                 </g>
             </g>
         </g>

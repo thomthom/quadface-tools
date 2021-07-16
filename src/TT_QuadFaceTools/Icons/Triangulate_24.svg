@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg width="100%" height="100%" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:1.5;">
-    <g transform="matrix(1,0,0,1,-192,-252)">
-        <g id="Triangulate_24" transform="matrix(1,0,0,1,192,252)">
-            <rect x="0" y="0" width="32" height="32" style="fill:none;"/>
+    <g>
+        <g id="Triangulate_24">
             <g transform="matrix(0.985657,0,0,0.99713,0.583798,-0.45598)">
                 <rect x="4.48" y="5.472" width="22.32" height="22.063" style="fill:rgb(235,235,235);"/>
             </g>
             <g transform="matrix(1.04286,0.0047619,0.0047619,1.04286,-0.761905,-0.761905)">
-                <path d="M5.023,5.023L26.977,26.977" style="fill:none;stroke:rgb(25,133,255);stroke-width:1.43px;"/>
+                <path d="M5.023,5.023L26.977,26.977" style="fill:none;stroke:rgb(25,133,255);stroke-width:0.95px;"/>
             </g>
             <g transform="matrix(1.0381,0,0,1.0381,-0.609524,-0.609524)">
-                <path d="M16,4.922L27.078,16" style="fill:none;stroke:rgb(25,133,255);stroke-width:1.44px;"/>
+                <path d="M16,4.922L27.078,16" style="fill:none;stroke:rgb(25,133,255);stroke-width:0.96px;"/>
             </g>
             <g transform="matrix(1,0,0,1,0,-218)">
-                <path d="M4.5,234L16,245.5" style="fill:none;stroke:rgb(25,133,255);stroke-width:1.5px;stroke-miterlimit:10;"/>
+                <path d="M4.5,234L16,245.5" style="fill:none;stroke:rgb(25,133,255);stroke-width:1px;stroke-miterlimit:10;"/>
             </g>
             <g transform="matrix(1.03046,0,0,1.04245,-0.116938,-1.20398)">
                 <rect x="4.48" y="5.472" width="22.32" height="22.063" style="fill:none;stroke:rgb(92,92,92);stroke-width:0.96px;stroke-linejoin:miter;"/>

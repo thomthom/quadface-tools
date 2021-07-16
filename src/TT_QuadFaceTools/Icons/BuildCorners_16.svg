@@ -1,40 +1,34 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg width="100%" height="100%" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-miterlimit:1.5;">
-    <g transform="matrix(1,0,0,1,-36,-74)">
-        <g id="BuildCorners_16" transform="matrix(0.75,0,0,0.75,36,74)">
-            <rect x="0" y="0" width="32" height="32" style="fill:none;"/>
-            <clipPath id="_clip1">
-                <rect x="0" y="0" width="32" height="32"/>
-            </clipPath>
-            <g clip-path="url(#_clip1)">
-                <g transform="matrix(0.198095,0,0,0.198095,2.12692,2.12692)">
-                    <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:rgb(235,235,235);"/>
-                </g>
-                <g transform="matrix(1.16667,0,0,1.16667,-40.1667,-84.3333)">
-                    <rect x="47" y="78" width="8" height="8" style="fill:rgb(145,197,255);"/>
-                </g>
-                <g transform="matrix(0.213333,0,0,0.213333,1.11104,1.11104)">
-                    <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:none;stroke:rgb(92,92,92);stroke-width:6.25px;"/>
-                </g>
-                <g transform="matrix(0.0914286,0,0,0.0914286,3.90473,14.5714)">
-                    <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:none;stroke:rgb(92,92,92);stroke-width:14.58px;"/>
-                </g>
-                <g transform="matrix(1.11111,0,0,1.33333,-38.8889,-96.6667)">
-                    <path d="M41,81L47,81" style="fill:none;stroke:rgb(92,92,92);stroke-width:1.09px;stroke-miterlimit:10;"/>
-                </g>
-                <g transform="matrix(1.33333,0,0,1.33333,-48.6667,-98)">
-                    <rect x="47" y="78" width="8" height="8" style="fill:none;stroke:rgb(25,133,255);stroke-width:1px;stroke-miterlimit:10;"/>
-                </g>
-                <g transform="matrix(0.666667,0,0,0.666667,-17.3333,-40.6667)">
-                    <rect x="47" y="78" width="8" height="8" style="fill:none;stroke:rgb(25,133,255);stroke-width:2px;stroke-miterlimit:10;"/>
-                </g>
-                <g transform="matrix(2,-0.666667,-0.666667,2,-31.3333,-115.333)">
-                    <path d="M54,79L52,81" style="fill:none;stroke:rgb(25,133,255);stroke-width:1px;stroke-miterlimit:10;"/>
-                </g>
-                <g transform="matrix(1.33333,0,0,1.33333,-48.6667,-98.6667)">
-                    <path d="M51,87L51,92" style="fill:none;stroke:rgb(92,92,92);stroke-width:1px;stroke-miterlimit:2;"/>
-                </g>
+    <g transform="matrix(0.75,0,0,0.75,0,0)">
+        <g id="BuildCorners_16">
+            <g transform="matrix(0.198095,0,0,0.198095,2.12692,2.12692)">
+                <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:rgb(235,235,235);"/>
+            </g>
+            <g transform="matrix(1.16667,0,0,1.16667,-40.1667,-84.3333)">
+                <rect x="47" y="78" width="8" height="8" style="fill:rgb(145,197,255);"/>
+            </g>
+            <g transform="matrix(0.213333,0,0,0.213333,1.11104,1.11104)">
+                <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:none;stroke:rgb(92,92,92);stroke-width:6.25px;"/>
+            </g>
+            <g transform="matrix(0.0914286,0,0,0.0914286,3.90473,14.5714)">
+                <rect x="22.917" y="22.917" width="87.5" height="87.5" style="fill:none;stroke:rgb(92,92,92);stroke-width:14.58px;"/>
+            </g>
+            <g transform="matrix(1.11111,0,0,1.33333,-38.8889,-96.6667)">
+                <path d="M41,81L47,81" style="fill:none;stroke:rgb(92,92,92);stroke-width:1.09px;stroke-miterlimit:10;"/>
+            </g>
+            <g transform="matrix(1.33333,0,0,1.33333,-48.6667,-98)">
+                <rect x="47" y="78" width="8" height="8" style="fill:none;stroke:rgb(25,133,255);stroke-width:1px;stroke-miterlimit:10;"/>
+            </g>
+            <g transform="matrix(0.666667,0,0,0.666667,-17.3333,-40.6667)">
+                <rect x="47" y="78" width="8" height="8" style="fill:none;stroke:rgb(25,133,255);stroke-width:2px;stroke-miterlimit:10;"/>
+            </g>
+            <g transform="matrix(2,-0.666667,-0.666667,2,-31.3333,-115.333)">
+                <path d="M54,79L52,81" style="fill:none;stroke:rgb(25,133,255);stroke-width:1px;stroke-miterlimit:10;"/>
+            </g>
+            <g transform="matrix(1.33333,0,0,1.33333,-48.6667,-98.6667)">
+                <path d="M51,87L51,92" style="fill:none;stroke:rgb(92,92,92);stroke-width:1px;stroke-miterlimit:2;"/>
             </g>
         </g>
     </g>
