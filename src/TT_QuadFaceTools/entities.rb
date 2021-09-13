@@ -504,8 +504,8 @@ module TT::Plugins::QuadFaceTools
         # Recreate quadface
         entities = div.parent.entities
         div.erase!
-        face1 = entities.add_face( pt1, pt2, pt3 )
-        face2 = entities.add_face( pt1, pt4, pt3 )
+        face1 = entities.add_face( [pt1, pt2, pt3] )
+        face2 = entities.add_face( [pt1, pt4, pt3] )
         @faces = [ face1, face2 ]
         div = ( face1.edges & face2.edges )[0]
         QuadFace.set_divider_props( div )
@@ -973,9 +973,10 @@ module TT::Plugins::QuadFaceTools
 
     # @param [Enumerable] entities
     # @param [Sketchup::Entities] parent
+    # @param [Sketchup::EntitiesBuilder] builder
     #
     # @since 0.6.0
-    def initialize( entities = [], parent = nil )
+    def initialize( entities = [], parent = nil, builder = nil )
       # (?) Find a way to keep face => quad mapping separate from 'collection'
       #     Then make [] and get() the same.
       #     Make QuadFaces link to an EntitiesProvider so its methods return
@@ -998,6 +999,7 @@ module TT::Plugins::QuadFaceTools
       # Model and parent references
       @model = nil
       @parent = nil
+      @builder = builder
       if parent.nil?
         if entities.length == 0
           @parent = Sketchup.active_model.active_entities
@@ -1033,13 +1035,13 @@ module TT::Plugins::QuadFaceTools
       :add_cline,
       :add_cpoint,
       :add_curve,
-      :add_edges,
-      :add_face,
+      # :add_edges,
+      # :add_face,
       :add_faces_from_mesh,
       :add_group,
       :add_image,
       :add_instance,
-      :add_line,
+      # :add_line,
       :add_ngon,
       :add_text,
       :clear!,
@@ -1050,6 +1052,17 @@ module TT::Plugins::QuadFaceTools
       :transform_entities
     ].each { |method|
       define_method( method ) { |*args| parent.send( method, *args ) }
+    }
+
+    [
+      :add_edges,
+      :add_face,
+      :add_line,
+    ].each { |method|
+      define_method( method ) do |*args|
+        entities = @builder ? @builder : parent
+        entities.send( method, *args )
+      end
     }
 
     # Returns the entity from the EntitiesProvider. Any Sketchup::Face
@@ -1145,7 +1158,7 @@ module TT::Plugins::QuadFaceTools
     #
     # @since 0.6.0
     def add_quad( *args )
-      entities = parent
+      entities = @builder ? @builder : parent
       # Array Argument
       if args.size == 1 && args.is_a?( Enumerable )
         args = args[0]
@@ -1167,7 +1180,7 @@ module TT::Plugins::QuadFaceTools
         points = args
       elsif args.size == 3 && args.all? { |a| a.is_a?( Geom::Point3d ) }
         # Triangle
-        return parent.add_face( args )
+        return entities.add_face( args )
       else
         raise( ArgumentError, 'Invalid arguments. Cannot create Quad.' )
       end
@@ -1176,8 +1189,8 @@ module TT::Plugins::QuadFaceTools
         face = entities.add_face( points )
         QuadFace.new( face )
       else
-        face1 = entities.add_face( points[0], points[1], points[2] )
-        face2 = entities.add_face( points[0], points[2], points[3] )
+        face1 = entities.add_face( [points[0], points[1], points[2]] )
+        face2 = entities.add_face( [points[0], points[2], points[3]] )
         edge = ( face1.edges & face2.edges )[0]
         QuadFace.set_divider_props( edge )
         QuadFace.new( face1 )
@@ -1186,15 +1199,16 @@ module TT::Plugins::QuadFaceTools
 
     # @since 0.8.0
     def add_surface( points )
-      entities = parent
+      entities = @builder ? @builder : parent
       if TT::Geom3d.planar_points?( points )
         face = entities.add_face( points )
         Surface.new( face )
       else
         # Create a planar mesh to use for triangulation.
+        # TODO: Use Geom.tesselate
         plane = Geom.fit_plane_to_points( points )
         planar_points = points.map { |pt| pt.project_to_plane( plane ) }
-        tempgroup = entities.add_group
+        tempgroup = parent.add_group
         tempface = tempgroup.entities.add_face( planar_points )
         mesh = tempface.mesh
         tempgroup.erase!

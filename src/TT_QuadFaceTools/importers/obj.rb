@@ -83,6 +83,39 @@ class ObjImporter < Sketchup::Importer
     ERROR_REPORTER.handle(exception)
   end
 
+  Context = Struct.new(
+    :filename,
+
+    :options,
+
+    :root_entities,
+
+    :parent_entities,
+
+    # The current Sketchup::Entities collection new entities should be added to.
+    :entities,
+
+    # Material manager for the OBJ file being parsed.
+    :materials,
+
+    # The current material which should be applied to geometry.
+    :material,
+
+    # List of vertices defined for the OBJ file.
+    # OBJ files uses 1-based indicies.
+    :vertex_cache,
+
+    # A hash with smoothing group numbers mapping to the faces within the same
+    # smoothing group.
+    :smoothing_groups,
+
+    # The current smoothing group new faces should be added to unless its Nil.
+    :smoothing_group,
+
+    :custom_encodings,
+    :encoding,
+  )
+
   # This method is called by SketchUp after the user has selected a file
   # to import. This is where you do the real work of opening and
   # processing the file.
@@ -98,39 +131,119 @@ class ObjImporter < Sketchup::Importer
     base_path = File.dirname(filename)
     model = Sketchup.active_model
     options = get_options
+    start_time = Time.now
     model.start_operation('Import OBJ', true)
     # The base group containing all the imported entities.
     group = model.active_entities.add_group
     group.name = File.basename(filename)
-    root_entities = group.entities
-    parent_entities = root_entities
+    context = Context.new
+    context.filename = filename
+    context.options = options
+    context.root_entities = group.entities
+    context.parent_entities = context.root_entities
     # The current Sketchup::Entities collection new entities should be added to.
-    entities = root_entities
+    context.entities = context.root_entities
     # Material manager for the OBJ file being parsed.
-    materials = MtlParser.new(model, base_path)
+    context.materials = MtlParser.new(model, base_path)
     # The current material which should be applied to geometry.
-    material = nil
+    context.material = nil
     # List of vertices defined for the OBJ file.
     # OBJ files uses 1-based indicies.
-    vertex_cache = VertexCache.new
-    vertex_cache.index_base = 1
+    context.vertex_cache = VertexCache.new
+    context.vertex_cache.index_base = 1
     # A hash with smoothing group numbers mapping to the faces within the same
     # smoothing group.
-    smoothing_groups = {}
+    context.smoothing_groups = {}
     # The current smoothing group new faces should be added to unless its Nil.
-    smoothing_group = nil
+    context.smoothing_group = nil
     # Statistics over the imported OBJ data.
     @stats = Statistics.new
     Sketchup.status_text = 'Importing OBJ file...'
     # @see http://paulbourke.net/dataformats/obj/
     # @see http://www.martinreddy.net/gfx/3d/OBJ.spec
-    custom_encodings = nil
-    encoding = 'UTF-8'
+    context.custom_encodings = nil
+    context.encoding = 'UTF-8'
     attempts = 0
     begin
-    File.open(filename, "r:#{encoding}:UTF-8") { |file|
+    File.open(filename, "r:#{context.encoding}:UTF-8") { |file|
       puts "Reading file. External encoding: #{file.external_encoding}"
-      file.each_line { |line|
+      while (!file.eof?)
+        context = parse(file, context)
+      end
+    }
+    rescue ArgumentError, ObjEncodingError, EncodingError => error
+      if error.is_a?(ArgumentError) && !error.message.include?('invalid byte sequence')
+        raise
+      end
+      # TODO: Log errors. (Allow user to access?)
+      puts error.backtrace.first
+      context.custom_encodings ||= Encoding.name_list
+      raise if context.custom_encodings.empty?
+      context.encoding = context.custom_encodings.pop
+      puts "Failed to read file. Retrying with encoding: #{context.encoding}"
+      attempts += 1
+      raise 'MAX ATTEMPTS' if attempts > Encoding.list.size
+      retry
+    end
+    apply_smoothing_groups(context.smoothing_groups)
+    model.commit_operation
+    Sketchup.status_text = ''
+    elapsed_time = Time.now - start_time
+    formatted_time = "%0.4fs" % elapsed_time
+    puts "Elapsed time: #{formatted_time}\n"
+    # Display summary back to the user
+    stats.materials = context.materials.used_materials.size
+    stats.smoothing_groups = context.smoothing_groups.size
+    if show_summary
+      message = "OBJ Import Results\n"
+      message << "\n"
+      message << "Points: #{stats.points}\n"
+      message << "Lines: #{stats.lines}\n"
+      message << "Faces: #{stats.faces}\n"
+      message << "Objects: #{stats.objects}\n"
+      message << "Groups: #{stats.groups}\n"
+      message << "Materials: #{context.materials.used_materials.size}\n"
+      message << "Smoothing Groups: #{stats.smoothing_groups}\n"
+      if stats.errors > 0
+        message << "\n"
+        message << "Errors: #{stats.errors}\n"
+      end
+      message << "\n"
+      message << "Elapsed time: #{formatted_time}\n"
+      # TODO: Add elapsed time.
+      UI.messagebox(message, MB_MULTILINE)
+    end
+    Sketchup::Importer::ImportSuccess
+  rescue Exception => exception
+    model.abort_operation
+    # Ensure the error is reported.
+    ERROR_REPORTER.report(exception)
+    # The importer interface have its own way to handle errors, so we don't
+    # re-raise. Instead output to console.
+    # TODO: Output to $STDERR?
+    p exception
+    puts exception.backtrace.join("\n")
+    Sketchup::Importer::ImportFail
+  end
+
+  private
+
+  # @param [Sketchup::Entities] entities
+  def build(entities, &block)
+    if defined?(Sketchup::EntitiesBuilder)
+      entities.build(&block)
+    else
+      yield entities
+    end
+  end
+
+  # @param [File] file
+  # @param [Context] context
+  def parse(file, context)
+    build(context.entities) do |builder|
+      while (!file.eof?) do
+        line = file.readline
+
         # Filter out comments.
         next if line.start_with?('#')
         # Filter out empty lines.
@@ -151,22 +264,22 @@ class ObjImporter < Sketchup::Importer
         when 'v'
           # Read the vertex data.
           raise 'invalid vertex data' if data.size < 3
-          x, y, z = data.map { |n| convert_to_length(n, options[:units]) }
+          x, y, z = data.map { |n| convert_to_length(n, context.options[:units]) }
           point = Geom::Point3d.new(x, y, z)
-          point.transform!(SWAP_YZ_TRANSFORM) if options[:swap_yz]
-          vertex_cache.add_vertex(*point.to_a)
+          point.transform!(SWAP_YZ_TRANSFORM) if context.options[:swap_yz]
+          context.vertex_cache.add_vertex(*point.to_a)
         when 'vt'
           # Read the vertex texture data.
           # Spec says default is 0.0, but that yield invalid data for SketchUp.
           u = data.x.to_f
           v = (data.y || 1.0).to_f
           w = (data.z || 1.0).to_f
-          vertex_cache.add_uvw(u, v, w)
+          context.vertex_cache.add_uvw(u, v, w)
         when 'p'
           # Represent points as construction points.
           data.each { |n|
             v = n.to_i
-            point = vertex_cache.get_vertex(v)
+            point = context.vertex_cache.get_vertex(v)
             entities.add_cpoint(point) unless @parse_only
             stats.points += 1
           }
@@ -174,7 +287,7 @@ class ObjImporter < Sketchup::Importer
           # Create edges ("lines").
           points = data.map { |triplet|
             v = parse_triplet(triplet)[0]
-            vertex_cache.get_vertex(v)
+            context.vertex_cache.get_vertex(v)
           }
           puts 'Line:'
           p points
@@ -187,7 +300,7 @@ class ObjImporter < Sketchup::Importer
           mapping = []
           data.each { |triplet|
             v, vt = parse_triplet(triplet)
-            point = vertex_cache.get_vertex(v)
+            point = context.vertex_cache.get_vertex(v)
             if points.include?(point)
               # TODO: Message error back to user without raising error. Need to
               # continue reading file.
@@ -198,50 +311,52 @@ class ObjImporter < Sketchup::Importer
             end
             points << point
             if vt
-              uvw = vertex_cache.get_uvw(vt)
+              uvw = context.vertex_cache.get_uvw(vt)
               uvw.z = 1.0 if uvw.z = 0.0 # Account for some weird files.
               mapping << point
               mapping << TT::UVQ.normalize(uvw)
             end
           }
           unless @parse_only
-            face = create_face(entities, points, material, mapping)
+            face = create_face(builder, points, context.material, mapping)
             if face.nil?
               puts "Line #{file.lineno}: #{line}"
               stats.errors += 1
               next
             end
-            if smoothing_group
-              smoothing_groups[smoothing_group] ||= []
-              smoothing_groups[smoothing_group] << face
+            if context.smoothing_group
+              context.smoothing_groups[context.smoothing_group] ||= []
+              context.smoothing_groups[context.smoothing_group] << face
             end
           end
           stats.faces += 1
         when 'g'
           # Assuming that objects can contain groups.
           unless @parse_only
-            group = parent_entities.add_group
+            group = context.parent_entities.add_group
             group.name = data[0] unless data[0].empty?
-            entities = group.entities
+            context.entities = group.entities
+            return context
           end
           stats.objects += 1
         when 'o'
           unless @parse_only
-            group = root_entities.add_group
+            group = context.root_entities.add_group
             group.name = data[0] unless data[0].empty?
-            entities = group.entities
-            parent_entities = entities
+            context.entities = group.entities
+            context.parent_entities = context.entities
+            return context
           end
           stats.groups += 1
         when 's'
           group_number = data[0] == 'off' ? nil : data[0].to_i
           group_number = nil if group_number == 0
-          smoothing_group = group_number
+          context.smoothing_group = group_number
         when 'mtllib'
           loaded = false
           data.each { |library|
-            library_file = find_file(library, filename)
-            loaded ||= materials.read(library_file)
+            library_file = find_file(library, context.filename)
+            loaded ||= context.materials.read(library_file)
           }
           if data.size > 1 && !loaded
             # Fall back to using the whole line as the filename. Version 0.8
@@ -249,12 +364,12 @@ class ObjImporter < Sketchup::Importer
             result = line.match(/mtllib\s+(.+)/)
             next unless result
             library = result[1]
-            library_file = find_file(library, filename)
+            library_file = find_file(library, context.filename)
             # TODO: Refactor puts to debug and/or logging.
             puts "falling back to trying: #{library_file}"
-            loaded ||= materials.read(library_file)
+            loaded ||= context.materials.read(library_file)
           end
-          raise ObjEncodingError if !loaded && custom_encodings
+          raise ObjEncodingError if !loaded && context.custom_encodings
         when 'usemtl'
           # If we don't get a material from the MtlParser then it probably means
           # it wasn't able to find the materials file. In this case we try to
@@ -263,16 +378,16 @@ class ObjImporter < Sketchup::Importer
           # - Source: SketchUcation user Ithil
           # TODO(thomthom): Maybe expose this behaviour as a user option.
           # material = materials.get(data[0]) || model.materials.current
-          material = materials.get(data[0])
-          if material.nil?
-            materials.load(data[0])
-            material = materials.get(data[0])
+          context.material = context.materials.get(data[0])
+          if context.material.nil?
+            context.materials.load(data[0])
+            context.material = context.materials.get(data[0])
           end
-          if material.nil?
+          if context.material.nil?
             # TODO: Message error back to user without raising error. Need to
             # continue reading file.
             puts "material not found: #{material_name}" if definition.nil?
-            material = model.materials.current
+            context.material = model.materials.current
           end
         else
           # Any other token is either unknown or not supported. No errors is
@@ -280,59 +395,14 @@ class ObjImporter < Sketchup::Importer
           # puts "Skipping token: #{token}" # TODO: Consider logging this.
           next
         end
-      }
-    }
-    rescue ArgumentError, ObjEncodingError, EncodingError => error
-      if error.is_a?(ArgumentError) && !error.message.include?('invalid byte sequence')
-        raise
       end
-      # TODO: Log errors. (Allow user to access?)
-      puts error.backtrace.first
-      custom_encodings ||= Encoding.name_list
-      raise if custom_encodings.empty?
-      encoding = custom_encodings.pop
-      puts "Failed to read file. Retrying with encoding: #{encoding}"
-      attempts += 1
-      raise 'MAX ATTEMPTS' if attempts > Encoding.list.size
-      retry
+      puts "Import done!\n"
+    rescue EOFError
+      puts 'EOF...'
+      break
     end
-    apply_smoothing_groups(smoothing_groups)
-    model.commit_operation
-    Sketchup.status_text = ''
-    # Display summary back to the user
-    stats.materials = materials.used_materials.size
-    stats.smoothing_groups = smoothing_groups.size
-    if show_summary
-      message = "OBJ Import Results\n"
-      message << "\n"
-      message << "Points: #{stats.points}\n"
-      message << "Lines: #{stats.lines}\n"
-      message << "Faces: #{stats.faces}\n"
-      message << "Objects: #{stats.objects}\n"
-      message << "Groups: #{stats.groups}\n"
-      message << "Materials: #{materials.used_materials.size}\n"
-      message << "Smoothing Groups: #{stats.smoothing_groups}\n"
-      if stats.errors > 0
-        message << "\n"
-        message << "Errors: #{stats.errors}\n"
-      end
-      # TODO: Add elapsed time.
-      UI.messagebox(message, MB_MULTILINE)
-    end
-    Sketchup::Importer::ImportSuccess
-  rescue Exception => exception
-    model.abort_operation
-    # Ensure the error is reported.
-    ERROR_REPORTER.report(exception)
-    # The importer interface have its own way to handle errors, so we don't
-    # re-raise. Instead output to console.
-    # TODO: Output to $STDERR?
-    p exception
-    puts exception.backtrace.join("\n")
-    Sketchup::Importer::ImportFail
+    context
   end
-
-  private
 
   Statistics = Struct.new(:points, :lines, :faces, :objects, :groups,
       :smoothing_groups, :materials, :edges, :errors) do
@@ -369,15 +439,15 @@ class ObjImporter < Sketchup::Importer
     nil
   end
 
-  # @param [Sketchup::Entities] entities
+  # @param [Sketchup::EntitiesBuilder] builder
   # @param [Array<Geom::Point3d>] points
   # @param [Sketchup::Material, Nil] material
   # @param [Array<Geom::Point3d>] mapping
   #
   # @return [Sketchup::Face, QuadFace]
-  def create_face(entities, points, material, mapping)
+  def create_face(builder, points, material, mapping)
     if TT::Geom3d.planar_points?(points)
-      face = entities.add_face(points)
+      face = builder.add_face(points)
       # Check face orientation. SketchUp might try to adjust the face to
       # a neighbouring face - and this isn't always ideal. For instance,
       # internal faces can easily affect exterior faces like this.
@@ -400,7 +470,8 @@ class ObjImporter < Sketchup::Importer
         face.material = material
       end
     elsif points.size == 4
-      provider = EntitiesProvider.new([], entities)
+      entities = builder.is_a?(Sketchup::Entities) ? builder : builder.entities
+      provider = EntitiesProvider.new([], entities, builder)
       face = provider.add_quad(points)
       # TODO: Check face orientation.
       if textured?(material) && !mapping.empty?
