@@ -23,10 +23,13 @@ module TT::Plugins::QuadFaceTools
       @service
     end
 
+    attr_reader :service_id, :name
     attr_reader :meshes
 
     def initialize
-      super('Holograms')
+      super()
+      @service_id = 'thomthom.quadfacetools.hologram'.freeze
+      @name = 'Holograms'
       @meshes = []
       @bounds = Geom::BoundingBox.new
     end

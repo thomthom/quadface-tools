@@ -3,11 +3,9 @@ module TT::Plugins::QuadFaceTools
   # Shim for testing in older SU versions as a tool.
   class MockService
 
-    attr_reader :id, :name
     attr_writer :enabled
 
     def initialize(name)
-      @id = name
       @name = name
     end
 
