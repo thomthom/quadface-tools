@@ -291,6 +291,7 @@ class ObjImporter < Sketchup::Importer
           }
           puts 'Line:'
           p points
+          entities = builder.is_a?(Sketchup::Entities) ? builder : builder.entities
           entities.add_edges(points) unless @parse_only
           stats.edges += (points.size - 1)
           stats.lines += 1
@@ -439,7 +440,7 @@ class ObjImporter < Sketchup::Importer
     nil
   end
 
-  # @param [Sketchup::EntitiesBuilder] builder
+  # @param [Sketchup::EntitiesBuilder, Sketchup::Entities] builder
   # @param [Array<Geom::Point3d>] points
   # @param [Sketchup::Material, Nil] material
   # @param [Array<Geom::Point3d>] mapping
