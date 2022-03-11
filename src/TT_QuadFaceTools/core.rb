@@ -96,7 +96,7 @@ module TT::Plugins::QuadFaceTools
   require File.join( PATH, 'exporter_obj.rb' )
   require 'TT_QuadFaceTools/command'
   require 'TT_QuadFaceTools/importers/obj'
-  require 'TT_QuadFaceTools/services/obj'
+  require 'TT_QuadFaceTools/overlays/obj'
   require 'TT_QuadFaceTools/settings'
   require 'TT_QuadFaceTools/tools/offset'
   require 'TT_QuadFaceTools/tools/quad_edge'
@@ -671,8 +671,8 @@ module TT::Plugins::QuadFaceTools
       UI.start_timer( 0.1, false ) { toolbar.restore } # SU bug 2902434
     end
 
-    if defined?(Sketchup::ModelService)
-      HologramService.service
+    if defined?(Sketchup::Overlay)
+      HologramOverlay.overlay
     end
   end
 

@@ -1,34 +1,34 @@
 module TT::Plugins::QuadFaceTools
-  unless defined?(MODEL_SERVICE)
-    MODEL_SERVICE = if defined?(Sketchup::ModelService)
-      Sketchup::ModelService
+  unless defined?(OVERLAY)
+    OVERLAY = if defined?(Sketchup::Overlay)
+      Sketchup::Overlay
     else
-      require 'TT_QuadFaceTools/services/mock_service'
-      MockService
+      require 'TT_QuadFaceTools/overlays/mock_overlay'
+      MockOverlay
     end
   end
 
-  class HologramService < MODEL_SERVICE
+  class HologramOverlay < OVERLAY
 
     def self.add_mesh(triangles, normals)
-      service.add_mesh(triangles, normals)
+      overlay.add_mesh(triangles, normals)
     end
 
-    def self.service
-      if @service.nil?
-        @service = self.new
+    def self.overlay
+      if @overlay.nil?
+        @overlay = self.new
         model = Sketchup.active_model
-        model.services.add(@service)
+        model.overlays.add(@overlay)
       end
-      @service
+      @overlay
     end
 
-    attr_reader :service_id, :name
+    attr_reader :overlay_id, :name
     attr_reader :meshes
 
     def initialize
       super()
-      @service_id = 'thomthom.quadfacetools.hologram'.freeze
+      @overlay_id = 'thomthom.quadfacetools.hologram'.freeze
       @name = 'Holograms'
       @meshes = []
       @bounds = Geom::BoundingBox.new
@@ -50,7 +50,7 @@ module TT::Plugins::QuadFaceTools
       @bounds.add(triangles)
     end
 
-    # TT::Plugins::QuadFaceTools::HologramService.service.reset
+    # TT::Plugins::QuadFaceTools::HologramOverlay.overlay.reset
     def reset
       @meshes.clear
       @bounds = Geom::BoundingBox.new

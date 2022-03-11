@@ -10,7 +10,7 @@ require 'TT_QuadFaceTools/ui/obj_import_options'
 require 'TT_QuadFaceTools/entities'
 require 'TT_QuadFaceTools/unit_helper'
 require 'TT_QuadFaceTools/vertex_cache'
-require 'TT_QuadFaceTools/services/hologram'
+require 'TT_QuadFaceTools/overlays/hologram'
 
 
 module TT::Plugins::QuadFaceTools
@@ -331,7 +331,7 @@ class ObjRawImporter < Sketchup::Importer
     end
     # apply_smoothing_groups(smoothing_groups)
     # model.commit_operation
-    HologramService.add_mesh(triangles, normals)
+    HologramOverlay.add_mesh(triangles, normals)
     Sketchup.status_text = ''
     # Display summary back to the user
     stats.materials = materials.used_materials.size
