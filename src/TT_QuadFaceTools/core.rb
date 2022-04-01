@@ -672,7 +672,7 @@ module TT::Plugins::QuadFaceTools
     end
 
     if defined?(Sketchup::Overlay)
-      HologramOverlay.overlay
+      HologramOverlay.register_overlays
     end
   end
 
