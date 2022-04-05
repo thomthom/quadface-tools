@@ -96,6 +96,7 @@ module TT::Plugins::QuadFaceTools
   require File.join( PATH, 'exporter_obj.rb' )
   require 'TT_QuadFaceTools/command'
   require 'TT_QuadFaceTools/importers/obj'
+  require 'TT_QuadFaceTools/overlays/app_observer'
   require 'TT_QuadFaceTools/overlays/obj'
   require 'TT_QuadFaceTools/settings'
   require 'TT_QuadFaceTools/tools/offset'
@@ -672,7 +673,7 @@ module TT::Plugins::QuadFaceTools
     end
 
     if defined?(Sketchup::Overlay)
-      HologramOverlay.register_overlays
+      self.register_overlays
     end
   end
 

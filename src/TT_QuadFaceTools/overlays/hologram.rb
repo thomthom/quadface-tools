@@ -1,27 +1,6 @@
+require 'TT_QuadFaceTools/overlays/overlay_shim'
+
 module TT::Plugins::QuadFaceTools
-  unless defined?(OVERLAY)
-    OVERLAY = if defined?(Sketchup::Overlay)
-      Sketchup::Overlay
-    else
-      require 'TT_QuadFaceTools/overlays/mock_overlay'
-      MockOverlay
-    end
-  end
-
-  class HologramAppObserver < Sketchup::AppObserver
-
-    def expectsStartupModelNotifications
-      true
-    end
-
-    def register_overlay(model)
-      HologramOverlay.overlay(model)
-    end
-    alias_method :onNewModel, :register_overlay
-    alias_method :onOpenModel, :register_overlay
-
-  end
-
   class HologramOverlay < OVERLAY
 
     def self.add_mesh(triangles, normals)
@@ -29,18 +8,14 @@ module TT::Plugins::QuadFaceTools
     end
 
     def self.overlay(model = Sketchup.active_model)
-      overlay = self.new
-      model.overlays.add(overlay)
+      @@overlays ||= {}
+      overlay = @@overlays[model]
+      if overlay.nil?
+        overlay = self.new
+        model.overlays.add(overlay)
+        @@overlays[model] = overlay
+      end
       overlay
-    end
-
-    def self.register_overlays
-      model = Sketchup.active_model
-      return unless model.respond_to?(:overlays)
-
-      observer = HologramAppObserver.new
-      Sketchup.add_observer(observer)
-      nil
     end
 
     attr_reader :overlay_id, :name
