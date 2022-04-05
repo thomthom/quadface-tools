@@ -29,10 +29,8 @@ module TT::Plugins::QuadFaceTools
     end
 
     def self.overlay(model = Sketchup.active_model)
-      @overlays ||= {}
       overlay = self.new
       model.overlays.add(overlay)
-      @overlays[model] = overlay
       overlay
     end
 
