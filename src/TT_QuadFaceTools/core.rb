@@ -39,6 +39,9 @@ module TT::Plugins::QuadFaceTools
 
   # TT::Plugins::QuadFaceTools::Settings.write('DebugDisplayOffsetLoopTool', true)
 
+  # TODO: This extension uses TT::Settings and it's own Settings x_X
+  # Refactor to use a single settings source.
+
   @settings = TT::Settings.new( PLUGIN_ID )
   # UI
   @settings.set_default( :context_menu, false )
@@ -495,6 +498,20 @@ module TT::Plugins::QuadFaceTools
     cmd_live_mesh_analysis = cmd
     @commands[:live_mesh_analysis] = cmd
 
+    cmd = Command.new( 'Recursive Analysis' )  {
+      value = Settings.read('AnalyzeRecursive', false)
+      Settings.write('AnalyzeRecursive', !value)
+    }
+    cmd.set_validation_proc  {
+      Settings.read('AnalyzeRecursive') ? MF_CHECKED : MF_UNCHECKED
+    }
+    # cmd.small_icon = File.join( PATH_ICONS, 'Analysis_16.png' )
+    # cmd.large_icon = File.join( PATH_ICONS, 'Analysis_24.png' )
+    cmd.status_bar_text = 'Analyze mesh recursively.'
+    cmd.tooltip = 'Live mesh analysis which will analyze child instances.'
+    cmd_recursive_mesh_analysis = cmd
+    @commands[:recursive_mesh_analysis] = cmd
+
 
     # Menus
     m = TT.menu( 'Tools' ).add_submenu( 'QuadFace Tools' )
@@ -545,6 +562,7 @@ module TT::Plugins::QuadFaceTools
     sub_menu.add_item( cmd_color_polygons )
     sub_menu.add_separator
     sub_menu.add_item( cmd_live_mesh_analysis )
+    sub_menu.add_item( cmd_recursive_mesh_analysis )
     sub_menu.add_separator
     sub_menu.add_item( cmd_flip_by_slope_tool )
     m.add_separator

@@ -71,6 +71,17 @@ class AnalyzeOverlay < OVERLAY
     analyze_model(model)
   end
 
+  def onActivePathChanged(model)
+    analyze_model(model)
+  end
+
+  def on_setting_change(settings, key, value)
+    return unless key == 'AnalyzeRecursive'
+
+    model = Sketchup.active_model
+    analyze_model(model)
+  end
+
   private
 
   def start_observing
@@ -78,22 +89,26 @@ class AnalyzeOverlay < OVERLAY
     model = Sketchup.active_model
     model.remove_observer(self)
     model.add_observer(self)
+    Settings.add_observer(self)
   end
 
   def stop_observing
     # puts "stop_observing (#{self})"
     model = Sketchup.active_model
     model.remove_observer(self)
+    Settings.remove_observer(self)
   end
 
   # @param [Sketchup::Face] face
+  # @param [Geom::Transformation] transformation
   # @param [Array<Geom::Point3d>] triangles
-  def collect_face_triangles(face, triangles)
+  def collect_face_triangles(face, transformation, triangles)
     raise "invalid triangles array" unless triangles.is_a?(Array)
 
     mesh = face.mesh
     mesh.count_polygons.times { |i|
       triangle = mesh.polygon_points_at(i + 1)
+      triangle.each { |pt| pt.transform!(transformation) }
       raise "invalid triangle" unless triangles.is_a?(Array)
 
       triangles.concat(triangle)
@@ -108,39 +123,50 @@ class AnalyzeOverlay < OVERLAY
     nil
   end
 
-  def analyze_model(model)
-    analyze(model)
+  def analyze_recursive?
+    Settings.read('AnalyzeRecursive', false)
   end
 
-  def analyze(model, recursive = false)
-    # puts "Quad Analyze..."
+  # @param [Sketchup::Model] model
+  def analyze_model(model)
+    puts "analyze_model"
+    puts "> analyze_recursive?: #{analyze_recursive?}"
     @polygons.each { |color, triangles|
       triangles.clear
     }
-    entities = model.active_entities
+    analyze(model.active_entities, IDENTITY, recursive: analyze_recursive?)
+  end
+
+  # @param [Sketchup::Entities] entities
+  # @param [Geom::Transformation] transformation
+  # @param [Boolean] recursive
+  def analyze(entities, transformation, recursive: false)
+    # puts "Quad Analyze..."
     provider = EntitiesProvider.new(entities)
     provider.each { |entity|
       case entity
       when QuadFace
-        collect_face_triangles(entity, @polygons[COLOR_QUAD])
+        collect_face_triangles(entity, transformation, @polygons[COLOR_QUAD])
       when Sketchup::Face
         case entity.vertices.size
         when 3
-          collect_face_triangles(entity, @polygons[COLOR_TRI])
+          collect_face_triangles(entity, transformation, @polygons[COLOR_TRI])
         when 4
-          collect_face_triangles(entity, @polygons[COLOR_QUAD])
+          collect_face_triangles(entity, transformation, @polygons[COLOR_QUAD])
         else
-          collect_face_triangles(entity, @polygons[COLOR_NGON])
+          collect_face_triangles(entity, transformation, @polygons[COLOR_NGON])
         end
       when Sketchup::Group, Sketchup::ComponentInstance
         next unless recursive
-        # definition = TT::Instance.definition(entity)
-        # self.analyze_entities(definition.entities, stats, colorize, recursive)
+        definition = TT::Instance.definition(entity)
+        tr = transformation * entity.transformation
+        analyze(definition.entities, tr, recursive: recursive)
       else
         next
       end
     }
     recompute_bounds
+    entities.model.active_view.invalidate
     nil
   end
 
