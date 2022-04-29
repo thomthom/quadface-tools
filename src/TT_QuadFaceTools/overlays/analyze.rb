@@ -12,12 +12,8 @@ class AnalyzeOverlay < OVERLAY
   COLOR_NGON      = Sketchup::Color.new(144,  48,  48, COLOR_ALPHA).to_a
   COLOR_NGON_BACK = Sketchup::Color.new( 54,   9,   9, COLOR_ALPHA).to_a
 
-  attr_reader :overlay_id, :name
-
   def initialize
-    super()
-    @overlay_id = 'thomthom.quadfacetools.analyze'.freeze
-    @name = 'Quad Analysis'
+    super('thomthom.quadfacetools.analyze', 'Quad Analysis')
 
     @polygons = {
       COLOR_TRI => [],
@@ -28,13 +24,13 @@ class AnalyzeOverlay < OVERLAY
     @bounds = Geom::BoundingBox.new
   end
 
-  def start(view)
+  def start
     # puts "start (#{self})"
     start_observing
     analyze_model(Sketchup.active_model)
   end
 
-  def stop(view)
+  def stop
     # puts "stop (#{self})"
     stop_observing
   end

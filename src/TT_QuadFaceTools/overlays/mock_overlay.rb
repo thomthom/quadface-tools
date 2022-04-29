@@ -3,10 +3,13 @@ module TT::Plugins::QuadFaceTools
   # Shim for testing in older SU versions as a tool.
   class MockOverlay
 
+    attr_reader :id, :name
     attr_writer :enabled
 
-    def initialize(name)
+    def initialize(id, name)
+      @id = id
       @name = name
+      @enabled = false
     end
 
     def enabled?
@@ -16,14 +19,14 @@ module TT::Plugins::QuadFaceTools
     def activate
       @enabled = true
       view = Sketchup.active_model.active_view
-      start(view)
+      start
       view.invalidate
     end
 
     # @param [Sketchup::View] view
     def deactivate(view)
       @enabled = false
-      stop(view)
+      stop
       view.invalidate
     end
 
@@ -37,10 +40,10 @@ module TT::Plugins::QuadFaceTools
       view.invalidate
     end
 
-    def start(view)
+    def start
     end
 
-    def stop(view)
+    def stop
     end
 
   end

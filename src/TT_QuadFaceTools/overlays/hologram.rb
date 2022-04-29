@@ -18,22 +18,19 @@ module TT::Plugins::QuadFaceTools
       overlay
     end
 
-    attr_reader :overlay_id, :name
     attr_reader :meshes
 
     def initialize
-      super()
-      @overlay_id = 'thomthom.quadfacetools.hologram'.freeze
-      @name = 'Holograms'
+      super('thomthom.quadfacetools.hologram', 'Holograms')
       @meshes = []
       @bounds = Geom::BoundingBox.new
     end
 
-    def start(view)
+    def start
       start_observing_app
     end
 
-    def stop(view)
+    def stop
       stop_observing_app
     end
 
