@@ -56,7 +56,7 @@ class LoopOffset
     reset_cache
   end
 
-  # @param [Sketchup::Edge] value
+  # @param [QuadFace, Sketchup::Face] value
   def start_quad=(value)
     @start_quad = @provider.get(value)
     reset_cache
