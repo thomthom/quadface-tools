@@ -14,6 +14,7 @@ class AnalyzeOverlay < OVERLAY
 
   def initialize
     super('thomthom.quadfacetools.analyze', 'Quad Analysis')
+    self.description = 'Visualizes topology structure.'
 
     @polygons = {
       COLOR_TRI => [],

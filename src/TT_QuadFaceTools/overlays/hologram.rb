@@ -22,6 +22,7 @@ module TT::Plugins::QuadFaceTools
 
     def initialize
       super('thomthom.quadfacetools.hologram', 'Holograms')
+      self.description = 'Displays 3d geometry without making it part of the model.'
       @meshes = []
       @bounds = Geom::BoundingBox.new
     end
