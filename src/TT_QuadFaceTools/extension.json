@@ -2,10 +2,10 @@
   "name": "QuadFace Tools",
   "description": "Suite of tools for manipulating quad-based meshes.",
   "creator": "Thomas Thomassen (thomas@thomthom.net)",
-  "copyright": "Thomas Thomassen © 2011—2021",
+  "copyright": "Thomas Thomassen © 2011—2022",
   "license": "MIT License",
   "product_id": "TT_QuadFaceTools",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "build": "0",
   "url": "https://github.com/thomthom/quadface-tools"
 }
