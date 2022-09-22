@@ -933,6 +933,7 @@ module TT::Plugins::QuadFaceTools
 
     # @since 0.3.0
     def onUserText( text, view, vcb = false )
+      # p [:onUserText, text, view, vcb]
       if @window.active_control == @txt_splits
         # Splits
         segments = text.to_i
@@ -975,6 +976,7 @@ module TT::Plugins::QuadFaceTools
 
     # @since 0.3.0
     def onKeyDown( key, repeat, flags, view )
+      # p [:onKeyDown, key, repeat, flags, view]
       @key_ctrl  = true if key == COPY_MODIFIER_KEY
       @key_shift = true if key == CONSTRAIN_MODIFIER_KEY
       onSetCursor() # This blocks the VCB. (But "p onSetCursor()" does not.. ? )
@@ -985,16 +987,23 @@ module TT::Plugins::QuadFaceTools
       control = @window.active_control
       return false unless control.is_a?( GL_Textbox )
       if key == 9 # Tab
+        # p :tab, @window.active_control.class
         if @window.active_control == @txt_splits
           @txt_pinch.set_focus
         else
           @txt_splits.set_focus
         end
+        # @vcb_text = @window.active_control.text
+        @vcb_text = ''
         view.invalidate
         return false
       elsif key == 8 # Backspace
         @vcb_text = @vcb_text.chop
-      elsif ( 96..105 ).include?( key ) # 0-9
+      elsif ( 48..57 ).include?( key ) # 0-9
+        character = key.chr
+        # puts "Char: #{character}"
+        @vcb_text << character
+      elsif ( 96..105 ).include?( key ) # 0-9 (numpad)
         character = ( key - 48 ).chr
         #puts "Char: #{character}"
         @vcb_text << character
