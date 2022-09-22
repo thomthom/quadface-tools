@@ -42,6 +42,8 @@ module TT::Plugins::QuadFaceTools
   @settings = TT::Settings.new( PLUGIN_ID )
   # UI
   @settings.set_default( :context_menu, false )
+  @settings.set_default( :debug_force_high_dpi, false )
+  @settings.set_default( :dpi_scale_factor, 1.0 )
   # Select Tool
   @settings.set_default( :ui_2d, true )
   @settings.set_default( :ui_show_poles, false )
