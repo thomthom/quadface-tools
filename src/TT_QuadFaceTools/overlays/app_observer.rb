@@ -10,8 +10,16 @@ module TT::Plugins::QuadFaceTools
     end
 
     def register_overlay(model)
-      model.overlays.add(AnalyzeOverlay.new)
-      HologramOverlay.overlay(model)
+      overlay = AnalyzeOverlay.new
+      begin
+        model.overlays.add(overlay)
+      rescue ArgumentError => error
+        # If the overlay was already registerred.
+        warn error
+      end
+
+      # TODO: Not ready for production.
+      HologramOverlay.overlay(model) if DEBUG
     end
     alias_method :onNewModel, :register_overlay
     alias_method :onOpenModel, :register_overlay
@@ -24,6 +32,10 @@ module TT::Plugins::QuadFaceTools
 
     observer = OverlaysAppObserver.new
     Sketchup.add_observer(observer)
+
+    # In the case of installing or enabling the extension we need to
+    # register the overlay.
+    observer.register_overlay(model) if model
     nil
   end
 

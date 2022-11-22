@@ -126,8 +126,8 @@ class AnalyzeOverlay < OVERLAY
 
   # @param [Sketchup::Model] model
   def analyze_model(model)
-    puts "analyze_model"
-    puts "> analyze_recursive?: #{analyze_recursive?}"
+    # puts "analyze_model"
+    # puts "> analyze_recursive?: #{analyze_recursive?}"
     @polygons.each { |color, triangles|
       triangles.clear
     }
